@@ -1,4 +1,4 @@
-# GymFlow / Infytter Fitness · V1.069
+# GymFlow / Infytter Fitness · V1.07
 
 PWA de gestión para Infytter Fitness con interfaces separadas para Admin/Coadmin, Profesor y Cliente, sincronización cloud mediante Supabase y despliegue self-hosted con Docker + Coolify.
 
