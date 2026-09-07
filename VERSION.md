@@ -1,4 +1,12 @@
-# V.1.069
+# V.1.07
+
+Actualización de versión para validar el flujo de despliegue actual con Docker + Coolify.
+
+- No modifica lógica funcional ni datos.
+- Cambia la versión visible de `V.1.069` a `V.1.07`.
+- `package.json` pasa de `1.06.9` a `1.07.0`.
+
+## V.1.069
 
 Registro Cliente automático por DNI + corrección del preview móvil de Profesor.
 
