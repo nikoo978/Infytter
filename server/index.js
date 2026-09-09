@@ -37,7 +37,7 @@ const MIME_TYPES = new Map([
 ]);
 
 function queryObject(searchParams) {
-  const query = {};
+  const query = Object.create(null);
   for (const [key, value] of searchParams) {
     if (query[key] === undefined) query[key] = value;
     else if (Array.isArray(query[key])) query[key].push(value);
@@ -47,18 +47,29 @@ function queryObject(searchParams) {
 }
 
 async function readRawBody(req) {
-  const chunks = [];
-  let size = 0;
-  for await (const chunk of req) {
-    size += chunk.length;
-    if (size > MAX_BODY_BYTES) {
-      const error = new Error("Payload demasiado grande");
-      error.statusCode = 413;
-      throw error;
-    }
-    chunks.push(chunk);
-  }
-  return Buffer.concat(chunks);
+  return new Promise((resolveBody, reject) => {
+    const chunks = [];
+    let size = 0;
+    let settled = false;
+    const fail = (message, statusCode) => {
+      if (settled) return;
+      settled = true;
+      chunks.length = 0;
+      reject(Object.assign(new Error(message), { statusCode }));
+    };
+    req.on("data", (chunk) => {
+      if (settled) return;
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) return fail("Payload demasiado grande", 413);
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      if (!settled) { settled = true; resolveBody(Buffer.concat(chunks)); }
+    });
+    req.on("error", () => fail("Solicitud interrumpida", 400));
+    req.on("aborted", () => fail("Solicitud interrumpida", 400));
+    if (Number(req.headers["content-length"]) > MAX_BODY_BYTES) fail("Payload demasiado grande", 413);
+  });
 }
 
 function parseBody(rawBody, contentType) {
@@ -93,6 +104,7 @@ function adaptResponse(res) {
 }
 
 async function handleApi(req, res, url) {
+  res.setHeader("Cache-Control", "no-store, max-age=0");
   const modulePath = API_ROUTES.get(url.pathname);
   if (!modulePath) {
     res.statusCode = 404;
@@ -109,17 +121,18 @@ async function handleApi(req, res, url) {
     if (typeof module.default !== "function") throw new Error(`Handler inválido: ${modulePath}`);
     await module.default(req, adaptResponse(res));
   } catch (error) {
-    console.error("api-adapter", url.pathname, error);
+    if (!error?.statusCode) console.error("api-adapter", url.pathname, error?.name || "Error");
     if (res.writableEnded) return;
     res.statusCode = error?.statusCode || 500;
     res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.end(JSON.stringify({ error: error?.message || "Error interno" }));
+    res.end(JSON.stringify({ error: error?.statusCode ? error.message : "Error interno" }));
   }
 }
 
 function safeStaticPath(pathname) {
   let decoded;
   try { decoded = decodeURIComponent(pathname); } catch { return null; }
+  if (decoded.includes("\0") || decoded.includes("\\") || decoded.split("/").some((part) => part.startsWith("."))) return null;
   const relative = normalize(decoded).replace(/^[/\\]+/, "");
   const candidate = resolve(DIST_DIR, relative);
   return candidate === DIST_DIR || candidate.startsWith(`${DIST_DIR}/`) ? candidate : null;
@@ -127,8 +140,8 @@ function safeStaticPath(pathname) {
 
 function cacheControl(pathname) {
   if (pathname === "/sw.js" || pathname === "/manifest.webmanifest" || pathname === "/index.html") return "no-cache";
-  if (pathname.startsWith("/assets/")) return "public, max-age=31536000, immutable";
-  return "public, max-age=3600";
+  if (pathname.startsWith("/assets/") && /-[a-zA-Z0-9_-]{8,}\.[a-z0-9]+$/i.test(pathname)) return "public, max-age=31536000, immutable";
+  return "no-cache";
 }
 
 function sendFile(req, res, filePath, pathname) {
@@ -138,7 +151,10 @@ function sendFile(req, res, filePath, pathname) {
   res.setHeader("Content-Length", stat.size);
   res.setHeader("Cache-Control", cacheControl(pathname));
   if (req.method === "HEAD") return res.end();
-  createReadStream(filePath).pipe(res);
+  const stream = createReadStream(filePath);
+  stream.on("error", () => res.destroy());
+  res.on("close", () => stream.destroy());
+  stream.pipe(res);
 }
 
 async function handleStatic(req, res, url) {
@@ -155,6 +171,14 @@ async function handleStatic(req, res, url) {
     return;
   }
 
+  if (!requested || url.pathname.startsWith("/assets/") || extname(url.pathname)) {
+    res.statusCode = 404;
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.end("Not Found");
+    return;
+  }
+
   const indexPath = join(DIST_DIR, "index.html");
   if (!existsSync(indexPath)) {
     res.statusCode = 503;
@@ -167,14 +191,31 @@ async function handleStatic(req, res, url) {
 }
 
 export function createAppServer() {
-  return http.createServer(async (req, res) => {
-    const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-    if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
-      await handleApi(req, res, url);
-      return;
+  const server = http.createServer(async (req, res) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    try {
+      const url = new URL(req.url || "/", "http://localhost");
+      try {
+        if (decodeURIComponent(url.pathname).includes("\0")) throw new URIError();
+      } catch { throw Object.assign(new Error("Ruta inválida"), { statusCode: 400 }); }
+      if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
+        await handleApi(req, res, url);
+        return;
+      }
+      await handleStatic(req, res, url);
+    } catch (error) {
+      if (res.headersSent) { res.destroy(); return; }
+      res.statusCode = error?.statusCode || 500;
+      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.end(error?.statusCode ? error.message : "Error interno");
     }
-    await handleStatic(req, res, url);
   });
+  server.requestTimeout = 30_000;
+  server.headersTimeout = 15_000;
+  return server;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

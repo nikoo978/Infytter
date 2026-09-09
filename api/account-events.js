@@ -17,6 +17,7 @@ export default async function handler(req, res) {
     const { url, anonKey } = publicSupabaseConfig();
     const rpc = await fetch(`${url}/rest/v1/rpc/gf_registration_push_target`, {
       method: "POST",
+      signal: AbortSignal.timeout(10_000),
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${anonKey}`,

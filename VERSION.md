@@ -1,4 +1,12 @@
-# V.1.07
+# V.1.07.1 — 09/09/2026
+
+- Veinte RPC validan explícitamente los roles nulos y se restringen permisos anónimos. Migración aplicada y registrada en Supabase.
+- Protección de la propiedad de suscripciones Push y métodos HTTP explícitos.
+- Archivos inexistentes devuelven 404, errores de entrada controlados y respuestas API sin caché.
+- Actualización offline que exige completar los recursos principales antes de sustituir la copia anterior.
+- Dependencias de construcción actualizadas y dominio operativo documentado correctamente.
+
+## V.1.07
 
 Actualización de versión para validar el flujo de despliegue actual con Docker + Coolify.
 

@@ -22,6 +22,7 @@ export async function requireAdmin(req) {
   try {
     const response = await fetch(`${url}/auth/v1/user`, {
       method: "GET",
+      signal: AbortSignal.timeout(10_000),
       headers: {
         Authorization: `Bearer ${token}`,
         apikey: anonKey,

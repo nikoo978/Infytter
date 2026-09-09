@@ -1,5 +1,13 @@
 # GymFlow · Estado de migraciones
 
+## V.1.07.1 — Permisos (09/09/2026)
+
+`supabase/migrations/20260909025126_gf_audit_role_guards.sql` fue aplicada a `ubfqwmhxkjtqdcfnsmwe` mediante el registro de migraciones de Supabase. No repetirla manualmente.
+
+- Veinte funciones rechazan explícitamente los roles nulos, además de los roles no autorizados.
+- Se retiró la ejecución anónima de funciones de cuentas y estado privado; se mantienen las RPC públicas que validan su propia clave de acceso.
+- Verificado en transacciones sin cambios de datos: anónimo rechazado, sesión sin perfil rechazada y Admin master autorizado.
+
 ## V.1.05 — Cuentas, DNI y rutinas
 
 Migraciones nuevas:

@@ -2,7 +2,7 @@
 
 PWA de gestión para Infytter Fitness con interfaces separadas para Admin/Coadmin, Profesor y Cliente, sincronización cloud mediante Supabase y despliegue self-hosted con Docker + Coolify.
 
-Producción: `https://gymflow.coffetec.com.ar`
+Producción: `https://infytter.coffeetec.com.ar`
 
 ## Interfaces
 

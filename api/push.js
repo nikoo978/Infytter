@@ -34,6 +34,17 @@ export default async function handler(req, res) {
 
     if (req.method === "OPTIONS") return res.status(204).end();
 
+    const methods = {
+      diagnostics: ["GET"], list: ["GET"], current: ["GET"],
+      subscribe: ["POST"], preferences: ["POST", "PATCH"],
+      unsubscribe: ["POST", "DELETE"], test: ["POST"],
+    };
+    if (!Object.hasOwn(methods, action)) return json(res, 400, { error: "Acción Push inválida." });
+    if (!methods[action].includes(req.method)) {
+      res.setHeader("Allow", methods[action].join(", "));
+      return json(res, 405, { error: "Método no permitido." });
+    }
+
     // La clave VAPID pública es, por definición, pública. Este diagnóstico no
     // depende de una sesión para que la pantalla pueda detectar errores de deploy.
     if (req.method === "GET" && action === "diagnostics") {
@@ -120,9 +131,18 @@ export default async function handler(req, res) {
       return json(res, 400, { error: "Acción Push inválida." });
     }
 
-    let subscription = current?.subscription;
+    const owned = current?.userId === admin.uid;
+    if (action === "preferences" && !owned) {
+      return json(res, 404, { error: "Este dispositivo no está vinculado a la cuenta actual." });
+    }
+    // Cambiar de cuenta en el mismo navegador requiere presentar la suscripción
+    // completa; conocer sólo el endpoint nunca permite apropiarse del registro.
+    let subscription = owned ? current.subscription : undefined;
     if (req.body?.subscription) subscription = normalizeSubscription(req.body.subscription);
     if (!subscription) return json(res, 422, { error: "Suscripción Push inválida." });
+    if (current && !owned && (subscription.keys.auth !== current.subscription?.keys?.auth || subscription.keys.p256dh !== current.subscription?.keys?.p256dh)) {
+      return json(res, 403, { error: "Suscripción Push no autorizada." });
+    }
 
     // Validar también las suscripciones ya guardadas antes de reutilizarlas.
     subscription = normalizeSubscription(subscription);
@@ -137,7 +157,7 @@ export default async function handler(req, res) {
     const record = {
       ...(current?.userId === admin.uid ? current : {}),
       subscription,
-      deviceName: req.body?.deviceName || current?.deviceName || "Dispositivo",
+      deviceName: req.body?.deviceName || (owned ? current.deviceName : "") || "Dispositivo",
       metadata: {
         ...(current?.userId === admin.uid ? current.metadata || {} : {}),
         ...(req.body?.metadata || {}),

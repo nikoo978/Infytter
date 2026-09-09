@@ -18,6 +18,7 @@ export async function redis(command) {
   const { url, token } = redisConfig();
   const response = await fetch(url, {
     method: "POST",
+    signal: AbortSignal.timeout(10_000),
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(command),
   });
