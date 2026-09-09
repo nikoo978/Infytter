@@ -29,7 +29,10 @@ export function normalizeSubscription(value) {
 
   let endpointUrl;
   try { endpointUrl = new URL(endpoint); } catch { endpointUrl = null; }
-  if (!endpointUrl || endpointUrl.protocol !== "https:") {
+  const host = endpointUrl?.hostname || "";
+  const supportedHost = host === "fcm.googleapis.com" ||
+    ["push.services.mozilla.com", "push.apple.com", "notify.windows.com"].some(domain => host === domain || host.endsWith(`.${domain}`));
+  if (!endpointUrl || endpointUrl.protocol !== "https:" || !supportedHost || endpointUrl.port || endpointUrl.username || endpointUrl.password || endpointUrl.hash) {
     throw Object.assign(new Error("La suscripción Push tiene un endpoint inválido."), { statusCode: 422 });
   }
 

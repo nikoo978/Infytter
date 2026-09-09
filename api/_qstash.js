@@ -27,6 +27,7 @@ export async function publishAt(payload, finalAtMs) {
 
   const response = await fetch(`${qstashUrl()}/v2/publish/${target}`, {
     method: "POST",
+    signal: AbortSignal.timeout(10_000),
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

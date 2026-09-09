@@ -63,3 +63,40 @@ test("returns a JSON 404 for unknown API routes", async () => {
     assert.deepEqual(await response.json(), { error: "API no encontrada" });
   });
 });
+
+test("missing assets and private paths never receive a cacheable SPA document", async () => {
+  await withServer(async (baseUrl) => {
+    for (const path of ["/assets/missing-12345678.js", "/missing.css", "/.env", "/%2ehidden"]) {
+      const response = await fetch(baseUrl + path);
+      assert.equal(response.status, 404, path);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+      assert.doesNotMatch(await response.text(), /<html/i);
+    }
+  });
+});
+
+test("bad paths and oversized bodies fail without taking the server down", async () => {
+  await withServer(async (baseUrl) => {
+    for (const path of ["/%ZZ", "/%00"]) assert.equal((await fetch(baseUrl + path)).status, 400);
+    const malformed = await fetch(baseUrl + "/api/push", {
+      method: "POST", headers: { "content-type": "application/json" }, body: "{",
+    });
+    assert.equal(malformed.status, 400);
+    const large = await fetch(baseUrl + "/api/push", { method: "POST", body: "x".repeat(1024 * 1024 + 1) });
+    assert.equal(large.status, 413);
+    const health = await fetch(baseUrl + "/api/health?__proto__=x&constructor=y&constructor=z");
+    assert.equal(health.status, 200);
+    assert.match(health.headers.get("cache-control"), /no-store/);
+  });
+});
+
+test("GET cannot unsubscribe, send Push or change preferences", async () => {
+  await withServer(async (baseUrl) => {
+    for (const action of ["unsubscribe", "test", "preferences", "subscribe"]) {
+      const response = await fetch(`${baseUrl}/api/push?action=${action}&endpoint=https://example.com`);
+      assert.equal(response.status, 405, action);
+      assert.ok(response.headers.get("allow"));
+    }
+  });
+});
