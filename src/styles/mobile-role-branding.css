@@ -1,0 +1,19 @@
+/* Ajuste exclusivo de marca para encabezados móviles de Profesor y Cliente.
+   El logo del panel Admin queda sin cambios. */
+@media (max-width: 767px) {
+  header img[src="/infytter-logo.svg"].w-24 {
+    width: min(10rem, 42vw) !important;
+    height: 2.75rem !important;
+    padding-inline: 0 !important;
+    background: transparent !important;
+    object-fit: contain;
+    object-position: left center;
+  }
+
+  header > img[src="/infytter-logo.svg"].w-28 {
+    width: min(11rem, 55vw) !important;
+    height: 3rem !important;
+    object-fit: contain;
+    object-position: left center;
+  }
+}
