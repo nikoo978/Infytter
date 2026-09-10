@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp, Dumbbell, ExternalLink, Search, Video } from "l
 import { useEffect, useMemo, useState } from "react";
 import { listExercises, matchesExerciseSearch, MUSCLE_GROUPS } from "../../services/exercises";
 import { ExerciseGifGallery } from "./ExerciseGif";
+import MuscleMap from "./MuscleMap";
 
 const PAGE_SIZE = 48;
 
@@ -74,9 +75,13 @@ export default function ExerciseCatalog({ compact = false, preview = false }) {
           <p className="text-[11px] font-black text-slate-400">{loading ? "Cargando…" : `${visible.length} ejercicio${visible.length === 1 ? "" : "s"}`}</p>
           {query && <button type="button" onClick={() => setQuery("")} className="text-[11px] font-black text-[#9E0710]">Limpiar búsqueda</button>}
         </div>
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <button onClick={() => setGroup("Todos")} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === "Todos" ? "bg-[#050505] text-white" : "bg-slate-100 text-slate-600"}`}>Todos</button>
-          {MUSCLE_GROUPS.map((item) => <button key={item} onClick={() => setGroup(item)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === item ? "bg-[#E30613] text-white" : "bg-slate-100 text-slate-600"}`}>{item}</button>)}
+
+        <div className="mt-3"><MuscleMap value={group} onChange={setGroup} /></div>
+
+        <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-slate-400">Todos los filtros</p>
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <button type="button" onClick={() => setGroup("Todos")} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === "Todos" ? "bg-[#050505] text-white" : "bg-slate-100 text-slate-600"}`}>Todos</button>
+          {MUSCLE_GROUPS.map((item) => <button key={item} type="button" onClick={() => setGroup(item)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === item ? "bg-[#E30613] text-white" : "bg-slate-100 text-slate-600"}`}>{item}</button>)}
         </div>
       </div>
 
@@ -88,7 +93,7 @@ export default function ExerciseCatalog({ compact = false, preview = false }) {
           const open = openId === exercise.id;
           return (
             <article key={exercise.id} className="overflow-hidden rounded-[20px] border border-black/7 bg-white shadow-sm">
-              <button onClick={() => setOpenId(open ? "" : exercise.id)} className="flex min-h-16 w-full items-start justify-between gap-3 p-3.5 text-left">
+              <button type="button" onClick={() => setOpenId(open ? "" : exercise.id)} className="flex min-h-16 w-full items-start justify-between gap-3 p-3.5 text-left" aria-expanded={open}>
                 <div className="flex min-w-0 flex-1 items-start gap-3">
                   <span className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-2xl bg-red-50 text-[#E30613]"><Dumbbell className="size-4" /></span>
                   <div className="min-w-0 flex-1">
