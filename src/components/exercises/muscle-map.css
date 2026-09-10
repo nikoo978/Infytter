@@ -1,0 +1,40 @@
+.muscle-map {
+  --map-outline: #52586b;
+  --map-body: #f0f3f5;
+  --map-accent: #e30613;
+  border: 1px solid #e2e6ec;
+  border-radius: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  color: #1e293b;
+}
+.muscle-map__header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.muscle-map__title { margin: 0; font-size: 1rem; line-height: 1.4; font-weight: 800; }
+.muscle-map__hint { margin: 5px 0 0; font-size: .875rem; line-height: 1.5; color: #64748b; }
+.muscle-map__gender { display: inline-flex; flex-shrink: 0; padding: 4px; background: white; border: 1px solid #e2e6ec; border-radius: 14px; }
+.muscle-map__gender button { min-height: 40px; padding: 0 14px; border: 0; border-radius: 10px; color: #475569; background: transparent; font-size: .875rem; font-weight: 750; cursor: pointer; }
+.muscle-map__gender button[aria-pressed="true"] { color: white; background: #101114; }
+.muscle-map__toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 16px; padding: 10px 0; border-top: 1px solid #e2e6ec; font-size: .875rem; }
+.muscle-map__hover { font-weight: 700; color: #475569; }
+.muscle-map__detail { display: inline-flex; min-height: 36px; align-items: center; gap: 8px; cursor: pointer; color: #475569; }
+.muscle-map__detail input { width: 18px; height: 18px; accent-color: var(--map-accent); cursor: pointer; }
+.muscle-map__canvas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 12px 4px; border: 1px solid #e5e9ee; border-radius: 16px; background: #e9eef1; }
+.muscle-map__view { min-width: 0; }
+.muscle-map__figure { display: block; width: 100%; height: auto; max-height: 520px; margin: 0 auto; overflow: visible; }
+.muscle-map__body, .muscle-map__region { fill: var(--map-body); stroke: var(--map-outline); stroke-width: 1.65; stroke-linejoin: round; stroke-linecap: round; }
+.muscle-map__region { cursor: pointer; transition: fill .15s, stroke .15s; }
+.muscle-map__region.is-selected { fill: var(--map-accent); stroke: #a30712; }
+.muscle-map__region:focus { outline: none; }
+.muscle-map__region:focus-visible { fill: #ffb6be; stroke: #111827; stroke-width: 3; }
+.muscle-map__region.is-selected:focus-visible { fill: var(--map-accent); }
+.muscle-map__line { fill: none; stroke: var(--map-outline); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+.muscle-map__caption { margin: 4px 0 0; text-align: center; font-size: .875rem; font-weight: 650; color: #475569; }
+.muscle-map__footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; min-height: 44px; padding-top: 8px; font-size: .875rem; }
+.muscle-map__footer p { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-weight: 700; color: #475569; }
+.muscle-map__swatch { display: inline-block; width: 12px; height: 12px; flex-shrink: 0; border-radius: 3px; border: 1px solid #64748b; background: var(--map-body); }
+.muscle-map__swatch.is-selected { border-color: var(--map-accent); background: var(--map-accent); }
+.muscle-map__footer button { min-height: 40px; padding: 6px 10px; border-radius: 8px; color: #a30712; font-weight: 800; background: white; border: 1px solid #e2e6ec; cursor: pointer; }
+.muscle-map button:focus-visible, .muscle-map input:focus-visible { outline: 2px solid #111827; outline-offset: 3px; }
+@media (hover: hover) { .muscle-map__region:hover { fill: #ffb6be; stroke: #be123c; } .muscle-map__region.is-selected:hover { fill: #c90512; } }
+@media (max-width: 380px) { .muscle-map { padding: 12px; } .muscle-map__canvas { padding: 8px 0; gap: 0; } }
+@media (prefers-reduced-motion: reduce) { .muscle-map__region { transition: none; } }

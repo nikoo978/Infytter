@@ -1,4 +1,12 @@
-# V.1.07.3 — 10/09/2026
+# V.1.07.4 — 10/09/2026
+
+- Selector muscular con diagramas SVG originales de proporciones humanas, vistas frontal/posterior y figuras masculina/femenina diferenciadas.
+- Grupos musculares neutros con resaltado rojo al seleccionar; selección por toque, mouse o teclado y deselección tocando de nuevo.
+- Vista con más detalle, nombre de la zona al pasar el mouse, indicador del filtro activo y controles legibles en móvil.
+- Conserva las categorías y el filtrado de la biblioteca. Los gemelos se seleccionan en la vista posterior, sin etiquetar la tibia como gemelo.
+- Sin cambios de base de datos, rutinas ni permisos.
+
+## V.1.07.3 — 10/09/2026
 
 - Registro y recuperación muestran y validan requisitos de contraseña antes de enviar.
 - Progreso calcula en vivo la estimación de grasa corporal con método Navy, informa medidas faltantes o incompatibles y permite eliminar mediciones guardadas por error.
