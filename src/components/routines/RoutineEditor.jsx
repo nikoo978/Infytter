@@ -29,6 +29,9 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
     return matchesExerciseSearch(exercise, query);
   }), [exercises, group, query]);
   const shownOptions = options.slice(0, OPTION_LIMIT);
+  const titleLength = title.trim().length;
+  const titleTooShort = titleLength === 1;
+  const canSave = titleLength >= 2 && items.length > 0;
 
   const addExercise = (exercise) => {
     if (!exercise || selectedIds.has(String(exercise.id))) return;
@@ -56,6 +59,7 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
 
   const submit = (event) => {
     event.preventDefault();
+    if (title.trim().length < 2 || !items.length) return;
     const normalizedItems = items.map((item) => {
       const sourceExercise = exerciseById.get(String(item.exercise_id || ""));
       return {
@@ -70,7 +74,7 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
   return <form onSubmit={submit} className="space-y-5">
     <section className="rounded-2xl border border-black/6 bg-white">
       <div className={`grid gap-3 p-3.5 ${compact ? "" : "sm:grid-cols-2 sm:p-4"}`}>
-        <label className="text-xs font-black uppercase tracking-wide text-slate-500">Nombre de la rutina<input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={2} maxLength={100} className={`mt-1.5 ${input}`} placeholder="Ej. Torso A" /></label>
+        <label className="text-xs font-black uppercase tracking-wide text-slate-500">Nombre de la rutina<input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={2} maxLength={100} aria-invalid={titleTooShort} aria-describedby="routine-title-help" className={`mt-1.5 ${input} ${titleTooShort ? "border-red-300 focus:ring-red-200" : ""}`} placeholder="Ej. Torso A" /><span id="routine-title-help" className={`mt-1.5 block text-[10px] normal-case tracking-normal ${titleTooShort ? "font-black text-red-600" : "font-bold text-slate-400"}`}>{titleTooShort ? "Usá al menos 2 caracteres para poder guardar la rutina." : "Mínimo 2 caracteres."}</span></label>
         <label className="text-xs font-black uppercase tracking-wide text-slate-500">Objetivo o indicación<input value={description} onChange={(event) => setDescription(event.target.value)} className={`mt-1.5 ${input}`} placeholder="Ej. Fuerza e hipertrofia" /></label>
       </div>
     </section>
@@ -101,6 +105,6 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
       </article>; })}{!items.length && <p className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-400">Elegí ejercicios arriba para empezar a armar la rutina.</p>}</div>
     </section>
 
-    <div className="sticky bottom-0 z-10 -mx-4 border-t border-black/6 bg-white/95 px-4 pb-[max(.25rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0"><button disabled={busy || !title.trim() || !items.length} className="btn-primary min-h-11 w-full disabled:opacity-50"><Save className="size-4" /> {busy ? "Guardando…" : routine ? "Guardar cambios" : "Crear rutina"}</button><p className="mt-2 text-center text-[10px] font-bold text-slate-400">{items.length ? `${items.length} ejercicios listos para guardar` : "Agregá al menos un ejercicio"}</p></div>
+    <div className="sticky bottom-0 z-10 -mx-4 border-t border-black/6 bg-white/95 px-4 pb-[max(.25rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0"><button disabled={busy || !canSave} className="btn-primary min-h-11 w-full disabled:opacity-50"><Save className="size-4" /> {busy ? "Guardando…" : routine ? "Guardar cambios" : "Crear rutina"}</button><p className={`mt-2 text-center text-[10px] font-bold ${titleTooShort ? "text-red-600" : "text-slate-400"}`}>{titleTooShort ? "El nombre necesita al menos 2 caracteres." : !items.length ? "Agregá al menos un ejercicio" : titleLength < 2 ? "Escribí un nombre de al menos 2 caracteres" : `${items.length} ejercicios listos para guardar`}</p></div>
   </form>;
 }
