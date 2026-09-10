@@ -1,4 +1,13 @@
-# V.1.07.1 — 09/09/2026
+# V.1.07.2 — 10/09/2026
+
+- La membresía vence al terminar su fecha en Argentina: se elimina la tolerancia accidental durante el día siguiente.
+- Las fechas de vencimiento ausentes o inválidas se consideran vencidas.
+- El plan de tres días cuenta días distintos de lunes a domingo en la zona horaria del gimnasio y conserva el reingreso durante el mismo día.
+- Recepción y portal del cliente comparten las reglas de fecha; el resultado y su registro usan el mismo instante.
+- Pruebas de medianoche, cambio de semana, fechas inválidas y límites del plan.
+- Plan de integración biométrica documentado; los lectores y el molinete aún requieren modelos, SDK y pruebas físicas.
+
+## V.1.07.1 — 09/09/2026
 
 - Veinte RPC validan explícitamente los roles nulos y se restringen permisos anónimos. Migración aplicada y registrada en Supabase.
 - Protección de la propiedad de suscripciones Push y métodos HTTP explícitos.

@@ -1,6 +1,7 @@
 import { Activity, CalendarDays, CheckCircle2, Clock3, Dumbbell, Edit3, Fingerprint, Home, ListPlus, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, UserRound, UsersRound, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { APP_VERSION } from "../App";
+import { statusOf, weeklyAccessUsage } from "../services/accessPolicy";
 import ExerciseCatalog from "../components/exercises/ExerciseCatalog";
 import BodyMetricsPanel from "../components/progress/BodyMetricsPanel";
 import RoutineEditor from "../components/routines/RoutineEditor";
@@ -12,14 +13,8 @@ import { getMyClientPortal } from "../services/roles";
 import { deleteMyRoutine, getMyRoutines, removeAssignedRoutine, saveMyRoutine } from "../services/routines";
 
 const dateLabel = (value) => value ? new Date(`${String(value).slice(0, 10)}T12:00:00`).toLocaleDateString("es-AR") : "—";
-const daysTo = (value) => value ? Math.ceil((new Date(`${value}T23:59:59`) - new Date()) / 86400000) : null;
 const number = (value, digits = 1) => value == null ? "—" : Number(value).toLocaleString("es-AR", { maximumFractionDigits: digits });
 
-function statusOfMember(member) {
-  const days = daysTo(member?.expiry);
-  if (days === null || days < 0) return "Vencida";
-  return days <= 7 ? "Por vencer" : "Vigente";
-}
 
 function RoutineView({ routine, actions = null }) {
   const [open, setOpen] = useState(false);
@@ -71,13 +66,11 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
 
   const member = portal?.member;
   const accesses = portal?.accesses || [];
-  const status = statusOfMember(member);
+  const status = statusOf(member);
   const latest = latestMetrics[0] || null;
   const thisWeekDays = useMemo(() => {
     if (!member || member.plan !== "3 días") return null;
-    const now = new Date();
-    const start = new Date(now); start.setHours(0,0,0,0); start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-    return new Set(accesses.filter((item) => item.allowed && new Date(item.date) >= start).map((item) => String(item.date).slice(0,10))).size;
+    return weeklyAccessUsage(accesses).usedDays;
   }, [member, accesses]);
   const statusTone = status === "Vigente" ? "bg-emerald-50 text-emerald-700" : status === "Por vencer" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700";
 

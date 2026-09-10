@@ -6,6 +6,9 @@ import { getCloudState, getWalOperations, recoverWalOperations, setCloudState, s
 import { applyOperationsLocally, buildStateOperations, flushPendingOperations, getDeviceId, pendingOperations, queueStateOperations } from "../services/offlineSync";
 import { cancelMembershipNotifications, scheduleMembershipNotifications, sendRemoteEvent } from "../services/notifications";
 import { useAuth } from "./AuthContext";
+import { daysUntilExpiry, planUsage, statusOf } from "../services/accessPolicy";
+
+export { planUsage, statusOf } from "../services/accessPolicy";
 
 const GymContext = createContext(null);
 const iso = (days = 0) => { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); };
@@ -23,25 +26,6 @@ const defaultNotificationPreferences = {
   deniedAccess: true,
   manualAccess: true,
 };
-
-const startOfWeek = (value = new Date()) => {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-  return date;
-};
-
-export function planUsage(person, accesses, now = new Date()) {
-  if (person?.plan !== "3 días") return { usedDays: 0, limitReached: false, alreadyEnteredToday: false };
-  const weekStart = startOfWeek(now);
-  const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 7);
-  const today = now.toISOString().slice(0, 10);
-  const days = new Set(accesses
-    .filter((access) => access.personId === person.id && access.allowed && !access.manual)
-    .filter((access) => { const date = new Date(access.date); return date >= weekStart && date < weekEnd; })
-    .map((access) => access.date.slice(0, 10)));
-  return { usedDays: days.size, alreadyEnteredToday: days.has(today), limitReached: days.size >= 3 && !days.has(today) };
-}
 
 const seed = {
   branches: [{ id: "centro", name: "Junín" }, { id: "norte", name: "Chacabuco" }],
@@ -73,13 +57,6 @@ const showDeviceNotification = (title, body) => {
   if (typeof window === "undefined" || !("Notification" in window) || Notification.permission !== "granted") return;
   navigator.serviceWorker?.ready.then((registration) => registration.showNotification(title, { body, icon: "/favicon.svg", badge: "/favicon.svg" })).catch(() => undefined);
 };
-
-export function statusOf(person) {
-  if (person.role === "Profesor") return "Vigente";
-  if (!person.expiry) return "Vencida";
-  const days = Math.ceil((new Date(`${person.expiry}T23:59:59`) - new Date()) / 86400000);
-  return days < 0 ? "Vencida" : days <= 7 ? "Por vencer" : "Vigente";
-}
 
 export function GymProvider({ children }) {
   const { user, isCloud, isLocal, isOnline, exitLocalMode, permissions } = useAuth();
@@ -442,19 +419,18 @@ export function GymProvider({ children }) {
     clearNotificationLog: () => permissions?.canDelete ? update((d) => ({ ...d, notificationLog: [] })) : forbidden("Sólo el Admin master puede borrar el historial de notificaciones."),
     checkAccess: (query) => {
       if (!permissions?.canAccessControl) return forbidden();
+      const now = new Date();
       const current = dataRef.current;
       const person = current.people.find((p) => p.dni === query || p.id === query);
-      const membershipStatus = person ? statusOf(person) : "No encontrado";
-      const usage = planUsage(person, current.accesses);
+      const membershipStatus = person ? statusOf(person, now) : "No encontrado";
+      const usage = planUsage(person, current.accesses, now);
       const allowed = !!person && membershipStatus !== "Vencida" && !usage.limitReached;
       const denialReason = !person ? "DNI no registrado" : membershipStatus === "Vencida" ? "Membresía vencida" : usage.limitReached ? "Límite semanal de 3 días alcanzado" : null;
       const lastPayment = person?.role === "Profesor" ? null : current.transactions.find((t) =>
         t.type === "income" && t.category === "Membresía" &&
         (t.personId === person?.id || (!t.personId && t.detail?.includes(person?.name)))
       );
-      const daysToExpiry = person?.expiry
-        ? Math.ceil((new Date(`${person.expiry}T23:59:59`) - new Date()) / 86400000)
-        : null;
+      const daysToExpiry = daysUntilExpiry(person?.expiry, now);
       const result = {
         person,
         allowed,
@@ -464,10 +440,10 @@ export function GymProvider({ children }) {
         planUsage: usage,
         denialReason,
         branchName: current.branches.find((b) => b.id === (person?.branch || current.activeBranch))?.name,
-        checkedAt: new Date().toISOString(),
+        checkedAt: now.toISOString(),
       };
       publishAccess(result);
-      update((d) => { d.accesses.unshift({ id: crypto.randomUUID(), personId: person?.id || null, branch: d.activeBranch, allowed, date: new Date().toISOString() }); return d; });
+      update((d) => { d.accesses.unshift({ id: crypto.randomUUID(), personId: person?.id || null, branch: d.activeBranch, allowed, date: now.toISOString() }); return d; });
       if (!allowed) sendNotification("deniedAccess", "Ingreso rechazado", person ? `${person.name}: ${denialReason}.` : `DNI ${query} no registrado.`, current.activeBranch, "/accesos");
       else if (person.role === "Profesor") sendNotification("staffAccess", "Ingreso de profesor", `${person.name} ingresó al gimnasio.`, person.branch, "/accesos");
       else sendNotification("clientAccess", "Ingreso de cliente", `${person.name} ingresó al gimnasio.`, person.branch, "/accesos");
