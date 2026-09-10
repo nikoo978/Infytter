@@ -6,6 +6,7 @@ import { supabase, supabaseConfigured } from "../services/supabase";
 import { getCloudState } from "../services/storage";
 import { unlinkPushSubscriptionBeforeLogout } from "../services/notifications";
 import { getMyProfile, permissionsForRole } from "../services/roles";
+import { PASSWORD_POLICY_SUMMARY, passwordPolicyError, passwordRequirementStatus } from "../services/passwordPolicy";
 
 const AuthContext = createContext(null);
 const MODE_KEY = "gymflow-emergency-local-mode";
@@ -34,13 +35,14 @@ async function sha256(value) {
 
 function authMessage(error, action = "login") {
   const message = String(error?.message || "").toLowerCase();
+  const code = String(error?.code || "").toLowerCase();
   if (message.includes("invalid login credentials")) return "Email o contraseña incorrectos.";
   if (message.includes("email not confirmed")) return "Primero confirmá tu email desde el mensaje que te envió Supabase.";
   if (message.includes("user already registered")) return "Ese email ya tiene una cuenta. Usá Ingresar.";
   if (message.includes("dni") && message.includes("registr")) return "Ese DNI ya tiene una cuenta registrada.";
   if (message.includes("dni")) return "Ingresá un DNI válido.";
   if (message.includes("nombre completo")) return "Ingresá tu nombre completo.";
-  if (message.includes("password") && (message.includes("least") || message.includes("characters"))) return "La contraseña debe tener al menos 8 caracteres.";
+  if (code.includes("weak_password") || (message.includes("password") && (message.includes("least") || message.includes("characters") || message.includes("contain") || message.includes("weak")))) return `La contraseña no cumple los requisitos. ${PASSWORD_POLICY_SUMMARY}`;
   if (message.includes("invalid email")) return "El email no es válido.";
   if (message.includes("rate limit") || error?.status === 429) return "Demasiados intentos. Esperá unos minutos y volvé a probar.";
   if (message.includes("network") || message.includes("fetch")) return "No se pudo conectar con Supabase. Revisá la conexión.";
@@ -51,8 +53,15 @@ function authMessage(error, action = "login") {
   return "No se pudo iniciar sesión.";
 }
 
+function PasswordRequirements({ value, id = "password-requirements" }) {
+  const status = passwordRequirementStatus(value);
+  return <div id={id} className="mt-2 rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Requisitos de contraseña</p><div className="mt-2 grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">{status.map((item) => <span key={item.key} className={`text-[11px] font-bold ${item.met ? "text-emerald-700" : "text-slate-400"}`}>{item.met ? "✓" : "•"} {item.label}</span>)}</div></div>;
+}
+
 function AuthScreen({ onLogin, onRegister, onReset, error, notice, busy }) {
   const [view, setView] = useState("login");
+  const [passwordDraft, setPasswordDraft] = useState("");
+  const changeView = (next) => { setView(next); setPasswordDraft(""); };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -76,25 +85,26 @@ function AuthScreen({ onLogin, onRegister, onReset, error, notice, busy }) {
     <section className="w-full max-w-md rounded-[24px] border border-white/10 bg-white p-7 shadow-2xl">
       <img src="/infytter-logo.svg" alt="Infytter Fitness" className="h-16 w-full rounded-xl bg-[#050505] object-contain p-2" />
       <h1 className="mt-6 text-3xl font-black uppercase text-[#050505]">{view === "register" ? "Crear cuenta" : view === "reset" ? "Recuperar acceso" : "Ingresar"}</h1>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{view === "register" ? "Registrate con nombre completo, DNI, email y contraseña. La cuenta ingresa como Cliente hasta que un administrador la vincule o cambie su rol." : view === "reset" ? "Te enviaremos un enlace para elegir una contraseña nueva." : "Acceso seguro con Supabase."}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{view === "register" ? "Registrate con nombre completo, DNI, email y una contraseña que cumpla los requisitos indicados abajo. La cuenta ingresa como Cliente hasta que un administrador la vincule o cambie su rol." : view === "reset" ? "Te enviaremos un enlace para elegir una contraseña nueva." : "Acceso seguro con Supabase."}</p>
 
       <form onSubmit={submit} className="mt-6 grid gap-4">
         {view === "register" && <><label className="text-sm font-bold text-slate-600">Nombre completo<input name="name" required minLength="3" autoComplete="name" placeholder="Nombre y apellido" className={field} /></label><label className="text-sm font-bold text-slate-600">DNI<input name="dni" required inputMode="numeric" pattern="[0-9]{6,10}" minLength="6" maxLength="10" autoComplete="off" placeholder="Solo números" className={field} /></label></>}
         <label className="text-sm font-bold text-slate-600">Email<input name="email" type="email" required autoComplete="email" className={field} /></label>
-        {view !== "reset" && <label className="text-sm font-bold text-slate-600">Contraseña<input name="password" type="password" minLength="8" required autoComplete={view === "register" ? "new-password" : "current-password"} className={field} /></label>}
+        {view !== "reset" && <label className="text-sm font-bold text-slate-600">Contraseña<input name="password" type="password" minLength="8" required autoComplete={view === "register" ? "new-password" : "current-password"} onChange={(event) => setPasswordDraft(event.target.value)} aria-describedby={view === "register" ? "register-password-requirements" : undefined} className={field} />{view === "register" && <PasswordRequirements value={passwordDraft} id="register-password-requirements" />}</label>}
         {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600">{error}</p>}
         {notice && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{notice}</p>}
         <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Procesando…" : view === "register" ? <><UserPlus className="size-4" /> Crear cuenta</> : view === "reset" ? <><Mail className="size-4" /> Enviar recuperación</> : <><LogIn className="size-4" /> Ingresar</>}</button>
       </form>
 
-      <div className="mt-4 grid gap-2 text-sm font-bold">{view !== "login" && <button disabled={busy} onClick={() => setView("login")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Volver a ingresar</button>}{view === "login" && <button disabled={busy} onClick={() => setView("register")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Crear cuenta</button>}{view === "login" && <button disabled={busy} onClick={() => setView("reset")} className="rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 disabled:opacity-60">Olvidé mi contraseña</button>}</div>
+      <div className="mt-4 grid gap-2 text-sm font-bold">{view !== "login" && <button disabled={busy} onClick={() => changeView("login")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Volver a ingresar</button>}{view === "login" && <button disabled={busy} onClick={() => changeView("register")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Crear cuenta</button>}{view === "login" && <button disabled={busy} onClick={() => changeView("reset")} className="rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 disabled:opacity-60">Olvidé mi contraseña</button>}</div>
     </section>
   </main>;
 }
 
 function PasswordRecovery({ onUpdatePassword, error, notice, busy }) {
-  const submit = async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await onUpdatePassword(String(form.get("password") || "")); };
-  return <main className="grid min-h-screen place-items-center bg-[#050505] p-4"><section className="w-full max-w-md rounded-[24px] bg-white p-7 shadow-2xl"><span className="grid size-12 place-items-center rounded-2xl bg-red-50 text-[#E30613]"><KeyRound className="size-6" /></span><h1 className="mt-5 text-3xl font-black uppercase">Nueva contraseña</h1><p className="mt-2 text-sm text-slate-500">Elegí una contraseña nueva de al menos 8 caracteres.</p><form onSubmit={submit} className="mt-6 grid gap-4"><input name="password" type="password" minLength="8" required autoComplete="new-password" className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20" />{error && <p className="text-sm font-bold text-red-600">{error}</p>}{notice && <p className="text-sm font-bold text-emerald-700">{notice}</p>}<button disabled={busy} className="btn-primary w-full">{busy ? "Guardando…" : "Guardar contraseña"}</button></form></section></main>;
+  const [passwordDraft, setPasswordDraft] = useState("");
+  const submit = async (event) => { event.preventDefault(); await onUpdatePassword(passwordDraft); };
+  return <main className="grid min-h-screen place-items-center bg-[#050505] p-4"><section className="w-full max-w-md rounded-[24px] bg-white p-7 shadow-2xl"><span className="grid size-12 place-items-center rounded-2xl bg-red-50 text-[#E30613]"><KeyRound className="size-6" /></span><h1 className="mt-5 text-3xl font-black uppercase">Nueva contraseña</h1><p className="mt-2 text-sm leading-6 text-slate-500">{PASSWORD_POLICY_SUMMARY}</p><form onSubmit={submit} className="mt-6 grid gap-4"><input name="password" value={passwordDraft} onChange={(event) => setPasswordDraft(event.target.value)} type="password" minLength="8" required autoComplete="new-password" aria-describedby="recovery-password-requirements" className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20" /><PasswordRequirements value={passwordDraft} id="recovery-password-requirements" />{error && <p className="text-sm font-bold text-red-600">{error}</p>}{notice && <p className="text-sm font-bold text-emerald-700">{notice}</p>}<button disabled={busy} className="btn-primary w-full">{busy ? "Guardando…" : "Guardar contraseña"}</button></form></section></main>;
 }
 
 function LocalPinModal({ open, onClose, onConfirm, error, busy }) {
@@ -192,7 +202,8 @@ export function AuthProvider({ children }) {
     const cleanDni = String(dni || "").replace(/\D/g, "");
     if (cleanName.length < 3 || !cleanName.includes(" ")) { setError("Ingresá nombre y apellido."); return; }
     if (!/^[0-9]{6,10}$/.test(cleanDni)) { setError("Ingresá un DNI válido, sólo con números."); return; }
-    if (password.length < 8) { setError("La contraseña debe tener al menos 8 caracteres."); return; }
+    const passwordError = passwordPolicyError(password);
+    if (passwordError) { setError(passwordError); return; }
     setBusy(true);
     try {
       if (!supabase) throw new Error("Supabase no configurado");
@@ -213,7 +224,8 @@ export function AuthProvider({ children }) {
 
   const updatePassword = async (password) => {
     setError(""); setNotice("");
-    if (password.length < 8) { setError("La contraseña debe tener al menos 8 caracteres."); return; }
+    const passwordError = passwordPolicyError(password);
+    if (passwordError) { setError(passwordError); return; }
     setBusy(true);
     try { const { error: updateError } = await supabase.auth.updateUser({ password }); if (updateError) throw updateError; setNotice("Contraseña actualizada correctamente."); setRecovery(false); }
     catch (err) { setError(authMessage(err, "password")); }
