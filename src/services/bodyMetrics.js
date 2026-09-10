@@ -25,6 +25,12 @@ export async function saveMyBodyMetric(values) {
   return { item: data || null, error };
 }
 
+export async function deleteMyBodyMetric(metricId) {
+  if (!supabase) return { ok: false, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_delete_my_body_metric", { p_metric_id: metricId });
+  return { ok: Boolean(data) && !error, error };
+}
+
 export async function getPersonBodyMetrics(personId, limit = 30) {
   if (!supabase) return { personId, items: [], error: noSupabase() };
   const { data, error } = await supabase.rpc("gf_get_person_body_metrics", { p_person_id: personId, p_limit: limit });
@@ -35,4 +41,10 @@ export async function savePersonBodyMetric(personId, values) {
   if (!supabase) return { item: null, error: noSupabase() };
   const { data, error } = await supabase.rpc("gf_save_person_body_metric", { p_person_id: personId, ...payload(values) });
   return { item: data || null, error };
+}
+
+export async function deletePersonBodyMetric(personId, metricId) {
+  if (!supabase) return { ok: false, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_delete_person_body_metric", { p_person_id: personId, p_metric_id: metricId });
+  return { ok: Boolean(data) && !error, error };
 }
