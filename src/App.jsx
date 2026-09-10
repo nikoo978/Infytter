@@ -23,6 +23,7 @@ import Routines from "./pages/Routines";
 import Usuarios from "./pages/Usuarios";
 import { useAuth } from "./context/AuthContext";
 import "./styles/v1066-admin-menu.css";
+import "./styles/mobile-role-branding.css";
 
 export const APP_VERSION = "V.1.07.4";
 export const navigation = [
