@@ -1,4 +1,15 @@
-# V.1.07.2 — 10/09/2026
+# V.1.07.3 — 10/09/2026
+
+- Registro y recuperación muestran y validan requisitos de contraseña antes de enviar.
+- Progreso calcula en vivo la estimación de grasa corporal con método Navy, informa medidas faltantes o incompatibles y permite eliminar mediciones guardadas por error.
+- Se incorpora selector anatómico Hombre/Mujer, frente y espalda, para filtrar ejercicios tocando directamente el grupo muscular.
+- Las rutinas explican por qué un nombre de un solo carácter no se puede guardar.
+- En el portal Cliente cada ejercicio de una rutina puede desplegar descripción y GIF, marcarse como realizado y conservar el progreso diario local por cuenta, rutina y fecha argentina.
+- Los GIFs pueden ampliarse a pantalla completa y se bloquea el zoom por gesto en dispositivos móviles compatibles.
+- Supabase incorpora funciones protegidas para eliminar mediciones y validación explícita de estimaciones Navy inválidas.
+- Se mantienen fuera de alcance biometría, reconocimiento facial y control físico de molinete.
+
+## V.1.07.2 — 10/09/2026
 
 - La membresía vence al terminar su fecha en Argentina: se elimina la tolerancia accidental durante el día siguiente.
 - Las fechas de vencimiento ausentes o inválidas se consideran vencidas.
