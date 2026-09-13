@@ -213,7 +213,7 @@ export default function Notificaciones() {
         {state === "unsupported" && <p className="mt-3 text-xs text-red-600">Este navegador no admite Web Push.</p>}
         {!isCloud && <p className="mt-3 text-xs font-bold text-slate-500">Modo local: los avisos remotos se pausan. Los movimientos operativos pendientes se sincronizan con Cloud cuando vuelve Internet.</p>}
         {message && <p className={`mt-3 text-xs font-bold ${messageKind === "error" ? "text-red-600" : "text-slate-500"}`}>{message}</p>}
-        {isCloud && diagnostics && !diagnostics.configuredForImmediatePush && <p className="mt-3 text-xs font-bold text-red-600">Backend Push incompleto: revisá VAPID y Redis en Vercel.</p>}
+        {isCloud && diagnostics && !diagnostics.configuredForImmediatePush && <p className="mt-3 text-xs font-bold text-red-600">Backend Push incompleto: revisá VAPID y Redis en el servidor.</p>}
         {isCloud && diagnostics?.configuredForImmediatePush && !diagnostics.configuredForScheduledPush && <p className="mt-3 text-xs font-bold text-amber-700">Push inmediato listo; faltan QStash/NOTIFICATION_SECRET/PUBLIC_APP_URL para avisos de vencimientos programados.</p>}
       </article>
 

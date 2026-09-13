@@ -4,10 +4,11 @@ import MetricCard from "../components/ui/MetricCard";
 import FormDialog from "../components/ui/FormDialog";
 import { useGym } from "../context/GymContext";
 import { useAuth } from "../context/AuthContext";
+import { gymDateISO } from "../services/gymDate";
 
 const money = (v) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(v);
 const field = "h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20";
-const today = () => new Date().toISOString().slice(0,10);
+const today = () => gymDateISO();
 const incomeCategories = ["Membresía", "Venta · Agua", "Venta · Energizante", "Venta · Proteína", "Venta · Suplementos", "Otro ingreso"];
 const expenseCategories = ["Limpieza", "Insumos", "Luz", "Agua", "Alquiler", "Mantenimiento", "Sueldos", "Retiro de caja", "Otro gasto"];
 

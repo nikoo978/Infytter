@@ -10,7 +10,7 @@ export default function ProfessorProgress() {
   const [selectedId, setSelectedId] = useState("");
 
   const clients = useMemo(() => (data.people || [])
-    .filter((person) => person.role === "Cliente" && person.branch === data.activeBranch)
+    .filter((person) => person.role === "Cliente" && !person.archivedAt && person.branch === data.activeBranch)
     .filter((person) => `${person.name} ${person.dni}`.toLowerCase().includes(query.trim().toLowerCase()))
     .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es")), [data.people, data.activeBranch, query]);
 

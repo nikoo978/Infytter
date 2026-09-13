@@ -3,38 +3,39 @@ import { ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, CalendarDays, Pack
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import MetricCard from "../components/ui/MetricCard";
 import { useGym } from "../context/GymContext";
+import { addCalendarDays, addCalendarMonths, gymDateISO } from "../services/gymDate";
 
 const money = (value) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value);
-const iso = (date) => date.toISOString().slice(0, 10);
+const iso = (date) => gymDateISO(date);
+const calendarDate = (value) => new Date(`${value}T12:00:00Z`);
+const dateFormat = (date, options) => date.toLocaleDateString("es-AR", { ...options, timeZone: "UTC" });
 const periods = [{ id: "day", label: "Día" }, { id: "week", label: "Semana" }, { id: "month", label: "Mes" }, { id: "year", label: "Año" }];
 
 function rangeFor(period, anchor, offset = 0) {
-  const base = new Date(`${anchor}T12:00:00`); let start; let end;
-  if (period === "day") { start = new Date(base); start.setDate(start.getDate() + offset); end = new Date(start); end.setDate(end.getDate() + 1); }
-  if (period === "week") { start = new Date(base); start.setDate(start.getDate() - ((start.getDay() + 6) % 7) + offset * 7); end = new Date(start); end.setDate(end.getDate() + 7); }
-  if (period === "month") { start = new Date(base.getFullYear(), base.getMonth() + offset, 1, 12); end = new Date(start.getFullYear(), start.getMonth() + 1, 1, 12); }
-  if (period === "year") { start = new Date(base.getFullYear() + offset, 0, 1, 12); end = new Date(start.getFullYear() + 1, 0, 1, 12); }
+  const base = calendarDate(anchor); let start; let end;
+  if (period === "day") { start = new Date(base); start.setUTCDate(start.getUTCDate() + offset); end = new Date(start); end.setUTCDate(end.getUTCDate() + 1); }
+  if (period === "week") { start = new Date(base); start.setUTCDate(start.getUTCDate() - ((start.getUTCDay() + 6) % 7) + offset * 7); end = new Date(start); end.setUTCDate(end.getUTCDate() + 7); }
+  if (period === "month") { start = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + offset, 1)); end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 1)); }
+  if (period === "year") { start = new Date(Date.UTC(base.getUTCFullYear() + offset, 0, 1)); end = new Date(Date.UTC(start.getUTCFullYear() + 1, 0, 1)); }
   return { start, end };
 }
 
-const inRange = (date, range) => { const value = new Date(`${date}T12:00:00`); return value >= range.start && value < range.end; };
+const inRange = (date, range) => { const value = calendarDate(date); return value >= range.start && value < range.end; };
 const percent = (current, previous) => previous ? Math.round(((current - previous) / previous) * 100) : current ? 100 : 0;
 const groupTotals = (items) => Object.entries(items.reduce((acc, item) => { acc[item.category || "Sin categoría"] = (acc[item.category || "Sin categoría"] || 0) + item.amount; return acc; }, {})).sort((a, b) => b[1] - a[1]);
 
 function rangeLabel(period, range) {
-  if (period === "day") return range.start.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  if (period === "week") { const last = new Date(range.end); last.setDate(last.getDate() - 1); return `${range.start.toLocaleDateString("es-AR", { day: "numeric", month: "short" })} — ${last.toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}`; }
-  if (period === "month") return range.start.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
-  return range.start.toLocaleDateString("es-AR", { year: "numeric" });
+  if (period === "day") return dateFormat(range.start, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  if (period === "week") { const last = new Date(range.end); last.setUTCDate(last.getUTCDate() - 1); return `${dateFormat(range.start, { day: "numeric", month: "short" })} — ${dateFormat(last, { day: "numeric", month: "short", year: "numeric" })}`; }
+  if (period === "month") return dateFormat(range.start, { month: "long", year: "numeric" });
+  return dateFormat(range.start, { year: "numeric" });
 }
 
 function shiftDate(anchor, period, direction) {
-  const date = new Date(`${anchor}T12:00:00`);
-  if (period === "day") date.setDate(date.getDate() + direction);
-  if (period === "week") date.setDate(date.getDate() + direction * 7);
-  if (period === "month") date.setMonth(date.getMonth() + direction);
-  if (period === "year") date.setFullYear(date.getFullYear() + direction);
-  return iso(date);
+  if (period === "day") return addCalendarDays(anchor, direction);
+  if (period === "week") return addCalendarDays(anchor, direction * 7);
+  if (period === "month") return addCalendarMonths(anchor, direction);
+  return addCalendarMonths(anchor, direction * 12);
 }
 
 function pointFor(label, range, transactions, clients) {
@@ -52,15 +53,15 @@ function trendData(period, range, transactions, clients) {
   const points = [];
   if (period === "year") {
     for (let month = 0; month < 12; month += 1) {
-      const start = new Date(range.start.getFullYear(), month, 1, 12); const end = new Date(range.start.getFullYear(), month + 1, 1, 12);
-      points.push(pointFor(start.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""), { start, end }, transactions, clients));
+      const start = new Date(Date.UTC(range.start.getUTCFullYear(), month, 1)); const end = new Date(Date.UTC(range.start.getUTCFullYear(), month + 1, 1));
+      points.push(pointFor(dateFormat(start, { month: "short" }).replace(".", ""), { start, end }, transactions, clients));
     }
     return points;
   }
   const days = period === "day" ? 1 : Math.round((range.end - range.start) / 86400000);
   for (let index = 0; index < days; index += 1) {
-    const start = new Date(range.start); start.setDate(start.getDate() + index); const end = new Date(start); end.setDate(end.getDate() + 1);
-    const label = period === "week" ? start.toLocaleDateString("es-AR", { weekday: "short" }).replace(".", "") : start.getDate().toString();
+    const start = new Date(range.start); start.setUTCDate(start.getUTCDate() + index); const end = new Date(start); end.setUTCDate(end.getUTCDate() + 1);
+    const label = period === "week" ? dateFormat(start, { weekday: "short" }).replace(".", "") : start.getUTCDate().toString();
     points.push(pointFor(label, { start, end }, transactions, clients));
   }
   return points;
@@ -69,7 +70,7 @@ function trendData(period, range, transactions, clients) {
 export default function Reportes() {
   const { data } = useGym();
   const [period, setPeriod] = useState("month");
-  const [anchor, setAnchor] = useState(() => iso(new Date()));
+  const [anchor, setAnchor] = useState(() => gymDateISO());
   const branchName = data.branches.find((branch) => branch.id === data.activeBranch)?.name;
   const report = useMemo(() => {
     const current = rangeFor(period, anchor); const previous = rangeFor(period, anchor, -1);

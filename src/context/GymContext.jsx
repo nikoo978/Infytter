@@ -7,11 +7,13 @@ import { applyOperationsLocally, buildStateOperations, flushPendingOperations, g
 import { cancelMembershipNotifications, scheduleMembershipNotifications, sendRemoteEvent } from "../services/notifications";
 import { useAuth } from "./AuthContext";
 import { daysUntilExpiry, planUsage, statusOf } from "../services/accessPolicy";
+import { addCalendarDays, addCalendarMonths, gymDateISO } from "../services/gymDate";
+import { archivePersonRecord, permanentlyDeletePerson, restorePersonRecord } from "../services/personLifecycle";
 
 export { planUsage, statusOf } from "../services/accessPolicy";
 
 const GymContext = createContext(null);
-const iso = (days = 0) => { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); };
+const iso = (days = 0) => addCalendarDays(gymDateISO(), days);
 const BRANCH_KEY = "gymflow-active-branch";
 const localBranch = () => { try { return localStorage.getItem(BRANCH_KEY); } catch { return null; } };
 const defaultNotificationPreferences = {
@@ -59,7 +61,7 @@ const showDeviceNotification = (title, body) => {
 };
 
 export function GymProvider({ children }) {
-  const { user, isCloud, isLocal, isOnline, exitLocalMode, permissions } = useAuth();
+  const { user, profile, isCloud, isLocal, isOnline, exitLocalMode, permissions } = useAuth();
   const [data, setData] = useState(seed);
   const [sync, setSync] = useState("Cargando");
   const [pendingCount, setPendingCount] = useState(0);
@@ -240,7 +242,7 @@ export function GymProvider({ children }) {
   }, [storageReady, isCloud, isLocal, isOnline, user?.id, permissions?.isStaff]);
 
   const reminderSignature = data.people
-    .filter((person) => person.role === "Cliente")
+    .filter((person) => person.role === "Cliente" && !person.archivedAt)
     .map((person) => `${person.id}|${person.name}|${person.expiry || ""}|${person.branch || ""}`)
     .sort()
     .join(";");
@@ -248,20 +250,27 @@ export function GymProvider({ children }) {
   useEffect(() => {
     if (!isCloud || !storageReady || !permissions?.canManageNotifications) return undefined;
     const timer = setTimeout(() => {
-      data.people.filter((person) => person.role === "Cliente" && person.expiry).forEach((person) => {
+      data.people.filter((person) => person.role === "Cliente" && !person.archivedAt && person.expiry).forEach((person) => {
         scheduleMembershipNotifications(person).catch(() => undefined);
       });
     }, 1200);
     return () => clearTimeout(timer);
   }, [reminderSignature, isCloud, storageReady, permissions?.canManageNotifications]);
 
-  const update = (fn) => {
+  const update = (fn, audit = null) => {
     const before = dataRef.current;
     const after = fn(structuredClone(before));
     let operations = [];
 
     if (storageReady && user?.id && (isCloud || isLocal)) {
       operations = buildStateOperations(before, after, deviceIdRef.current || getDeviceId());
+      if (audit) {
+        operations = operations.map((operation) => (
+          operation.collection === audit.collection && String(operation.recordId) === String(audit.recordId)
+            ? { ...operation, audit: { action: audit.action, reason: audit.reason || "", branch: audit.branch || after.activeBranch || "" } }
+            : operation
+        ));
+      }
       if (operations.length) {
         try {
           // WAL sincrónico: el movimiento queda persistido antes de reflejarlo en pantalla.
@@ -329,7 +338,7 @@ export function GymProvider({ children }) {
     addPerson: (person) => {
       if (!permissions?.canOperate) return forbidden();
       const duplicate = dataRef.current.people.find((item) => item.dni === person.dni);
-      if (duplicate) return { ok: false, error: `El DNI ${person.dni} ya pertenece a ${duplicate.name}.` };
+      if (duplicate) return { ok: false, error: duplicate.archivedAt ? `El DNI ${person.dni} pertenece a ${duplicate.name}, que está archivado. Restauralo antes de crear otra ficha.` : `El DNI ${person.dni} ya pertenece a ${duplicate.name}.` };
       const normalizedEmail = String(person.email || "").trim().toLowerCase();
       const duplicateEmail = normalizedEmail && dataRef.current.people.find((item) => String(item.email || "").trim().toLowerCase() === normalizedEmail);
       if (duplicateEmail) return { ok: false, error: `El email ${normalizedEmail} ya está vinculado a ${duplicateEmail.name}.` };
@@ -372,21 +381,57 @@ export function GymProvider({ children }) {
       });
       const current = currentData.people.find((item) => item.id === id);
       const nextPerson = current ? { ...current, ...changes } : null;
-      if (isCloud && nextPerson?.role === "Cliente") scheduleMembershipNotifications(nextPerson).catch(() => undefined);
+      if (isCloud && nextPerson?.role === "Cliente" && !nextPerson.archivedAt) scheduleMembershipNotifications(nextPerson).catch(() => undefined);
       return { ok: true };
     },
-    deletePerson: (id) => {
+    archivePerson: (id, reason = "") => {
+      if (!permissions?.canOperate) return forbidden();
+      const person = dataRef.current.people.find((item) => item.id === id);
+      if (!person) return { ok: false, error: "No se encontró la persona." };
+      if (person.archivedAt) return { ok: false, error: "La persona ya está archivada." };
+      const archivedAt = new Date().toISOString();
+      if (isCloud && person.role === "Cliente") cancelMembershipNotifications(id).catch(() => undefined);
+      update((d) => {
+        const target = d.people.find((item) => item.id === id);
+        if (target) Object.assign(target, archivePersonRecord(target, {
+          at: archivedAt,
+          actorId: user?.id || null,
+          actorName: profile?.display_name || profile?.email || "Usuario",
+          reason,
+        }));
+        return d;
+      }, { collection: "people", recordId: id, action: "archive_person", reason, branch: person.branch });
+      return { ok: true };
+    },
+    restorePerson: (id) => {
+      if (!permissions?.canOperate) return forbidden();
+      const person = dataRef.current.people.find((item) => item.id === id);
+      if (!person) return { ok: false, error: "No se encontró la persona." };
+      update((d) => {
+        const target = d.people.find((item) => item.id === id);
+        if (target) Object.assign(target, restorePersonRecord(target));
+        if (target) ["archivedAt", "archivedBy", "archivedByName", "archivedReason"].forEach((key) => delete target[key]);
+        return d;
+      }, { collection: "people", recordId: id, action: "restore_person", branch: person.branch });
+      if (isCloud && person.role === "Cliente" && person.expiry) scheduleMembershipNotifications(person).catch(() => undefined);
+      return { ok: true };
+    },
+    deletePerson: (id, reason = "") => {
       if (!permissions?.canDelete) return forbidden("Sólo el Admin master puede eliminar personas.");
+      const person = dataRef.current.people.find((item) => item.id === id);
+      if (!person) return { ok: false, error: "No se encontró la persona." };
+      if (String(reason || "").trim().length < 3) return { ok: false, error: "Indicá el motivo de la eliminación." };
       if (isCloud) cancelMembershipNotifications(id).catch(() => undefined);
-      return update((d) => ({ ...d, people: d.people.filter((person) => person.id !== id) }));
+      update((d) => permanentlyDeletePerson(d, person), { collection: "people", recordId: id, action: "delete_person", reason, branch: person.branch });
+      return { ok: true };
     },
     renew: (id, { months, discount, method }) => {
       if (!permissions?.canOperate) return forbidden();
       const currentPerson = dataRef.current.people.find((person) => person.id === id); if (!currentPerson) return;
       const amount = Math.round(currentPerson.price * Number(months) * (1 - Number(discount || 0) / 100));
-      const base = new Date(Math.max(Date.now(), new Date(`${currentPerson.expiry || iso()}T12:00:00`).getTime()));
-      base.setMonth(base.getMonth() + Number(months));
-      const nextExpiry = base.toISOString().slice(0, 10);
+      const currentDay = iso();
+      const base = currentPerson.expiry && currentPerson.expiry > currentDay ? currentPerson.expiry : currentDay;
+      const nextExpiry = addCalendarMonths(base, Number(months));
       update((d) => {
         const person = d.people.find((item) => item.id === id); if (!person) return d;
         person.expiry = nextExpiry;
@@ -424,8 +469,8 @@ export function GymProvider({ children }) {
       const person = current.people.find((p) => p.dni === query || p.id === query);
       const membershipStatus = person ? statusOf(person, now) : "No encontrado";
       const usage = planUsage(person, current.accesses, now);
-      const allowed = !!person && membershipStatus !== "Vencida" && !usage.limitReached;
-      const denialReason = !person ? "DNI no registrado" : membershipStatus === "Vencida" ? "Membresía vencida" : usage.limitReached ? "Límite semanal de 3 días alcanzado" : null;
+      const allowed = !!person && !person.archivedAt && membershipStatus !== "Vencida" && !usage.limitReached;
+      const denialReason = !person ? "DNI no registrado" : person.archivedAt ? "Ficha archivada" : membershipStatus === "Vencida" ? "Membresía vencida" : usage.limitReached ? "Límite semanal de 3 días alcanzado" : null;
       const lastPayment = person?.role === "Profesor" ? null : current.transactions.find((t) =>
         t.type === "income" && t.category === "Membresía" &&
         (t.personId === person?.id || (!t.personId && t.detail?.includes(person?.name)))

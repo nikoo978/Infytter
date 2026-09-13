@@ -1,5 +1,15 @@
 # GymFlow · Estado de migraciones
 
+## V.1.08.0 — Archivo y auditoría (13/09/2026)
+
+`supabase/migrations/20260913093736_gf_v108_archival_audit.sql` fue aplicada a `ubfqwmhxkjtqdcfnsmwe` mediante el registro de migraciones de Supabase. No repetirla manualmente.
+
+- Crea `private.gf_audit_events`, sin acceso directo para `anon` ni `authenticated`.
+- Audita cambios sensibles desde el mismo proceso atómico que sincroniza la operación.
+- `gf_list_audit_events` permite consultar la actividad sólo a Admin master y Coadmin.
+- El borrado de personas exige Admin master y motivo también en el servidor.
+- Al eliminar una ficha, desvincula su cuenta, elimina sus mediciones corporales y conserva caja/accesos anonimizados.
+
 ## V.1.07.1 — Permisos (09/09/2026)
 
 `supabase/migrations/20260909025126_gf_audit_role_guards.sql` fue aplicada a `ubfqwmhxkjtqdcfnsmwe` mediante el registro de migraciones de Supabase. No repetirla manualmente.

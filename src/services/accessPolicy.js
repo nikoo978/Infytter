@@ -1,5 +1,7 @@
 // Calendar rules belong to the gym, regardless of the PC/browser time zone.
-export const GYM_TIME_ZONE = "America/Argentina/Buenos_Aires";
+import { GYM_TIME_ZONE } from "./gymDate.js";
+
+export { GYM_TIME_ZONE } from "./gymDate.js";
 const DAY_MS = 86_400_000;
 const gymDateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: GYM_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit",
@@ -37,6 +39,7 @@ export function daysUntilExpiry(expiry, now = new Date()) {
 }
 
 export function statusOf(person, now = new Date()) {
+  if (person?.archivedAt) return "Archivado";
   if (person?.role === "Profesor") return "Vigente";
   const days = daysUntilExpiry(person?.expiry, now);
   if (days === null || days < 0) return "Vencida";
