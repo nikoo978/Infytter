@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import MetricCard from "../components/ui/MetricCard";
 import { statusOf, useGym } from "../context/GymContext";
 import { useAuth } from "../context/AuthContext";
+import { gymDateISO, gymDateISOOrNull } from "../services/gymDate";
+import { daysUntilExpiry } from "../services/accessPolicy";
 
 const money = (value) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value);
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => gymDateISO();
 const dateLabel = (value) => value ? new Date(`${String(value).slice(0, 10)}T12:00:00`).toLocaleDateString("es-AR") : "—";
 
 function DetailModal({ type, onClose, people, tx, accesses, expiring, data }) {
@@ -37,7 +39,7 @@ function DetailModal({ type, onClose, people, tx, accesses, expiring, data }) {
 
         {type === "accesses" && <div className="space-y-5"><div className="grid gap-3 sm:grid-cols-2"><div className="rounded-2xl bg-emerald-50 p-4"><p className="text-xs font-black uppercase text-emerald-700">Autorizados</p><p className="mt-1 text-3xl font-black">{allowed.length}</p></div><div className="rounded-2xl bg-red-50 p-4"><p className="text-xs font-black uppercase text-red-700">Rechazados</p><p className="mt-1 text-3xl font-black">{rejected.length}</p></div></div><div className="divide-y divide-slate-100 rounded-xl border border-black/7">{accesses.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 p-3"><div><p className="text-sm font-bold text-slate-800">{item.manual ? "Acceso manual" : personName(item.personId)}</p><p className="text-xs text-slate-400">{new Date(item.date).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</p></div><span className={`status ${item.allowed ? "status-ok" : "status-bad"}`}>{item.allowed ? "Autorizado" : "Rechazado"}</span></div>)}{!accesses.length && <p className="p-5 text-center text-sm text-slate-400">No hubo accesos hoy.</p>}</div></div>}
 
-        {type === "expiring" && <div className="space-y-2">{expiring.map((person) => { const days = Math.max(0, Math.ceil((new Date(`${person.expiry}T23:59:59`) - new Date()) / 86400000)); return <div key={person.id} className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/60 p-3"><div><p className="text-sm font-black text-slate-800">{person.name}</p><p className="mt-1 text-xs text-slate-500">Vence {dateLabel(person.expiry)} · DNI {person.dni}</p></div><span className="status status-warn">{days === 0 ? "Hoy" : `${days} día${days === 1 ? "" : "s"}`}</span></div>; })}{!expiring.length && <p className="py-10 text-center text-sm text-slate-400">No hay cuotas por vencer en los próximos 7 días.</p>}</div>}
+        {type === "expiring" && <div className="space-y-2">{expiring.map((person) => { const days = Math.max(0, daysUntilExpiry(person.expiry) || 0); return <div key={person.id} className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50/60 p-3"><div><p className="text-sm font-black text-slate-800">{person.name}</p><p className="mt-1 text-xs text-slate-500">Vence {dateLabel(person.expiry)} · DNI {person.dni}</p></div><span className="status status-warn">{days === 0 ? "Hoy" : `${days} día${days === 1 ? "" : "s"}`}</span></div>; })}{!expiring.length && <p className="py-10 text-center text-sm text-slate-400">No hay cuotas por vencer en los próximos 7 días.</p>}</div>}
       </div>
     </section>
   </div>;
@@ -47,9 +49,9 @@ export default function Dashboard() {
   const { data } = useGym();
   const { permissions } = useAuth();
   const [detail, setDetail] = useState(null);
-  const people = data.people.filter((p) => p.branch === data.activeBranch);
+  const people = data.people.filter((p) => p.branch === data.activeBranch && !p.archivedAt);
   const tx = data.transactions.filter((t) => t.branch === data.activeBranch && t.date === today());
-  const accesses = data.accesses.filter((a) => a.branch === data.activeBranch && a.date.slice(0, 10) === today());
+  const accesses = data.accesses.filter((a) => a.branch === data.activeBranch && gymDateISOOrNull(a.date) === today());
   const revenue = tx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const expiringPeople = useMemo(() => people.filter((p) => statusOf(p) === "Por vencer").sort((a, b) => String(a.expiry).localeCompare(String(b.expiry))), [people]);
   const branchName = data.branches.find((b) => b.id === data.activeBranch)?.name;

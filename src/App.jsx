@@ -1,11 +1,12 @@
 "use client";
 
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { Activity, BarChart3, BellRing, Building2, CircleDollarSign, Dumbbell, Eye, Fingerprint, LayoutDashboard, Settings2, ShieldCheck, UserCog, UsersRound } from "lucide-react";
+import { Activity, BarChart3, BellRing, Building2, CircleDollarSign, Dumbbell, Eye, FileClock, Fingerprint, LayoutDashboard, Settings2, ShieldCheck, UserCog, UsersRound } from "lucide-react";
 import AppLayout from "./components/layout/AppLayout";
 import ProfessorLayout from "./components/layout/ProfessorLayout";
 import Accesos from "./pages/Accesos";
 import AccessDisplay from "./pages/AccessDisplay";
+import Auditoria from "./pages/Auditoria";
 import Caja from "./pages/Caja";
 import ClientHomeV106 from "./pages/ClientHomeV106";
 import Clientes from "./pages/Clientes";
@@ -25,7 +26,7 @@ import { useAuth } from "./context/AuthContext";
 import "./styles/v1066-admin-menu.css";
 import "./styles/mobile-role-branding.css";
 
-export const APP_VERSION = "V.1.07.4";
+export const APP_VERSION = "V.1.08.0";
 export const navigation = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "coadmin"] },
   { label: "Clientes", path: "/clientes", icon: UsersRound, roles: ["admin", "coadmin"] },
@@ -37,6 +38,7 @@ export const navigation = [
   { label: "Reportes", path: "/reportes", icon: BarChart3, roles: ["admin", "coadmin"] },
   { label: "Accesos", path: "/accesos", icon: Fingerprint, roles: ["admin", "coadmin"] },
   { label: "Notificaciones", path: "/notificaciones", icon: BellRing, roles: ["admin", "coadmin"] },
+  { label: "Auditoría", path: "/auditoria", icon: FileClock, roles: ["admin", "coadmin"] },
   { label: "Vista previa", path: "/preview", icon: Eye, roles: ["admin", "coadmin"] },
 ];
 
@@ -91,6 +93,7 @@ export default function App() {
         <Route path="/reportes" element={allowed("/reportes") ? <Reportes /> : <Navigate to={fallback} replace />} />
         <Route path="/accesos" element={allowed("/accesos") ? <Accesos /> : <Navigate to={fallback} replace />} />
         <Route path="/notificaciones" element={allowed("/notificaciones") ? <Notificaciones /> : <Navigate to={fallback} replace />} />
+        <Route path="/auditoria" element={allowed("/auditoria") ? <Auditoria /> : <Navigate to={fallback} replace />} />
         <Route path="/preview" element={allowed("/preview") ? <InterfacePreview /> : <Navigate to={fallback} replace />} />
         <Route path="*" element={<Navigate to={fallback} replace />} />
       </Routes>

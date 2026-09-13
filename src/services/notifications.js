@@ -60,7 +60,7 @@ async function parseApiResponse(response, url) {
   if (!contentType.includes("application/json")) {
     const text = await response.text().catch(() => "");
     if (contentType.includes("text/html") || /^\s*<!doctype html/i.test(text)) {
-      throw new Error(`La API de notificaciones no está desplegada correctamente en Vercel (${url} devuelve la aplicación web en lugar de JSON).`);
+      throw new Error(`La API de notificaciones no está desplegada correctamente en el servidor (${url} devuelve la aplicación web en lugar de JSON).`);
     }
     throw new Error(`Respuesta inválida del servidor de notificaciones (${response.status}).`);
   }
@@ -222,7 +222,7 @@ export async function enablePushNotifications(preferences = DEFAULT_PREFERENCES)
   const config = await getPushDiagnostics();
   const publicKey = String(config.vapidPublicKey || config.publicKey || "").trim();
   if (!config.configuredForImmediatePush || !publicKey) {
-    throw new Error("Web Push no está configurado completamente en Vercel (VAPID + Redis). ");
+    throw new Error("Web Push no está configurado completamente en el servidor (VAPID + Redis). ");
   }
 
   const permission = await Notification.requestPermission();

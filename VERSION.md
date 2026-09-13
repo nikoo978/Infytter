@@ -1,4 +1,15 @@
-# V.1.07.4 — 10/09/2026
+# V.1.08.0 — 13/09/2026
+
+- Clientes incorpora vistas separadas para activos y archivados.
+- Admin y Coadmin pueden archivar y restaurar fichas, conservando historial, pagos y accesos.
+- El Admin master puede eliminar definitivamente una ficha con motivo y confirmación reforzada; las referencias contables se conservan anonimizadas.
+- Supabase registra una auditoría inmutable de operaciones sensibles con actor, rol, acción, sucursal, motivo y fecha.
+- Los clientes archivados dejan de recibir recordatorios, de aparecer en la operación diaria y de obtener acceso al gimnasio.
+- Altas, renovaciones, caja, Dashboard, accesos y reportes usan el calendario de `America/Argentina/Buenos_Aires`.
+- La suma de meses conserva el último día válido: una membresía iniciada un día 31 no salta al mes siguiente.
+- Se incorporan pruebas de calendario, archivo, restauración, anonimización y conservación contable.
+
+## V.1.07.4 — 10/09/2026
 
 - Selector muscular con diagramas SVG originales de proporciones humanas, vistas frontal/posterior y figuras masculina/femenina diferenciadas.
 - Grupos musculares neutros con resaltado rojo al seleccionar; selección por toque, mouse o teclado y deselección tocando de nuevo.

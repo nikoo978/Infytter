@@ -4,8 +4,9 @@ import { Link } from "react-router-dom";
 import { statusOf, useGym } from "../context/GymContext";
 import { useAuth } from "../context/AuthContext";
 import { allowProfessorManualAccess } from "../services/professorAccess";
+import { gymDateISO, gymDateISOOrNull } from "../services/gymDate";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => gymDateISO();
 const dateLabel = (value) => value ? new Date(`${String(value).slice(0, 10)}T12:00:00`).toLocaleDateString("es-AR") : "—";
 
 export default function ProfessorDashboard({ previewProfile = null }) {
@@ -17,10 +18,10 @@ export default function ProfessorDashboard({ previewProfile = null }) {
   const [accessError, setAccessError] = useState("");
   const shownProfile = previewProfile || profile;
   const branch = data.activeBranch;
-  const people = useMemo(() => data.people.filter((person) => person.role === "Cliente" && person.branch === branch), [data.people, branch]);
+  const people = useMemo(() => data.people.filter((person) => person.role === "Cliente" && !person.archivedAt && person.branch === branch), [data.people, branch]);
   const active = people.filter((person) => statusOf(person) !== "Vencida");
   const expiring = people.filter((person) => statusOf(person) === "Por vencer").sort((a, b) => String(a.expiry).localeCompare(String(b.expiry)));
-  const accessesToday = data.accesses.filter((item) => item.branch === branch && String(item.date || "").slice(0, 10) === today());
+  const accessesToday = data.accesses.filter((item) => item.branch === branch && gymDateISOOrNull(item.date) === today());
   const filtered = people.filter((person) => `${person.name} ${person.dni}`.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
   const canGrantAccess = !previewProfile && Boolean(profile?.can_grant_access);
 

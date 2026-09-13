@@ -12,7 +12,7 @@ function ProfessorClientsPreview() {
   const { data } = useGym();
   const [query, setQuery] = useState("");
   const clients = useMemo(() => (data.people || [])
-    .filter((person) => person.role === "Cliente" && person.branch === data.activeBranch)
+    .filter((person) => person.role === "Cliente" && !person.archivedAt && person.branch === data.activeBranch)
     .filter((person) => `${person.name} ${person.dni}`.toLowerCase().includes(query.trim().toLowerCase())), [data.people, data.activeBranch, query]);
 
   return <div className="mx-auto max-w-[1480px] space-y-4 sm:space-y-6">

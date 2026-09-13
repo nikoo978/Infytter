@@ -94,7 +94,7 @@ export default function Usuarios() {
   const candidatesFor = (profile) => {
     const wantedRole = profile.role === "profe" ? "Profesor" : "Cliente";
     return (data.people || [])
-      .filter((person) => person.role === wantedRole)
+      .filter((person) => person.role === wantedRole && !person.archivedAt)
       .filter((person) => !occupiedPersonIds.has(String(person.id)) || String(profile.linked_person_id || "") === String(person.id))
       .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es"));
   };

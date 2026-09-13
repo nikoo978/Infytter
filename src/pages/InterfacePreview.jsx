@@ -10,7 +10,7 @@ function PreviewClose({ onClose }) {
 export default function InterfacePreview() {
   const { data } = useGym();
   const [previewRole, setPreviewRole] = useState("");
-  const clients = useMemo(() => data.people.filter((person) => person.role === "Cliente"), [data.people]);
+  const clients = useMemo(() => data.people.filter((person) => person.role === "Cliente" && !person.archivedAt), [data.people]);
   const client = clients[0] || null;
 
   const portal = client ? {
