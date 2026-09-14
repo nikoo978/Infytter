@@ -6,15 +6,15 @@ import {
   signupPasswordRequirementStatus,
 } from "../src/services/passwordPolicy.js";
 
-test("signup requires at least 78 characters", () => {
-  assert.match(signupPasswordPolicyError(`${"a".repeat(76)}1`), /78 caracteres/);
-  assert.equal(signupPasswordPolicyError(`${"a".repeat(77)}1`), "");
+test("signup requires at least 8 characters", () => {
+  assert.match(signupPasswordPolicyError("abcdef1"), /8 caracteres/);
+  assert.equal(signupPasswordPolicyError("abcdefg1"), "");
 });
 
 test("signup requires at least one letter and one number", () => {
-  assert.match(signupPasswordPolicyError("a".repeat(78)), /1 número/);
-  assert.match(signupPasswordPolicyError("1".repeat(78)), /1 letra/);
-  assert.equal(signupPasswordPolicyError(`${"ñ".repeat(77)}1`), "");
+  assert.match(signupPasswordPolicyError("abcdefgh"), /1 número/);
+  assert.match(signupPasswordPolicyError("12345678"), /1 letra/);
+  assert.equal(signupPasswordPolicyError("ñññññññ1"), "");
 });
 
 test("signup password cannot equal DNI", () => {
