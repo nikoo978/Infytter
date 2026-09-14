@@ -47,10 +47,10 @@ export function passwordPolicyError(value = "") {
 
 export function signupPasswordPolicyError(value = "", { dni = "" } = {}) {
   const password = String(value || "");
+  const normalizedDni = cleanDni(dni);
+  if (normalizedDni && password === normalizedDni) return "La contraseña no puede ser igual al DNI.";
   if (!SIGNUP_PASSWORD_REQUIREMENTS.every((requirement) => requirement.test(password))) {
     return `La contraseña debe cumplir estos requisitos: ${SIGNUP_PASSWORD_POLICY_SUMMARY}`;
   }
-  const normalizedDni = cleanDni(dni);
-  if (normalizedDni && password === normalizedDni) return "La contraseña no puede ser igual al DNI.";
   return "";
 }
