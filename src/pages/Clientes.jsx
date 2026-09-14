@@ -86,12 +86,12 @@ export default function Clientes() {
     <button onClick={() => setRenewing(person)} className={compact ? "btn-primary min-h-10" : "inline-flex items-center gap-1 text-sm font-black text-[#E30613]"}><CreditCard className="size-4" /> Renovar</button>
     <button onClick={() => { setError(""); setEditing(person); }} className={compact ? "btn-secondary min-h-10" : "inline-flex items-center gap-1 text-sm font-black text-slate-600"}><Pencil className="size-4" /> Editar</button>
     <button onClick={() => { setError(""); setArchiving(person); }} className={compact ? "btn-secondary min-h-10" : "inline-flex items-center gap-1 text-sm font-black text-slate-600"}><Archive className="size-4" /> Archivar</button>
-    {permissions?.canDelete && <button onClick={() => { setError(""); setDeleting(person); }} className={compact ? "min-h-10 rounded-xl bg-red-50 text-sm font-black text-[#9E0710]" : "inline-flex items-center gap-1 text-sm font-black text-[#9E0710]"} aria-label={`Eliminar definitivamente a ${person.name}`}><Trash2 className="size-4" />{compact && " Eliminar"}</button>}
+    {permissions?.canDelete && <button onClick={() => { setError(""); setDeleting(person); }} className={compact ? "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-red-50 px-3 text-sm font-black text-[#9E0710]" : "inline-flex items-center gap-1 text-sm font-black text-[#9E0710]"} aria-label={`Eliminar definitivamente a ${person.name}`}><Trash2 className="size-4 shrink-0" />{compact && "Eliminar"}</button>}
   </>;
 
   const archivedActions = (person, compact = false) => permissions?.canOperate && <>
     <button onClick={() => restore(person)} className={compact ? "btn-primary min-h-10" : "inline-flex items-center gap-1 text-sm font-black text-[#E30613]"}><ArchiveRestore className="size-4" /> Restaurar</button>
-    {permissions?.canDelete && <button onClick={() => { setError(""); setDeleting(person); }} className={compact ? "min-h-10 rounded-xl bg-red-50 text-sm font-black text-[#9E0710]" : "inline-flex items-center gap-1 text-sm font-black text-[#9E0710]"}><Trash2 className="size-4" /> Eliminar</button>}
+    {permissions?.canDelete && <button onClick={() => { setError(""); setDeleting(person); }} className={compact ? "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-red-50 px-3 text-sm font-black text-[#9E0710]" : "inline-flex items-center gap-1 text-sm font-black text-[#9E0710]"}><Trash2 className="size-4 shrink-0" /> Eliminar</button>}
   </>;
 
   return <div className="mx-auto max-w-[1480px] space-y-4 sm:space-y-6">
