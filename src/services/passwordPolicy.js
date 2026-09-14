@@ -8,10 +8,10 @@ export const PASSWORD_REQUIREMENTS = [
   { key: "symbol", label: "1 símbolo", test: (value) => /[^A-Za-z0-9]/.test(value) },
 ];
 
-export const SIGNUP_PASSWORD_POLICY_SUMMARY = "Mínimo 78 caracteres, con al menos 1 letra y 1 número. No puede ser igual al DNI.";
+export const SIGNUP_PASSWORD_POLICY_SUMMARY = "Mínimo 8 caracteres, con al menos 1 letra y 1 número. No puede ser igual al DNI.";
 
 export const SIGNUP_PASSWORD_REQUIREMENTS = [
-  { key: "length", label: "78 caracteres como mínimo", test: (value) => value.length >= 78 },
+  { key: "length", label: "8 caracteres como mínimo", test: (value) => value.length >= 8 },
   { key: "letter", label: "1 letra", test: (value) => /\p{L}/u.test(value) },
   { key: "number", label: "1 número", test: (value) => /[0-9]/.test(value) },
 ];
