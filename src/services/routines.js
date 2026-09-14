@@ -54,19 +54,19 @@ export async function saveProfessorRoutine(routine) {
   return { routine: data || null, error };
 }
 
-export async function assignProfessorRoutine(routineId, clientUserIds) {
+export async function assignProfessorRoutine(routineId, personIds) {
   if (!supabase) return { added: 0, error: noSupabase() };
-  const { data, error } = await supabase.rpc("gf_assign_professor_routine", {
+  const { data, error } = await supabase.rpc("gf_assign_professor_routine_people", {
     p_routine_id: routineId,
-    p_client_user_ids: clientUserIds || [],
+    p_person_ids: personIds || [],
   });
   return { added: Number(data || 0), error };
 }
 
-export async function getClientRoutinesForProfessor(clientUserId) {
+export async function getClientRoutinesForProfessor(personId) {
   if (!supabase) return { routines: [], error: noSupabase() };
-  const { data, error } = await supabase.rpc("gf_get_client_routines_for_professor", {
-    p_client_user_id: clientUserId,
+  const { data, error } = await supabase.rpc("gf_get_person_routines_for_professor", {
+    p_person_id: personId,
   });
   return { routines: data || [], error };
 }

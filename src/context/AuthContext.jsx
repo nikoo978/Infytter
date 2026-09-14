@@ -6,7 +6,14 @@ import { supabase, supabaseConfigured } from "../services/supabase";
 import { getCloudState } from "../services/storage";
 import { unlinkPushSubscriptionBeforeLogout } from "../services/notifications";
 import { getMyProfile, permissionsForRole } from "../services/roles";
-import { PASSWORD_POLICY_SUMMARY, passwordPolicyError, passwordRequirementStatus } from "../services/passwordPolicy";
+import {
+  PASSWORD_POLICY_SUMMARY,
+  SIGNUP_PASSWORD_POLICY_SUMMARY,
+  passwordPolicyError,
+  passwordRequirementStatus,
+  signupPasswordPolicyError,
+  signupPasswordRequirementStatus,
+} from "../services/passwordPolicy";
 
 const AuthContext = createContext(null);
 const MODE_KEY = "gymflow-emergency-local-mode";
@@ -42,7 +49,10 @@ function authMessage(error, action = "login") {
   if (message.includes("dni") && message.includes("registr")) return "Ese DNI ya tiene una cuenta registrada.";
   if (message.includes("dni")) return "Ingresá un DNI válido.";
   if (message.includes("nombre completo")) return "Ingresá tu nombre completo.";
-  if (code.includes("weak_password") || (message.includes("password") && (message.includes("least") || message.includes("characters") || message.includes("contain") || message.includes("weak")))) return `La contraseña no cumple los requisitos. ${PASSWORD_POLICY_SUMMARY}`;
+  if (code.includes("weak_password") || (message.includes("password") && (message.includes("least") || message.includes("characters") || message.includes("contain") || message.includes("weak")))) {
+    const summary = action === "register" ? SIGNUP_PASSWORD_POLICY_SUMMARY : PASSWORD_POLICY_SUMMARY;
+    return `La contraseña no cumple los requisitos. ${summary}`;
+  }
   if (message.includes("invalid email")) return "El email no es válido.";
   if (message.includes("rate limit") || error?.status === 429) return "Demasiados intentos. Esperá unos minutos y volvé a probar.";
   if (message.includes("network") || message.includes("fetch")) return "No se pudo conectar con Supabase. Revisá la conexión.";
@@ -53,15 +63,16 @@ function authMessage(error, action = "login") {
   return "No se pudo iniciar sesión.";
 }
 
-function PasswordRequirements({ value, id = "password-requirements" }) {
-  const status = passwordRequirementStatus(value);
+function PasswordRequirements({ value, dni = "", signup = false, id = "password-requirements" }) {
+  const status = signup ? signupPasswordRequirementStatus(value, dni) : passwordRequirementStatus(value);
   return <div id={id} className="mt-2 rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Requisitos de contraseña</p><div className="mt-2 grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">{status.map((item) => <span key={item.key} className={`text-[11px] font-bold ${item.met ? "text-emerald-700" : "text-slate-400"}`}>{item.met ? "✓" : "•"} {item.label}</span>)}</div></div>;
 }
 
 function AuthScreen({ onLogin, onRegister, onReset, error, notice, busy }) {
   const [view, setView] = useState("login");
   const [passwordDraft, setPasswordDraft] = useState("");
-  const changeView = (next) => { setView(next); setPasswordDraft(""); };
+  const [dniDraft, setDniDraft] = useState("");
+  const changeView = (next) => { setView(next); setPasswordDraft(""); setDniDraft(""); };
 
   const submit = async (event) => {
     event.preventDefault();
@@ -88,9 +99,9 @@ function AuthScreen({ onLogin, onRegister, onReset, error, notice, busy }) {
       <p className="mt-2 text-sm leading-6 text-slate-500">{view === "register" ? "Registrate con nombre completo, DNI, email y una contraseña que cumpla los requisitos indicados abajo. La cuenta ingresa como Cliente hasta que un administrador la vincule o cambie su rol." : view === "reset" ? "Te enviaremos un enlace para elegir una contraseña nueva." : "Acceso seguro con Supabase."}</p>
 
       <form onSubmit={submit} className="mt-6 grid gap-4">
-        {view === "register" && <><label className="text-sm font-bold text-slate-600">Nombre completo<input name="name" required minLength="3" autoComplete="name" placeholder="Nombre y apellido" className={field} /></label><label className="text-sm font-bold text-slate-600">DNI<input name="dni" required inputMode="numeric" pattern="[0-9]{6,10}" minLength="6" maxLength="10" autoComplete="off" placeholder="Solo números" className={field} /></label></>}
+        {view === "register" && <><label className="text-sm font-bold text-slate-600">Nombre completo<input name="name" required minLength="3" autoComplete="name" placeholder="Nombre y apellido" className={field} /></label><label className="text-sm font-bold text-slate-600">DNI<input name="dni" required inputMode="numeric" pattern="[0-9]{6,10}" minLength="6" maxLength="10" autoComplete="off" placeholder="Solo números" onChange={(event) => setDniDraft(event.target.value.replace(/\D/g, "").slice(0, 10))} className={field} /></label></>}
         <label className="text-sm font-bold text-slate-600">Email<input name="email" type="email" required autoComplete="email" className={field} /></label>
-        {view !== "reset" && <label className="text-sm font-bold text-slate-600">Contraseña<input name="password" type="password" minLength="8" required autoComplete={view === "register" ? "new-password" : "current-password"} onChange={(event) => setPasswordDraft(event.target.value)} aria-describedby={view === "register" ? "register-password-requirements" : undefined} className={field} />{view === "register" && <PasswordRequirements value={passwordDraft} id="register-password-requirements" />}</label>}
+        {view !== "reset" && <label className="text-sm font-bold text-slate-600">Contraseña<input name="password" type="password" minLength={view === "register" ? 78 : undefined} required autoComplete={view === "register" ? "new-password" : "current-password"} onChange={(event) => setPasswordDraft(event.target.value)} aria-describedby={view === "register" ? "register-password-requirements" : undefined} className={field} />{view === "register" && <PasswordRequirements value={passwordDraft} dni={dniDraft} signup id="register-password-requirements" />}</label>}
         {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600">{error}</p>}
         {notice && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{notice}</p>}
         <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Procesando…" : view === "register" ? <><UserPlus className="size-4" /> Crear cuenta</> : view === "reset" ? <><Mail className="size-4" /> Enviar recuperación</> : <><LogIn className="size-4" /> Ingresar</>}</button>
@@ -202,7 +213,7 @@ export function AuthProvider({ children }) {
     const cleanDni = String(dni || "").replace(/\D/g, "");
     if (cleanName.length < 3 || !cleanName.includes(" ")) { setError("Ingresá nombre y apellido."); return; }
     if (!/^[0-9]{6,10}$/.test(cleanDni)) { setError("Ingresá un DNI válido, sólo con números."); return; }
-    const passwordError = passwordPolicyError(password);
+    const passwordError = signupPasswordPolicyError(password, { dni: cleanDni });
     if (passwordError) { setError(passwordError); return; }
     setBusy(true);
     try {
