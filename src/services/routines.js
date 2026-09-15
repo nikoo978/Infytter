@@ -40,6 +40,43 @@ export async function getWorkoutHistory(routineId, limit = 8) {
   return { history: data || { recent: [], lastByExercise: {} }, error };
 }
 
+export async function openWorkoutSession(routineId, startedAt = new Date().toISOString()) {
+  if (!supabase) return { session: null, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_open_workout_session", {
+    p_routine_id: routineId,
+    p_started_at: startedAt,
+  });
+  return { session: data || null, error };
+}
+
+export async function saveWorkoutProgress({ sessionId, sets }) {
+  if (!supabase) return { result: null, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_save_workout_progress", {
+    p_session_id: sessionId,
+    p_sets: sets || [],
+  });
+  return { result: data || null, error };
+}
+
+export async function resetWorkoutSession({ sessionId, startedAt = new Date().toISOString() }) {
+  if (!supabase) return { session: null, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_reset_workout_session", {
+    p_session_id: sessionId,
+    p_started_at: startedAt,
+  });
+  return { session: data || null, error };
+}
+
+export async function finishWorkoutSession({ sessionId, completedAt = new Date().toISOString() }) {
+  if (!supabase) return { summary: null, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_finish_workout_session", {
+    p_session_id: sessionId,
+    p_completed_at: completedAt,
+  });
+  return { summary: data || null, error };
+}
+
+// Compatibilidad temporal con clientes que todavía tengan V.1.08.1 en caché.
 export async function saveWorkoutSession({ routineId, startedAt, completedAt, sets }) {
   if (!supabase) return { summary: null, error: noSupabase() };
   const { data, error } = await supabase.rpc("gf_save_workout_session", {
