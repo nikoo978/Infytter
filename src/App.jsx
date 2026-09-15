@@ -2,6 +2,7 @@
 
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Activity, BarChart3, BellRing, Building2, CircleDollarSign, Dumbbell, Eye, FileClock, Fingerprint, LayoutDashboard, Settings2, ShieldCheck, UserCog, UsersRound } from "lucide-react";
+import EmailConfirmedWelcome from "./components/auth/EmailConfirmedWelcome";
 import AppLayout from "./components/layout/AppLayout";
 import ProfessorLayout from "./components/layout/ProfessorLayout";
 import Accesos from "./pages/Accesos";
@@ -26,7 +27,7 @@ import { useAuth } from "./context/AuthContext";
 import "./styles/v1066-admin-menu.css";
 import "./styles/mobile-role-branding.css";
 
-export const APP_VERSION = "V.1.08.3";
+export const APP_VERSION = "V.1.08.4";
 export const navigation = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "coadmin"] },
   { label: "Clientes", path: "/clientes", icon: UsersRound, roles: ["admin", "coadmin"] },
@@ -63,6 +64,7 @@ export default function App() {
   const location = useLocation();
   const { role, profile } = useAuth();
 
+  if (location.pathname === "/bienvenido") return <EmailConfirmedWelcome />;
   if (location.pathname === "/pantalla-acceso") return <AccessDisplay />;
   if (location.pathname === "/preview-profesor-mobile") {
     if (!profile?.role) return <div className="min-h-dvh bg-[#F5F5F5]" />;

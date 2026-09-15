@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp, Dumbbell, ExternalLink, Pencil, Plus, RefreshCw, Search, Trash2, Video } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ExerciseGifGallery } from "../components/exercises/ExerciseGif";
+import MuscleMap from "../components/exercises/MuscleMap";
 import FormDialog from "../components/ui/FormDialog";
 import { useAuth } from "../context/AuthContext";
 import { createExercise, deleteExercise, EXERCISE_CATEGORIES, listExercises, matchesExerciseSearch, MUSCLE_GROUPS, updateExercise } from "../services/exercises";
@@ -161,9 +162,13 @@ export default function Exercises() {
           <p className="text-xs font-black text-slate-400">{loading ? "Cargando…" : `${visible.length} de ${exercises.length} ejercicios`}</p>
           {query && <button type="button" onClick={() => setQuery("")} className="text-xs font-black text-[#9E0710]">Limpiar</button>}
         </div>
+
+        <MuscleMap value={group} onChange={setGroup} />
+
+        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Todos los filtros</p>
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <button onClick={() => setGroup("Todos")} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === "Todos" ? "bg-[#050505] text-white" : "bg-slate-100 text-slate-600"}`}>Todos</button>
-          {MUSCLE_GROUPS.map((item) => <button key={item} onClick={() => setGroup(item)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === item ? "bg-[#E30613] text-white" : "bg-slate-100 text-slate-600"}`}>{item}</button>)}
+          <button type="button" onClick={() => setGroup("Todos")} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === "Todos" ? "bg-[#050505] text-white" : "bg-slate-100 text-slate-600"}`}>Todos</button>
+          {MUSCLE_GROUPS.map((item) => <button key={item} type="button" onClick={() => setGroup(item)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === item ? "bg-[#E30613] text-white" : "bg-slate-100 text-slate-600"}`}>{item}</button>)}
         </div>
       </section>
 
