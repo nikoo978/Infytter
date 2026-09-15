@@ -1,5 +1,5 @@
-const SW_VERSION = "gymflow-push-v1-08-3";
-const CACHE_NAME = "gymflow-shell-v1-08-3";
+const SW_VERSION = "gymflow-push-v1-08-4";
+const CACHE_NAME = "gymflow-shell-v1-08-4";
 const CORE_ASSETS = [
   "/",
   "/manifest.webmanifest",
@@ -63,7 +63,7 @@ self.addEventListener("fetch", (event) => {
       } catch {
         const cached = await (await caches.open(CACHE_NAME)).match("/");
         if (cached) return cached;
-        throw new Error("GymFlow todavía no tiene una copia offline en esta PC.");
+        throw new Error("Infytter todavía no tiene una copia offline en este dispositivo.");
       }
     })());
     return;
