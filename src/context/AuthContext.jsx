@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { KeyRound, LogIn, Mail, ShieldCheck, UserPlus, X } from "lucide-react";
+import { Eye, EyeOff, KeyRound, LogIn, Mail, ShieldCheck, UserPlus, X } from "lucide-react";
 import { supabase, supabaseConfigured } from "../services/supabase";
 import { getCloudState } from "../services/storage";
 import { unlinkPushSubscriptionBeforeLogout } from "../services/notifications";
@@ -48,6 +48,13 @@ async function sha256(value) {
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function formatCountdown(seconds = 0) {
+  const safe = Math.max(0, Math.ceil(Number(seconds) || 0));
+  const minutes = Math.floor(safe / 60);
+  const rest = safe % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+}
+
 function authMessage(error, action = "login") {
   const message = String(error?.message || "").toLowerCase();
   const code = String(error?.code || "").toLowerCase();
@@ -77,20 +84,44 @@ function PasswordRequirements({ value, dni = "", signup = false, id = "password-
   return <div id={id} className="mt-2 rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Requisitos de contraseña</p><div className="mt-2 grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">{status.map((item) => <span key={item.key} className={`text-[11px] font-bold ${item.met ? "text-emerald-700" : "text-slate-400"}`}>{item.met ? "✓" : "•"} {item.label}</span>)}</div></div>;
 }
 
+function PasswordEye({ visible, onToggle, label = "contraseña" }) {
+  return <button type="button" onClick={onToggle} aria-label={visible ? `Ocultar ${label}` : `Mostrar ${label}`} title={visible ? `Ocultar ${label}` : `Mostrar ${label}`} className="absolute inset-y-0 right-0 grid w-11 place-items-center rounded-r-xl text-slate-500 transition hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E30613]/35">{visible ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}</button>;
+}
+
 function AuthScreen({ onLogin, onRegister, onReset, onClearFeedback, error, notice, busy }) {
   const [view, setView] = useState("login");
   const [passwordDraft, setPasswordDraft] = useState("");
+  const [confirmPasswordDraft, setConfirmPasswordDraft] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [dniDraft, setDniDraft] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  const [cooldown, setCooldown] = useState(0);
+  const [cooldownAction, setCooldownAction] = useState("");
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const formRef = useRef(null);
 
   useEffect(() => {
-    if (cooldown <= 0) return undefined;
-    const timer = setInterval(() => setCooldown((value) => Math.max(0, value - 1)), 1000);
+    if (!cooldownUntil) { setCooldownRemaining(0); return undefined; }
+    const update = () => {
+      const remaining = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
+      setCooldownRemaining(remaining);
+      if (!remaining) {
+        setCooldownUntil(0);
+        setCooldownAction("");
+      }
+    };
+    update();
+    const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
-  }, [cooldown > 0]);
+  }, [cooldownUntil]);
 
+  const startCooldown = (action, seconds) => {
+    const safeSeconds = Math.max(1, Number(seconds) || 60);
+    setCooldownAction(action);
+    setCooldownUntil(Date.now() + safeSeconds * 1000);
+    setCooldownRemaining(Math.ceil(safeSeconds));
+  };
   const clearFieldError = (field) => setFieldErrors((current) => current[field] ? { ...current, [field]: "" } : current);
   const focusFirstError = (errors) => {
     const field = firstAuthErrorField(errors);
@@ -104,15 +135,19 @@ function AuthScreen({ onLogin, onRegister, onReset, onClearFeedback, error, noti
   const changeView = (next) => {
     setView(next);
     setPasswordDraft("");
+    setConfirmPasswordDraft("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setDniDraft("");
     setFieldErrors({});
-    setCooldown(0);
     onClearFeedback?.();
   };
 
+  const isBlocked = cooldownRemaining > 0 && cooldownAction === view;
+
   const submit = async (event) => {
     event.preventDefault();
-    if (busy || (view === "register" && cooldown > 0)) return;
+    if (busy || isBlocked) return;
 
     const form = new FormData(event.currentTarget);
     const validation = validateAuthForm({
@@ -121,6 +156,7 @@ function AuthScreen({ onLogin, onRegister, onReset, onClearFeedback, error, noti
       dni: form.get("dni"),
       email: form.get("email"),
       password: form.get("password"),
+      confirmPassword: form.get("confirmPassword"),
     });
 
     if (Object.values(validation.errors).some(Boolean)) {
@@ -131,53 +167,71 @@ function AuthScreen({ onLogin, onRegister, onReset, onClearFeedback, error, noti
 
     setFieldErrors({});
     const { name, dni, email, password } = validation.values;
-    if (view === "reset") { await onReset(email); return; }
-    if (view === "register") {
-      const result = await onRegister(name, dni, email, password);
-      if (result?.rateLimited) setCooldown(result.retryAfterSeconds || 60);
+    if (view === "reset") {
+      const result = await onReset(email);
+      if (result?.rateLimited) startCooldown("reset", result.retryAfterSeconds);
       return;
     }
-    await onLogin(email, password);
+    if (view === "register") {
+      const result = await onRegister(name, dni, email, password);
+      if (result?.rateLimited) startCooldown("register", result.retryAfterSeconds);
+      return;
+    }
+    const result = await onLogin(email, password);
+    if (result?.rateLimited) startCooldown("login", result.retryAfterSeconds);
   };
 
-  const field = "mt-1 h-11 w-full rounded-xl border px-3 text-sm outline-none transition focus:ring-2 focus:ring-[#E30613]/20";
-  const fieldClass = (name) => `${field} ${fieldErrors[name] ? "border-red-400 bg-red-50/40 focus:border-red-500" : "border-slate-200 bg-white focus:border-[#E30613]/50"}`;
+  const field = "h-11 w-full rounded-xl border px-3 text-sm outline-none transition focus:ring-2 focus:ring-[#E30613]/20";
+  const fieldClass = (name, extra = "") => `${field} ${fieldErrors[name] ? "border-red-400 bg-red-50/40 focus:border-red-500" : "border-slate-200 bg-white focus:border-[#E30613]/50"} ${extra}`;
   const fieldError = (name) => fieldErrors[name] ? <span id={`${name}-error`} role="alert" className="mt-1.5 block text-xs font-bold leading-5 text-red-600">{fieldErrors[name]}</span> : null;
   const describedBy = (name, extra = "") => [fieldErrors[name] ? `${name}-error` : "", extra].filter(Boolean).join(" ") || undefined;
-  const registerBlocked = view === "register" && cooldown > 0;
+  const countdown = formatCountdown(cooldownRemaining);
+  const confirmMatches = Boolean(confirmPasswordDraft) && confirmPasswordDraft === passwordDraft && !fieldErrors.confirmPassword;
 
   return <main className="grid min-h-screen place-items-center bg-[#050505] p-4">
     <section className="w-full max-w-md rounded-[24px] border border-white/10 bg-white p-5 shadow-2xl sm:p-7">
       <img src="/infytter-logo.svg" alt="Infytter Fitness" className="h-16 w-full rounded-xl bg-[#050505] object-contain p-2" />
       <h1 className="mt-6 text-3xl font-black uppercase text-[#050505]">{view === "register" ? "Crear cuenta" : view === "reset" ? "Recuperar acceso" : "Ingresar"}</h1>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{view === "register" ? "Registrate con nombre completo, DNI, email y una contraseña que cumpla los requisitos indicados abajo. La cuenta ingresa como Cliente hasta que un administrador la vincule o cambie su rol." : view === "reset" ? "Te enviaremos un enlace para elegir una contraseña nueva." : "Acceso seguro con Supabase."}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{view === "register" ? "Registrate con nombre completo, DNI, email y una contraseña que cumpla los requisitos indicados abajo. Para evitar errores, vas a escribir la contraseña dos veces." : view === "reset" ? "Te enviaremos un enlace para elegir una contraseña nueva." : "Acceso seguro con Supabase."}</p>
 
       <form ref={formRef} noValidate onSubmit={submit} className="mt-6 grid gap-4">
         {view === "register" && <>
           <label className="text-sm font-bold text-slate-600">Nombre completo
-            <input name="name" required minLength="3" autoComplete="name" enterKeyHint="next" placeholder="Nombre y apellido" aria-invalid={Boolean(fieldErrors.name)} aria-describedby={describedBy("name")} onChange={() => clearFieldError("name")} className={fieldClass("name")} />
+            <input name="name" required minLength="3" autoComplete="name" enterKeyHint="next" placeholder="Nombre y apellido" aria-invalid={Boolean(fieldErrors.name)} aria-describedby={describedBy("name")} onChange={() => clearFieldError("name")} className={fieldClass("name", "mt-1")} />
             {fieldError("name")}
           </label>
           <label className="text-sm font-bold text-slate-600">DNI
-            <input name="dni" required value={dniDraft} inputMode="numeric" pattern="[0-9]{6,10}" minLength="6" maxLength="10" autoComplete="off" enterKeyHint="next" placeholder="Solo números" aria-invalid={Boolean(fieldErrors.dni)} aria-describedby={describedBy("dni")} onChange={(event) => { const next = sanitizeDni(event.target.value); setDniDraft(next); clearFieldError("dni"); }} className={fieldClass("dni")} />
+            <input name="dni" required value={dniDraft} inputMode="numeric" pattern="[0-9]{6,10}" minLength="6" maxLength="10" autoComplete="off" enterKeyHint="next" placeholder="Solo números" aria-invalid={Boolean(fieldErrors.dni)} aria-describedby={describedBy("dni")} onChange={(event) => { const next = sanitizeDni(event.target.value); setDniDraft(next); clearFieldError("dni"); }} className={fieldClass("dni", "mt-1")} />
             {fieldError("dni")}
           </label>
         </>}
         <label className="text-sm font-bold text-slate-600">Email
-          <input name="email" type="email" required autoCapitalize="none" autoCorrect="off" spellCheck="false" inputMode="email" autoComplete="email" enterKeyHint={view === "reset" ? "send" : "next"} aria-invalid={Boolean(fieldErrors.email)} aria-describedby={describedBy("email")} onChange={() => clearFieldError("email")} className={fieldClass("email")} />
+          <input name="email" type="email" required autoCapitalize="none" autoCorrect="off" spellCheck="false" inputMode="email" autoComplete="email" enterKeyHint={view === "reset" ? "send" : "next"} aria-invalid={Boolean(fieldErrors.email)} aria-describedby={describedBy("email")} onChange={() => clearFieldError("email")} className={fieldClass("email", "mt-1")} />
           {fieldError("email")}
         </label>
         {view !== "reset" && <label className="text-sm font-bold text-slate-600">Contraseña
-          <input name="password" value={passwordDraft} type="password" minLength={view === "register" ? 8 : undefined} required autoComplete={view === "register" ? "new-password" : "current-password"} enterKeyHint="done" onChange={(event) => { setPasswordDraft(event.target.value); clearFieldError("password"); }} aria-invalid={Boolean(fieldErrors.password)} aria-describedby={describedBy("password", view === "register" ? "register-password-requirements" : "")} className={fieldClass("password")} />
+          <div className="relative mt-1">
+            <input name="password" value={passwordDraft} type={showPassword ? "text" : "password"} minLength={view === "register" ? 8 : undefined} required autoComplete={view === "register" ? "new-password" : "current-password"} enterKeyHint={view === "register" ? "next" : "done"} onChange={(event) => { setPasswordDraft(event.target.value); clearFieldError("password"); if (confirmPasswordDraft === event.target.value) clearFieldError("confirmPassword"); }} aria-invalid={Boolean(fieldErrors.password)} aria-describedby={describedBy("password", view === "register" ? "register-password-requirements" : "")} className={fieldClass("password", "pr-12")} />
+            <PasswordEye visible={showPassword} onToggle={() => setShowPassword((value) => !value)} />
+          </div>
           {fieldError("password")}
           {view === "register" && <PasswordRequirements value={passwordDraft} dni={dniDraft} signup id="register-password-requirements" />}
+        </label>}
+
+        {view === "register" && <label className="text-sm font-bold text-slate-600">Confirmar contraseña
+          <div className="relative mt-1">
+            <input name="confirmPassword" value={confirmPasswordDraft} type={showConfirmPassword ? "text" : "password"} required autoComplete="new-password" enterKeyHint="done" onChange={(event) => { setConfirmPasswordDraft(event.target.value); clearFieldError("confirmPassword"); }} aria-invalid={Boolean(fieldErrors.confirmPassword)} aria-describedby={describedBy("confirmPassword")} className={fieldClass("confirmPassword", "pr-12")} />
+            <PasswordEye visible={showConfirmPassword} onToggle={() => setShowConfirmPassword((value) => !value)} label="confirmación de contraseña" />
+          </div>
+          {fieldError("confirmPassword")}
+          {confirmMatches && <span className="mt-1.5 block text-xs font-bold text-emerald-700">✓ Las contraseñas coinciden.</span>}
         </label>}
 
         {Object.values(fieldErrors).some(Boolean) && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold leading-5 text-red-700">Revisá los campos marcados. Te indicamos exactamente qué falta debajo de cada uno.</p>}
         {error && <p role="alert" aria-live="assertive" className="rounded-xl bg-red-50 p-3 text-sm font-bold leading-6 text-red-600">{error}</p>}
         {notice && <p aria-live="polite" className="rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-700">{notice}</p>}
-        {registerBlocked && <p aria-live="polite" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold leading-6 text-amber-800">Para no prolongar el bloqueo, el botón de registro se habilitará nuevamente en {cooldown}s. Si la cuenta ya se creó, podés volver a Ingresar sin repetir el alta.</p>}
-        <button disabled={busy || registerBlocked} className="btn-primary w-full disabled:opacity-60">{busy ? "Procesando…" : registerBlocked ? `Reintentar en ${cooldown}s` : view === "register" ? <><UserPlus className="size-4" /> Crear cuenta</> : view === "reset" ? <><Mail className="size-4" /> Enviar recuperación</> : <><LogIn className="size-4" /> Ingresar</>}</button>
+        {isBlocked && <p aria-live="polite" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold leading-6 text-amber-800">{view === "login" ? <>Demasiados intentos seguidos. Podés volver a ingresar en <span className="font-black tabular-nums">{countdown}</span>.</> : view === "register" ? <>Para no prolongar el bloqueo, podés volver a intentar el registro en <span className="font-black tabular-nums">{countdown}</span>.</> : <>Podés volver a solicitar la recuperación en <span className="font-black tabular-nums">{countdown}</span>.</>}</p>}
+        <button disabled={busy || isBlocked} className="btn-primary w-full disabled:opacity-60">{busy ? "Procesando…" : isBlocked ? `Reintentar en ${countdown}` : view === "register" ? <><UserPlus className="size-4" /> Crear cuenta</> : view === "reset" ? <><Mail className="size-4" /> Enviar recuperación</> : <><LogIn className="size-4" /> Ingresar</>}</button>
       </form>
 
       <div className="mt-4 grid gap-2 text-sm font-bold">{view !== "login" && <button type="button" disabled={busy} onClick={() => changeView("login")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Volver a ingresar</button>}{view === "login" && <button type="button" disabled={busy} onClick={() => changeView("register")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Crear cuenta</button>}{view === "login" && <button type="button" disabled={busy} onClick={() => changeView("reset")} className="rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 disabled:opacity-60">Olvidé mi contraseña</button>}</div>
@@ -187,8 +241,9 @@ function AuthScreen({ onLogin, onRegister, onReset, onClearFeedback, error, noti
 
 function PasswordRecovery({ onUpdatePassword, error, notice, busy }) {
   const [passwordDraft, setPasswordDraft] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const submit = async (event) => { event.preventDefault(); await onUpdatePassword(passwordDraft); };
-  return <main className="grid min-h-screen place-items-center bg-[#050505] p-4"><section className="w-full max-w-md rounded-[24px] bg-white p-7 shadow-2xl"><span className="grid size-12 place-items-center rounded-2xl bg-red-50 text-[#E30613]"><KeyRound className="size-6" /></span><h1 className="mt-5 text-3xl font-black uppercase">Nueva contraseña</h1><p className="mt-2 text-sm leading-6 text-slate-500">{PASSWORD_POLICY_SUMMARY}</p><form onSubmit={submit} className="mt-6 grid gap-4"><input name="password" value={passwordDraft} onChange={(event) => setPasswordDraft(event.target.value)} type="password" minLength="8" required autoComplete="new-password" aria-describedby="recovery-password-requirements" className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20" /><PasswordRequirements value={passwordDraft} id="recovery-password-requirements" />{error && <p className="text-sm font-bold text-red-600">{error}</p>}{notice && <p className="text-sm font-bold text-emerald-700">{notice}</p>}<button disabled={busy} className="btn-primary w-full">{busy ? "Guardando…" : "Guardar contraseña"}</button></form></section></main>;
+  return <main className="grid min-h-screen place-items-center bg-[#050505] p-4"><section className="w-full max-w-md rounded-[24px] bg-white p-7 shadow-2xl"><span className="grid size-12 place-items-center rounded-2xl bg-red-50 text-[#E30613]"><KeyRound className="size-6" /></span><h1 className="mt-5 text-3xl font-black uppercase">Nueva contraseña</h1><p className="mt-2 text-sm leading-6 text-slate-500">{PASSWORD_POLICY_SUMMARY}</p><form onSubmit={submit} className="mt-6 grid gap-4"><div className="relative"><input name="password" value={passwordDraft} onChange={(event) => setPasswordDraft(event.target.value)} type={showPassword ? "text" : "password"} minLength="8" required autoComplete="new-password" aria-describedby="recovery-password-requirements" className="h-11 w-full rounded-xl border border-slate-200 px-3 pr-12 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20" /><PasswordEye visible={showPassword} onToggle={() => setShowPassword((value) => !value)} /></div><PasswordRequirements value={passwordDraft} id="recovery-password-requirements" />{error && <p className="text-sm font-bold text-red-600">{error}</p>}{notice && <p className="text-sm font-bold text-emerald-700">{notice}</p>}<button disabled={busy} className="btn-primary w-full">{busy ? "Guardando…" : "Guardar contraseña"}</button></form></section></main>;
 }
 
 function LocalPinModal({ open, onClose, onConfirm, error, busy }) {
@@ -275,9 +330,16 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     setError(""); setNotice(""); setBusy(true);
-    try { if (!supabase) throw new Error("Supabase no configurado"); const { error: signInError } = await supabase.auth.signInWithPassword({ email, password }); if (signInError) throw signInError; }
-    catch (err) { setError(authMessage(err, "login")); }
-    finally { setBusy(false); }
+    try {
+      if (!supabase) throw new Error("Supabase no configurado");
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) throw signInError;
+      return { ok: true };
+    } catch (err) {
+      const rateLimit = isAuthRateLimit(err) ? authRateLimitDetails(err, "login") : null;
+      setError(rateLimit?.message || authMessage(err, "login"));
+      return rateLimit ? { ok: false, rateLimited: true, ...rateLimit } : { ok: false };
+    } finally { setBusy(false); }
   };
 
   const register = async (name, dni, email, password) => {
@@ -306,9 +368,17 @@ export function AuthProvider({ children }) {
 
   const resetPassword = async (email) => {
     setError(""); setNotice(""); setBusy(true);
-    try { if (!supabase) throw new Error("Supabase no configurado"); const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: getAuthRedirectUrl("/") }); if (resetError) throw resetError; setNotice("Te enviamos un correo de recuperación. Revisá también Spam/Correo no deseado."); }
-    catch (err) { setError(authMessage(err, "reset")); }
-    finally { setBusy(false); }
+    try {
+      if (!supabase) throw new Error("Supabase no configurado");
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: getAuthRedirectUrl("/") });
+      if (resetError) throw resetError;
+      setNotice("Te enviamos un correo de recuperación. Revisá también Spam/Correo no deseado.");
+      return { ok: true };
+    } catch (err) {
+      const rateLimit = isAuthRateLimit(err) ? authRateLimitDetails(err, "reset") : null;
+      setError(rateLimit?.message || authMessage(err, "reset"));
+      return rateLimit ? { ok: false, rateLimited: true, ...rateLimit } : { ok: false };
+    } finally { setBusy(false); }
   };
 
   const updatePassword = async (password) => {
