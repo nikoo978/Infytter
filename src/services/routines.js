@@ -31,6 +31,26 @@ export async function removeAssignedRoutine(id) {
   return { ok: Boolean(data) && !error, error };
 }
 
+export async function getWorkoutHistory(routineId, limit = 8) {
+  if (!supabase) return { history: { recent: [], lastByExercise: {} }, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_get_workout_history", {
+    p_routine_id: routineId,
+    p_limit: limit,
+  });
+  return { history: data || { recent: [], lastByExercise: {} }, error };
+}
+
+export async function saveWorkoutSession({ routineId, startedAt, completedAt, sets }) {
+  if (!supabase) return { summary: null, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_save_workout_session", {
+    p_routine_id: routineId,
+    p_started_at: startedAt,
+    p_completed_at: completedAt,
+    p_sets: sets || [],
+  });
+  return { summary: data || null, error };
+}
+
 export async function listRoutineClients() {
   if (!supabase) return { clients: [], error: noSupabase() };
   const { data, error } = await supabase.rpc("gf_list_routine_clients");

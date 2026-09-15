@@ -1,3 +1,14 @@
+# V.1.08.1 — 15/09/2026
+
+- Rutinas del Cliente incorpora una sesión de entrenamiento a pantalla completa adaptada a móvil.
+- Cada ejercicio permite registrar series, repeticiones, peso en kilogramos y RIR opcional.
+- La próxima sesión muestra las cargas y repeticiones de la última vez para cada ejercicio.
+- Se incorpora historial por ejercicio, timer de sesión, progreso por series y resumen final con duración, series y volumen movido.
+- Técnica, GIF, músculo principal y equipamiento quedan disponibles dentro del entrenamiento sin salir de la rutina.
+- El avance en curso mantiene un borrador local temporal para evitar perder datos si la PWA se cierra antes de finalizar.
+- Los entrenamientos finalizados se guardan en tablas privadas de Supabase y sólo una cuenta Cliente con acceso real a la rutina puede leer o registrar su historial.
+- RIR se presenta como dato opcional y la carga usa kilogramos, con entrada compatible con coma decimal.
+
 # V.1.08.0 — 13/09/2026
 
 - Clientes incorpora vistas separadas para activos y archivados.
