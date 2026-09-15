@@ -1,3 +1,59 @@
+@media (max-width: 767px) {
+  .fixed.inset-0.z-40 > aside {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  }
+
+  .fixed.inset-0.z-40 > aside::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .fixed.inset-0.z-40 > aside::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  .fixed.inset-0.z-40 > aside > div:last-child {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 820px) {
+  .fixed.inset-0.z-40 > aside > a:first-child {
+    padding-top: 0.85rem;
+    padding-bottom: 0.15rem;
+  }
+
+  .fixed.inset-0.z-40 > aside > a:first-child img {
+    height: 2.35rem;
+  }
+
+  .fixed.inset-0.z-40 > aside > p:nth-child(2) {
+    padding-bottom: 0.45rem;
+  }
+
+  .fixed.inset-0.z-40 > aside > p:nth-child(3) {
+    padding-bottom: 0.25rem;
+  }
+
+  .fixed.inset-0.z-40 > aside > nav {
+    gap: 0.2rem;
+  }
+
+  .fixed.inset-0.z-40 > aside > nav a {
+    height: 2.45rem;
+    font-size: 0.82rem;
+  }
+}
+
 @media (min-width: 768px) {
   aside.w-64 {
     overflow: hidden;
