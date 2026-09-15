@@ -14,6 +14,13 @@ import {
   signupPasswordPolicyError,
   signupPasswordRequirementStatus,
 } from "../services/passwordPolicy";
+import {
+  authRateLimitDetails,
+  firstAuthErrorField,
+  isAuthRateLimit,
+  sanitizeDni,
+  validateAuthForm,
+} from "../services/authForm";
 
 const AuthContext = createContext(null);
 const MODE_KEY = "gymflow-emergency-local-mode";
@@ -44,8 +51,9 @@ function authMessage(error, action = "login") {
   const message = String(error?.message || "").toLowerCase();
   const code = String(error?.code || "").toLowerCase();
   if (message.includes("invalid login credentials")) return "Email o contraseña incorrectos.";
-  if (message.includes("email not confirmed")) return "Primero confirmá tu email desde el mensaje que te envió Supabase.";
-  if (message.includes("user already registered")) return "Ese email ya tiene una cuenta. Usá Ingresar.";
+  if (code === "email_not_confirmed" || message.includes("email not confirmed")) return "Primero confirmá tu email desde el mensaje de Infytter y después ingresá.";
+  if (code === "email_exists" || message.includes("user already registered")) return "Ese email ya tiene una cuenta. Usá Ingresar.";
+  if (code === "email_address_not_authorized") return "El servicio de correo de registro todavía no está habilitado para enviar a ese email. No es un error de tus datos; pedí ayuda en recepción.";
   if (message.includes("dni") && message.includes("registr")) return "Ese DNI ya tiene una cuenta registrada.";
   if (message.includes("dni")) return "Ingresá un DNI válido.";
   if (message.includes("nombre completo")) return "Ingresá tu nombre completo.";
@@ -53,8 +61,8 @@ function authMessage(error, action = "login") {
     const summary = action === "register" ? SIGNUP_PASSWORD_POLICY_SUMMARY : PASSWORD_POLICY_SUMMARY;
     return `La contraseña no cumple los requisitos. ${summary}`;
   }
-  if (message.includes("invalid email")) return "El email no es válido.";
-  if (message.includes("rate limit") || error?.status === 429) return "Demasiados intentos. Esperá unos minutos y volvé a probar.";
+  if (code === "email_address_invalid" || message.includes("invalid email")) return "El email no es válido.";
+  if (isAuthRateLimit(error)) return authRateLimitDetails(error, action).message;
   if (message.includes("network") || message.includes("fetch")) return "No se pudo conectar con Supabase. Revisá la conexión.";
   if (!supabaseConfigured) return "Supabase todavía no está configurado para esta versión de GymFlow.";
   if (action === "register") return "No se pudo crear la cuenta. Revisá nombre, DNI, email y contraseña.";
@@ -68,46 +76,110 @@ function PasswordRequirements({ value, dni = "", signup = false, id = "password-
   return <div id={id} className="mt-2 rounded-xl bg-slate-50 p-3"><p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Requisitos de contraseña</p><div className="mt-2 grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">{status.map((item) => <span key={item.key} className={`text-[11px] font-bold ${item.met ? "text-emerald-700" : "text-slate-400"}`}>{item.met ? "✓" : "•"} {item.label}</span>)}</div></div>;
 }
 
-function AuthScreen({ onLogin, onRegister, onReset, error, notice, busy }) {
+function AuthScreen({ onLogin, onRegister, onReset, onClearFeedback, error, notice, busy }) {
   const [view, setView] = useState("login");
   const [passwordDraft, setPasswordDraft] = useState("");
   const [dniDraft, setDniDraft] = useState("");
-  const changeView = (next) => { setView(next); setPasswordDraft(""); setDniDraft(""); };
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [cooldown, setCooldown] = useState(0);
+  const formRef = useRef(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const timer = setInterval(() => setCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown > 0]);
+
+  const clearFieldError = (field) => setFieldErrors((current) => current[field] ? { ...current, [field]: "" } : current);
+  const focusFirstError = (errors) => {
+    const field = firstAuthErrorField(errors);
+    if (!field) return;
+    requestAnimationFrame(() => {
+      const input = formRef.current?.elements?.namedItem?.(field);
+      input?.focus?.({ preventScroll: true });
+      input?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    });
+  };
+  const changeView = (next) => {
+    setView(next);
+    setPasswordDraft("");
+    setDniDraft("");
+    setFieldErrors({});
+    setCooldown(0);
+    onClearFeedback?.();
+  };
 
   const submit = async (event) => {
     event.preventDefault();
+    if (busy || (view === "register" && cooldown > 0)) return;
+
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") || "").trim();
+    const validation = validateAuthForm({
+      view,
+      name: form.get("name"),
+      dni: form.get("dni"),
+      email: form.get("email"),
+      password: form.get("password"),
+    });
+
+    if (Object.values(validation.errors).some(Boolean)) {
+      setFieldErrors(validation.errors);
+      focusFirstError(validation.errors);
+      return;
+    }
+
+    setFieldErrors({});
+    const { name, dni, email, password } = validation.values;
     if (view === "reset") { await onReset(email); return; }
-    const password = String(form.get("password") || "");
     if (view === "register") {
-      await onRegister(
-        String(form.get("name") || "").trim(),
-        String(form.get("dni") || "").replace(/\D/g, ""),
-        email,
-        password,
-      );
-    } else await onLogin(email, password);
+      const result = await onRegister(name, dni, email, password);
+      if (result?.rateLimited) setCooldown(result.retryAfterSeconds || 60);
+      return;
+    }
+    await onLogin(email, password);
   };
 
-  const field = "mt-1 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20";
+  const field = "mt-1 h-11 w-full rounded-xl border px-3 text-sm outline-none transition focus:ring-2 focus:ring-[#E30613]/20";
+  const fieldClass = (name) => `${field} ${fieldErrors[name] ? "border-red-400 bg-red-50/40 focus:border-red-500" : "border-slate-200 bg-white focus:border-[#E30613]/50"}`;
+  const fieldError = (name) => fieldErrors[name] ? <span id={`${name}-error`} role="alert" className="mt-1.5 block text-xs font-bold leading-5 text-red-600">{fieldErrors[name]}</span> : null;
+  const describedBy = (name, extra = "") => [fieldErrors[name] ? `${name}-error` : "", extra].filter(Boolean).join(" ") || undefined;
+  const registerBlocked = view === "register" && cooldown > 0;
 
   return <main className="grid min-h-screen place-items-center bg-[#050505] p-4">
-    <section className="w-full max-w-md rounded-[24px] border border-white/10 bg-white p-7 shadow-2xl">
+    <section className="w-full max-w-md rounded-[24px] border border-white/10 bg-white p-5 shadow-2xl sm:p-7">
       <img src="/infytter-logo.svg" alt="Infytter Fitness" className="h-16 w-full rounded-xl bg-[#050505] object-contain p-2" />
       <h1 className="mt-6 text-3xl font-black uppercase text-[#050505]">{view === "register" ? "Crear cuenta" : view === "reset" ? "Recuperar acceso" : "Ingresar"}</h1>
       <p className="mt-2 text-sm leading-6 text-slate-500">{view === "register" ? "Registrate con nombre completo, DNI, email y una contraseña que cumpla los requisitos indicados abajo. La cuenta ingresa como Cliente hasta que un administrador la vincule o cambie su rol." : view === "reset" ? "Te enviaremos un enlace para elegir una contraseña nueva." : "Acceso seguro con Supabase."}</p>
 
-      <form onSubmit={submit} className="mt-6 grid gap-4">
-        {view === "register" && <><label className="text-sm font-bold text-slate-600">Nombre completo<input name="name" required minLength="3" autoComplete="name" placeholder="Nombre y apellido" className={field} /></label><label className="text-sm font-bold text-slate-600">DNI<input name="dni" required inputMode="numeric" pattern="[0-9]{6,10}" minLength="6" maxLength="10" autoComplete="off" placeholder="Solo números" onChange={(event) => setDniDraft(event.target.value.replace(/\D/g, "").slice(0, 10))} className={field} /></label></>}
-        <label className="text-sm font-bold text-slate-600">Email<input name="email" type="email" required autoComplete="email" className={field} /></label>
-        {view !== "reset" && <label className="text-sm font-bold text-slate-600">Contraseña<input name="password" type="password" minLength={view === "register" ? 8 : undefined} required autoComplete={view === "register" ? "new-password" : "current-password"} onChange={(event) => setPasswordDraft(event.target.value)} aria-describedby={view === "register" ? "register-password-requirements" : undefined} className={field} />{view === "register" && <PasswordRequirements value={passwordDraft} dni={dniDraft} signup id="register-password-requirements" />}</label>}
-        {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600">{error}</p>}
-        {notice && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{notice}</p>}
-        <button disabled={busy} className="btn-primary w-full disabled:opacity-60">{busy ? "Procesando…" : view === "register" ? <><UserPlus className="size-4" /> Crear cuenta</> : view === "reset" ? <><Mail className="size-4" /> Enviar recuperación</> : <><LogIn className="size-4" /> Ingresar</>}</button>
+      <form ref={formRef} noValidate onSubmit={submit} className="mt-6 grid gap-4">
+        {view === "register" && <>
+          <label className="text-sm font-bold text-slate-600">Nombre completo
+            <input name="name" required minLength="3" autoComplete="name" enterKeyHint="next" placeholder="Nombre y apellido" aria-invalid={Boolean(fieldErrors.name)} aria-describedby={describedBy("name")} onChange={() => clearFieldError("name")} className={fieldClass("name")} />
+            {fieldError("name")}
+          </label>
+          <label className="text-sm font-bold text-slate-600">DNI
+            <input name="dni" required value={dniDraft} inputMode="numeric" pattern="[0-9]{6,10}" minLength="6" maxLength="10" autoComplete="off" enterKeyHint="next" placeholder="Solo números" aria-invalid={Boolean(fieldErrors.dni)} aria-describedby={describedBy("dni")} onChange={(event) => { const next = sanitizeDni(event.target.value); setDniDraft(next); clearFieldError("dni"); }} className={fieldClass("dni")} />
+            {fieldError("dni")}
+          </label>
+        </>}
+        <label className="text-sm font-bold text-slate-600">Email
+          <input name="email" type="email" required autoCapitalize="none" autoCorrect="off" spellCheck="false" inputMode="email" autoComplete="email" enterKeyHint={view === "reset" ? "send" : "next"} aria-invalid={Boolean(fieldErrors.email)} aria-describedby={describedBy("email")} onChange={() => clearFieldError("email")} className={fieldClass("email")} />
+          {fieldError("email")}
+        </label>
+        {view !== "reset" && <label className="text-sm font-bold text-slate-600">Contraseña
+          <input name="password" value={passwordDraft} type="password" minLength={view === "register" ? 8 : undefined} required autoComplete={view === "register" ? "new-password" : "current-password"} enterKeyHint="done" onChange={(event) => { setPasswordDraft(event.target.value); clearFieldError("password"); }} aria-invalid={Boolean(fieldErrors.password)} aria-describedby={describedBy("password", view === "register" ? "register-password-requirements" : "")} className={fieldClass("password")} />
+          {fieldError("password")}
+          {view === "register" && <PasswordRequirements value={passwordDraft} dni={dniDraft} signup id="register-password-requirements" />}
+        </label>}
+
+        {Object.values(fieldErrors).some(Boolean) && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold leading-5 text-red-700">Revisá los campos marcados. Te indicamos exactamente qué falta debajo de cada uno.</p>}
+        {error && <p role="alert" aria-live="assertive" className="rounded-xl bg-red-50 p-3 text-sm font-bold leading-6 text-red-600">{error}</p>}
+        {notice && <p aria-live="polite" className="rounded-xl bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-700">{notice}</p>}
+        {registerBlocked && <p aria-live="polite" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold leading-6 text-amber-800">Para no prolongar el bloqueo, el botón de registro se habilitará nuevamente en {cooldown}s. Si la cuenta ya se creó, podés volver a Ingresar sin repetir el alta.</p>}
+        <button disabled={busy || registerBlocked} className="btn-primary w-full disabled:opacity-60">{busy ? "Procesando…" : registerBlocked ? `Reintentar en ${cooldown}s` : view === "register" ? <><UserPlus className="size-4" /> Crear cuenta</> : view === "reset" ? <><Mail className="size-4" /> Enviar recuperación</> : <><LogIn className="size-4" /> Ingresar</>}</button>
       </form>
 
-      <div className="mt-4 grid gap-2 text-sm font-bold">{view !== "login" && <button disabled={busy} onClick={() => changeView("login")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Volver a ingresar</button>}{view === "login" && <button disabled={busy} onClick={() => changeView("register")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Crear cuenta</button>}{view === "login" && <button disabled={busy} onClick={() => changeView("reset")} className="rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 disabled:opacity-60">Olvidé mi contraseña</button>}</div>
+      <div className="mt-4 grid gap-2 text-sm font-bold">{view !== "login" && <button type="button" disabled={busy} onClick={() => changeView("login")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Volver a ingresar</button>}{view === "login" && <button type="button" disabled={busy} onClick={() => changeView("register")} className="rounded-xl px-3 py-2 text-[#9E0710] hover:bg-red-50 disabled:opacity-60">Crear cuenta</button>}{view === "login" && <button type="button" disabled={busy} onClick={() => changeView("reset")} className="rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50 disabled:opacity-60">Olvidé mi contraseña</button>}</div>
     </section>
   </main>;
 }
@@ -209,21 +281,26 @@ export function AuthProvider({ children }) {
 
   const register = async (name, dni, email, password) => {
     setError(""); setNotice("");
-    const cleanName = String(name || "").trim();
-    const cleanDni = String(dni || "").replace(/\D/g, "");
-    if (cleanName.length < 3 || !cleanName.includes(" ")) { setError("Ingresá nombre y apellido."); return; }
-    if (!/^[0-9]{6,10}$/.test(cleanDni)) { setError("Ingresá un DNI válido, sólo con números."); return; }
+    const cleanName = String(name || "").trim().replace(/\s+/g, " ");
+    const cleanDni = sanitizeDni(dni);
+    const cleanEmail = String(email || "").trim().toLowerCase();
+    if (cleanName.length < 3 || !/\S+\s+\S+/.test(cleanName)) { setError("Ingresá nombre y apellido."); return { ok: false }; }
+    if (!/^[0-9]{6,10}$/.test(cleanDni)) { setError("Ingresá un DNI válido, sólo con números."); return { ok: false }; }
     const passwordError = signupPasswordPolicyError(password, { dni: cleanDni });
-    if (passwordError) { setError(passwordError); return; }
+    if (passwordError) { setError(passwordError); return { ok: false }; }
     setBusy(true);
     try {
       if (!supabase) throw new Error("Supabase no configurado");
-      const { data, error: signUpError } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${location.origin}/`, data: { name: cleanName, dni: cleanDni } } });
+      const { data, error: signUpError } = await supabase.auth.signUp({ email: cleanEmail, password, options: { emailRedirectTo: `${location.origin}/`, data: { name: cleanName, dni: cleanDni } } });
       if (signUpError) throw signUpError;
       if (!data.session) setNotice("Cuenta creada. Revisá tu correo para confirmar el email y después ingresá.");
       else setNotice("Cuenta creada correctamente.");
-    } catch (err) { setError(authMessage(err, "register")); }
-    finally { setBusy(false); }
+      return { ok: true };
+    } catch (err) {
+      const rateLimit = isAuthRateLimit(err) ? authRateLimitDetails(err, "register") : null;
+      setError(rateLimit?.message || authMessage(err, "register"));
+      return rateLimit ? { ok: false, rateLimited: true, ...rateLimit } : { ok: false };
+    } finally { setBusy(false); }
   };
 
   const resetPassword = async (email) => {
@@ -273,9 +350,11 @@ export function AuthProvider({ children }) {
     await supabase?.auth.signOut({ scope: "local" }).catch(() => undefined); getModeStorage()?.removeItem(MODE_KEY); setSession(null); setProfile(null); setMode("auth");
   };
 
+  const clearAuthFeedback = () => { setError(""); setNotice(""); };
+
   if (mode === "loading" || session === undefined) return <div className="min-h-screen bg-[#050505]" />;
   if (recovery) return <PasswordRecovery onUpdatePassword={updatePassword} error={error} notice={notice} busy={busy} />;
-  if (mode === "auth") return <AuthScreen onLogin={login} onRegister={register} onReset={resetPassword} error={error} notice={notice} busy={busy} />;
+  if (mode === "auth") return <AuthScreen onLogin={login} onRegister={register} onReset={resetPassword} onClearFeedback={clearAuthFeedback} error={error} notice={notice} busy={busy} />;
 
   const user = session?.user || null;
   if (user && profileLoading && !profile) return <div className="min-h-screen bg-[#050505]" />;
