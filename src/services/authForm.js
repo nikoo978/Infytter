@@ -1,4 +1,4 @@
-import { signupPasswordPolicyError } from "./passwordPolicy";
+import { signupPasswordPolicyError } from "./passwordPolicy.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const FIELD_ORDER = ["name", "dni", "email", "password"];
