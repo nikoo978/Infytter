@@ -3,35 +3,45 @@ import assert from "node:assert/strict";
 import { authRateLimitDetails, firstAuthErrorField, sanitizeDni, validateAuthForm } from "../src/services/authForm.js";
 
 test("registro devuelve errores propios y ordenados sin depender del navegador", () => {
-  const result = validateAuthForm({ view: "register", name: "", dni: "", email: "", password: "" });
+  const result = validateAuthForm({ view: "register", name: "", dni: "", email: "", password: "", confirmPassword: "" });
   assert.equal(result.errors.name, "Completá tu nombre y apellido.");
   assert.equal(result.errors.dni, "Completá tu DNI.");
   assert.equal(result.errors.email, "Completá tu email.");
   assert.equal(result.errors.password, "Completá la contraseña.");
+  assert.equal(result.errors.confirmPassword, "Repetí la contraseña.");
   assert.equal(firstAuthErrorField(result.errors), "name");
 });
 
 test("nombre corto y nombre sin apellido tienen mensajes claros", () => {
-  assert.equal(validateAuthForm({ view: "register", name: "A", dni: "12345678", email: "a@b.com", password: "abc12345" }).errors.name, "Usá al menos 3 caracteres.");
-  assert.equal(validateAuthForm({ view: "register", name: "Nicolas", dni: "12345678", email: "a@b.com", password: "abc12345" }).errors.name, "Ingresá nombre y apellido.");
+  assert.equal(validateAuthForm({ view: "register", name: "A", dni: "12345678", email: "a@b.com", password: "abc12345", confirmPassword: "abc12345" }).errors.name, "Usá al menos 3 caracteres.");
+  assert.equal(validateAuthForm({ view: "register", name: "Nicolas", dni: "12345678", email: "a@b.com", password: "abc12345", confirmPassword: "abc12345" }).errors.name, "Ingresá nombre y apellido.");
 });
 
 test("DNI se normaliza y valida entre 6 y 10 dígitos", () => {
   assert.equal(sanitizeDni("12.345.678"), "12345678");
-  assert.equal(validateAuthForm({ view: "register", name: "Ana Perez", dni: "12345", email: "ana@test.com", password: "abc12345" }).errors.dni, "Ingresá entre 6 y 10 números, sin puntos ni espacios.");
+  assert.equal(validateAuthForm({ view: "register", name: "Ana Perez", dni: "12345", email: "ana@test.com", password: "abc12345", confirmPassword: "abc12345" }).errors.dni, "Ingresá entre 6 y 10 números, sin puntos ni espacios.");
 });
 
 test("email inválido se detecta antes de llamar a Supabase", () => {
-  const result = validateAuthForm({ view: "register", name: "Ana Perez", dni: "12345678", email: "ana@", password: "abc12345" });
+  const result = validateAuthForm({ view: "register", name: "Ana Perez", dni: "12345678", email: "ana@", password: "abc12345", confirmPassword: "abc12345" });
   assert.match(result.errors.email, /email válido/);
 });
 
+test("confirmar contraseña es obligatorio y debe coincidir exactamente", () => {
+  const missing = validateAuthForm({ view: "register", name: "Ana Perez", dni: "12345678", email: "ana@test.com", password: "abc12345", confirmPassword: "" });
+  const mismatch = validateAuthForm({ view: "register", name: "Ana Perez", dni: "12345678", email: "ana@test.com", password: "abc12345", confirmPassword: "abc12346" });
+  assert.equal(missing.errors.confirmPassword, "Repetí la contraseña.");
+  assert.equal(mismatch.errors.confirmPassword, "Las contraseñas no coinciden.");
+  assert.equal(firstAuthErrorField({ confirmPassword: mismatch.errors.confirmPassword }), "confirmPassword");
+});
+
 test("registro válido queda normalizado", () => {
-  const result = validateAuthForm({ view: "register", name: "  Ana   Perez ", dni: "12.345.678", email: "ANA@TEST.COM", password: "abc12345" });
+  const result = validateAuthForm({ view: "register", name: "  Ana   Perez ", dni: "12.345.678", email: "ANA@TEST.COM", password: "abc12345", confirmPassword: "abc12345" });
   assert.deepEqual(result.errors, {});
   assert.equal(result.values.name, "Ana Perez");
   assert.equal(result.values.dni, "12345678");
   assert.equal(result.values.email, "ana@test.com");
+  assert.equal(result.values.confirmPassword, "abc12345");
 });
 
 test("rate limit de correo y de requests muestran causas distintas", () => {
@@ -41,4 +51,10 @@ test("rate limit de correo y de requests muestran causas distintas", () => {
   assert.equal(mail.retryAfterSeconds, 120);
   assert.match(requests.message, /Esta conexión/);
   assert.equal(requests.retryAfterSeconds, 60);
+});
+
+test("rate limit de ingreso tiene mensaje propio y respeta retry-after disponible", () => {
+  const login = authRateLimitDetails({ status: 429, code: "over_request_rate_limit", retryAfterSeconds: 87 }, "login");
+  assert.match(login.message, /intentos de ingreso/);
+  assert.equal(login.retryAfterSeconds, 87);
 });
