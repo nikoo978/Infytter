@@ -6,6 +6,7 @@ import { supabase, supabaseConfigured } from "../services/supabase";
 import { getCloudState } from "../services/storage";
 import { unlinkPushSubscriptionBeforeLogout } from "../services/notifications";
 import { getMyProfile, permissionsForRole } from "../services/roles";
+import { getAuthRedirectUrl } from "../services/authRedirect";
 import {
   PASSWORD_POLICY_SUMMARY,
   SIGNUP_PASSWORD_POLICY_SUMMARY,
@@ -64,7 +65,7 @@ function authMessage(error, action = "login") {
   if (code === "email_address_invalid" || message.includes("invalid email")) return "El email no es válido.";
   if (isAuthRateLimit(error)) return authRateLimitDetails(error, action).message;
   if (message.includes("network") || message.includes("fetch")) return "No se pudo conectar con Supabase. Revisá la conexión.";
-  if (!supabaseConfigured) return "Supabase todavía no está configurado para esta versión de GymFlow.";
+  if (!supabaseConfigured) return "Supabase todavía no está configurado para esta versión de Infytter.";
   if (action === "register") return "No se pudo crear la cuenta. Revisá nombre, DNI, email y contraseña.";
   if (action === "reset") return "No se pudo enviar el correo de recuperación.";
   if (action === "password") return "No se pudo actualizar la contraseña.";
@@ -222,7 +223,7 @@ export function AuthProvider({ children }) {
     try {
       const { profile: next, error: profileLoadError } = await getMyProfile();
       if (profileLoadError) throw profileLoadError;
-      if (!next) throw new Error("Tu cuenta todavía no tiene un perfil GymFlow.");
+      if (!next) throw new Error("Tu cuenta todavía no tiene un perfil Infytter.");
       setProfile(next); cacheProfile(next); setProfileError(""); return next;
     } catch (err) {
       const cached = getCachedProfile(userId);
@@ -291,7 +292,7 @@ export function AuthProvider({ children }) {
     setBusy(true);
     try {
       if (!supabase) throw new Error("Supabase no configurado");
-      const { data, error: signUpError } = await supabase.auth.signUp({ email: cleanEmail, password, options: { emailRedirectTo: `${location.origin}/`, data: { name: cleanName, dni: cleanDni } } });
+      const { data, error: signUpError } = await supabase.auth.signUp({ email: cleanEmail, password, options: { emailRedirectTo: getAuthRedirectUrl("/bienvenido?email_confirmado=1"), data: { name: cleanName, dni: cleanDni } } });
       if (signUpError) throw signUpError;
       if (!data.session) setNotice("Cuenta creada. Revisá tu correo para confirmar el email y después ingresá.");
       else setNotice("Cuenta creada correctamente.");
@@ -305,7 +306,7 @@ export function AuthProvider({ children }) {
 
   const resetPassword = async (email) => {
     setError(""); setNotice(""); setBusy(true);
-    try { if (!supabase) throw new Error("Supabase no configurado"); const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/` }); if (resetError) throw resetError; setNotice("Te enviamos un correo de recuperación. Revisá también Spam/Correo no deseado."); }
+    try { if (!supabase) throw new Error("Supabase no configurado"); const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: getAuthRedirectUrl("/") }); if (resetError) throw resetError; setNotice("Te enviamos un correo de recuperación. Revisá también Spam/Correo no deseado."); }
     catch (err) { setError(authMessage(err, "reset")); }
     finally { setBusy(false); }
   };
