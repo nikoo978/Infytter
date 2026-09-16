@@ -1,5 +1,5 @@
-const SW_VERSION = "gymflow-push-v1-08-5";
-const CACHE_NAME = "gymflow-shell-v1-08-5";
+const SW_VERSION = "gymflow-push-v1-08-6";
+const CACHE_NAME = "gymflow-shell-v1-08-6";
 const CORE_ASSETS = [
   "/",
   "/manifest.webmanifest",
@@ -25,7 +25,6 @@ async function cacheAppShell() {
     if (url.origin === self.location.origin && url.pathname.startsWith("/assets/")) urls.add(url.pathname + url.search);
   }
   if (!urls.size) throw new Error("La aplicación offline está incompleta");
-  // Mantener el worker anterior si falla un archivo necesario de la nueva versión.
   await Promise.all([...urls].map((url) => cache.add(url)));
   await cache.put("/", response);
   await Promise.allSettled(CORE_ASSETS.filter(url => url !== "/").map(url => cache.add(url)));

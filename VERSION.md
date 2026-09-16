@@ -1,3 +1,11 @@
+# V.1.08.6 — 15/09/2026
+
+- Los enlaces de confirmación de nuevas cuentas regresan a la pantalla `/bienvenido` de Infytter.
+- Una confirmación exitosa muestra `¡BIENVENIDO! ¡SU MAIL HA SIDO CONFIRMADO!` antes de ingresar a la aplicación.
+- La pantalla de confirmación se muestra antes del bloqueo normal de autenticación, incluso si la sesión todavía no se restauró en ese navegador.
+- Enlaces inválidos o vencidos muestran un error explícito y nunca simulan una confirmación exitosa.
+- Se renueva la caché PWA para distribuir la nueva experiencia de confirmación en celulares instalados.
+
 # V.1.08.1 — 15/09/2026
 
 - Rutinas del Cliente incorpora una sesión de entrenamiento a pantalla completa adaptada a móvil.
