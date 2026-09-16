@@ -27,7 +27,7 @@ import { useAuth } from "./context/AuthContext";
 import "./styles/v1066-admin-menu.css";
 import "./styles/mobile-role-branding.css";
 
-export const APP_VERSION = "V.1.08.5";
+export const APP_VERSION = "V.1.08.6";
 export const navigation = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "coadmin"] },
   { label: "Clientes", path: "/clientes", icon: UsersRound, roles: ["admin", "coadmin"] },
@@ -71,9 +71,6 @@ export default function App() {
     return profile.role === "admin" || profile.role === "coadmin" ? <ProfessorMobilePreview /> : <Navigate to="/" replace />;
   }
 
-  // No asumir "cliente" durante el breve lapso entre restaurar la sesión y
-  // cargar el perfil real. Evita ejecutar RPC exclusivas de Cliente desde una
-  // cuenta Admin/Profesor durante el arranque.
   if (!profile?.role) return <div className="min-h-dvh bg-[#F5F5F5]" />;
 
   if (role === "cliente") return <ClientHomeV106 />;
