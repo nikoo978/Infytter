@@ -28,7 +28,7 @@ import { useAuth } from "./context/AuthContext";
 import "./styles/v1066-admin-menu.css";
 import "./styles/mobile-role-branding.css";
 
-export const APP_VERSION = "V.1.08.7";
+export const APP_VERSION = "V.1.09.0";
 export const navigation = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "coadmin"] },
   { label: "Clientes", path: "/clientes", icon: UsersRound, roles: ["admin", "coadmin"] },

@@ -1,5 +1,5 @@
-const SW_VERSION = "gymflow-push-v1-08-7";
-const CACHE_NAME = "gymflow-shell-v1-08-7";
+const SW_VERSION = "infytter-push-v1-09-0";
+const CACHE_NAME = "infytter-shell-v1-09-0";
 const CORE_ASSETS = [
   "/",
   "/manifest.webmanifest",
@@ -40,7 +40,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith("gymflow-shell-") && key !== CACHE_NAME).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter((key) => (key.startsWith("gymflow-shell-") || key.startsWith("infytter-shell-")) && key !== CACHE_NAME).map((key) => caches.delete(key)));
     await self.clients.claim();
   })());
 });

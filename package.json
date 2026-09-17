@@ -1,6 +1,6 @@
 {
   "name": "gymflow-gestion2",
-  "version": "1.08.7",
+  "version": "1.09.0",
   "private": true,
   "engines": {
     "node": "24.x"
