@@ -1,5 +1,5 @@
-const SW_VERSION = "gymflow-push-v1-08-7";
-const CACHE_NAME = "gymflow-shell-v1-08-7";
+const SW_VERSION = "infytter-push-v1-09-0";
+const CACHE_NAME = "infytter-shell-v1-09-0";
 const CORE_ASSETS = [
   "/",
   "/manifest.webmanifest",
