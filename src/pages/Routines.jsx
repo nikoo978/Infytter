@@ -1,6 +1,7 @@
 import { ClipboardList, Edit3, Plus, RefreshCw, Search, Send, UserRoundSearch, UsersRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import RoutineEditor from "../components/routines/RoutineEditor";
+import ProfessorTrainingOverview from "../components/routines/ProfessorTrainingOverview";
 import FormDialog from "../components/ui/FormDialog";
 import { listExercises } from "../services/exercises";
 import { assignProfessorRoutine, getClientRoutinesForProfessor, listProfessorRoutines, listRoutineClients, saveProfessorRoutine } from "../services/routines";
@@ -93,7 +94,7 @@ export default function Routines() {
       <div className={`${mobileView === "clientes" ? "block" : "hidden"} panel p-3.5 sm:p-5 xl:block`}><div className="flex items-center gap-2"><UserRoundSearch className="size-5 shrink-0 text-[#E30613]" /><div><h2 className="section-title">Ver por cliente</h2><p className="text-xs leading-5 text-slate-500">Incluye fichas del gimnasio aunque todavía no tengan una cuenta de acceso.</p></div></div>
         <select value={selectedClientId} onChange={(event) => loadClient(event.target.value)} className="mt-4 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-black outline-none"><option value="">Seleccionar cliente</option>{clients.map((client) => <option key={client.person_id} value={client.person_id}>{client.display_name || client.email} · DNI {client.dni || "—"}</option>)}</select>
         {selectedClient && <div className="mt-4 space-y-3"><p className="text-xs font-black uppercase tracking-wider text-slate-400">Rutinas de {clientName}</p>{clientRoutines.map((routine) => <article key={routine.id} className="rounded-2xl bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate font-black text-slate-800">{routine.title}</p><p className="mt-1 text-xs text-slate-400">{routine.items?.length || 0} ejercicios</p></div>{routine.canEdit && <button onClick={() => setEditing(routine)} className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-slate-600 shadow-sm" aria-label="Editar rutina"><Edit3 className="size-4" /></button>}</div></article>)}{!clientRoutines.length && <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">Este cliente todavía no recibió rutinas.</p>}</div>}
-        {!selectedClient && <div className="mt-5 rounded-2xl bg-slate-50 p-6 text-center"><UserRoundSearch className="mx-auto size-7 text-slate-300" /><p className="mt-2 text-sm font-bold text-slate-400">Elegí un cliente para ver sus rutinas.</p></div>}
+        {selectedClient && <ProfessorTrainingOverview personId={selectedClientId} />}{!selectedClient && <div className="mt-5 rounded-2xl bg-slate-50 p-6 text-center"><UserRoundSearch className="mx-auto size-7 text-slate-300" /><p className="mt-2 text-sm font-bold text-slate-400">Elegí un cliente para ver sus rutinas y entrenamientos.</p></div>}
       </div>
     </section>
 
