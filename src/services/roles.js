@@ -64,6 +64,12 @@ export async function listAccountEvents(limit = 10) {
   return { events: data || [], error };
 }
 
+export async function getMyClientPlatformAccess() {
+  if (!supabase) return { access: null, error: new Error("Supabase no configurado") };
+  const { data, error } = await supabase.rpc("gf_get_my_platform_access");
+  return { access: data || null, error };
+}
+
 export async function getMyClientPortal() {
   if (!supabase) return { portal: null, error: new Error("Supabase no configurado") };
   const { data, error } = await supabase.rpc("gf_get_my_client_portal");
