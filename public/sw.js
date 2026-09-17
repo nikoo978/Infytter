@@ -1,5 +1,5 @@
-const SW_VERSION = "gymflow-push-v1-08-6";
-const CACHE_NAME = "gymflow-shell-v1-08-6";
+const SW_VERSION = "gymflow-push-v1-08-7";
+const CACHE_NAME = "gymflow-shell-v1-08-7";
 const CORE_ASSETS = [
   "/",
   "/manifest.webmanifest",
