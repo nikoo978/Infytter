@@ -1,3 +1,17 @@
+# V.1.09.0 — 17/09/2026
+
+- El portal Cliente se reorganiza en cuatro áreas: Inicio, Entrenar, Progreso y Perfil.
+- Entrenar presenta un plan semanal por días, unificando rutinas del Profesor y rutinas personales sin perder su origen.
+- Las rutinas pueden guardarse con uno o varios días de la semana; la programación vive en Supabase y no en el dispositivo.
+- La ejecución móvil incorpora miniaturas para navegar ejercicios, cronómetro, descanso automático por serie y posibilidad de agregar o quitar series durante la sesión.
+- Repeticiones, kilogramos, RIR, series completadas y sesiones activas continúan guardándose exclusivamente en Supabase.
+- “Última vez” toma el registro más reciente del ejercicio aunque se haya realizado dentro de otra rutina.
+- El historial por ejercicio agrega mayor peso, máximo de repeticiones, volumen, e1RM estimado y una tendencia histórica.
+- Progreso combina métricas corporales con entrenamientos de los últimos 30 días, series, tiempo y volumen acumulado.
+- Profesor puede consultar entrenamientos finalizados del Cliente, con cargas, repeticiones y RIR por ejercicio.
+- Los RPC nuevos vuelven a validar rol Cliente y mensualidad vigente antes de exponer progreso de entrenamiento.
+- Se renueva la caché PWA y la versión visible pasa a V.1.09.0.
+
 # V.1.08.6 — 15/09/2026
 
 - Los enlaces de confirmación de nuevas cuentas regresan a la pantalla `/bienvenido` de Infytter.
