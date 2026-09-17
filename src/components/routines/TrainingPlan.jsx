@@ -1,7 +1,7 @@
 import { CalendarDays, Dumbbell, Edit3, Play, Plus, Trash2, UserRound, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { normalizeExerciseSearch } from "../../services/exercises";
-import WorkoutRunner from "./WorkoutRunner";
+import WorkoutRunner from "./WorkoutRunnerV2";
 
 export const TRAINING_DAYS = [
   { value: 1, short: "L", label: "Lunes" },
