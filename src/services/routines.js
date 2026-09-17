@@ -10,11 +10,12 @@ export async function getMyRoutines() {
 
 export async function saveMyRoutine(routine) {
   if (!supabase) return { routine: null, error: noSupabase() };
-  const { data, error } = await supabase.rpc("gf_save_my_routine", {
+  const { data, error } = await supabase.rpc("gf_save_my_routine_v2", {
     p_routine_id: routine?.id || null,
     p_title: routine?.title || "",
     p_description: routine?.description || "",
     p_items: routine?.items || [],
+    p_schedule_days: routine?.scheduleDays || [],
   });
   return { routine: data || null, error };
 }
@@ -38,6 +39,30 @@ export async function getWorkoutHistory(routineId, limit = 8) {
     p_limit: limit,
   });
   return { history: data || { recent: [], lastByExercise: {} }, error };
+}
+
+export async function getExercisePerformance(exerciseKey, limit = 12) {
+  if (!supabase) return { performance: { stats: {}, trend: [], recent: [] }, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_get_exercise_performance", {
+    p_exercise_key: exerciseKey,
+    p_limit: limit,
+  });
+  return { performance: data || { stats: {}, trend: [], recent: [] }, error };
+}
+
+export async function getMyTrainingOverview(limit = 12) {
+  if (!supabase) return { overview: { last30: {}, recent: [] }, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_get_my_training_overview", { p_limit: limit });
+  return { overview: data || { last30: {}, recent: [] }, error };
+}
+
+export async function getPersonTrainingOverview(personId, limit = 12) {
+  if (!supabase) return { overview: { last30: {}, recent: [] }, error: noSupabase() };
+  const { data, error } = await supabase.rpc("gf_get_person_training_overview", {
+    p_person_id: personId,
+    p_limit: limit,
+  });
+  return { overview: data || { last30: {}, recent: [] }, error };
 }
 
 export async function openWorkoutSession(routineId, startedAt = new Date().toISOString()) {
@@ -102,11 +127,12 @@ export async function listProfessorRoutines() {
 
 export async function saveProfessorRoutine(routine) {
   if (!supabase) return { routine: null, error: noSupabase() };
-  const { data, error } = await supabase.rpc("gf_save_professor_routine", {
+  const { data, error } = await supabase.rpc("gf_save_professor_routine_v2", {
     p_routine_id: routine?.id || null,
     p_title: routine?.title || "",
     p_description: routine?.description || "",
     p_items: routine?.items || [],
+    p_schedule_days: routine?.scheduleDays || [],
   });
   return { routine: data || null, error };
 }
