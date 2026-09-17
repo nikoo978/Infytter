@@ -2,6 +2,7 @@
 
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Activity, BarChart3, BellRing, Building2, CircleDollarSign, Dumbbell, Eye, FileClock, Fingerprint, LayoutDashboard, Settings2, ShieldCheck, UserCog, UsersRound } from "lucide-react";
+import ClientPlatformGate from "./components/auth/ClientPlatformGate";
 import EmailConfirmedWelcome from "./components/auth/EmailConfirmedWelcome";
 import AppLayout from "./components/layout/AppLayout";
 import ProfessorLayout from "./components/layout/ProfessorLayout";
@@ -27,7 +28,7 @@ import { useAuth } from "./context/AuthContext";
 import "./styles/v1066-admin-menu.css";
 import "./styles/mobile-role-branding.css";
 
-export const APP_VERSION = "V.1.08.6";
+export const APP_VERSION = "V.1.08.7";
 export const navigation = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "coadmin"] },
   { label: "Clientes", path: "/clientes", icon: UsersRound, roles: ["admin", "coadmin"] },
@@ -73,7 +74,7 @@ export default function App() {
 
   if (!profile?.role) return <div className="min-h-dvh bg-[#F5F5F5]" />;
 
-  if (role === "cliente") return <ClientHomeV106 />;
+  if (role === "cliente") return <ClientPlatformGate><ClientHomeV106 /></ClientPlatformGate>;
   if (role === "profe") return <ProfessorApp currentPath={location.pathname} />;
 
   const allowed = (path) => navigation.find((item) => item.path === path)?.roles.includes(role);
