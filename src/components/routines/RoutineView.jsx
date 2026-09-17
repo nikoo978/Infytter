@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, Dumbbell, Play } from "lucide-react";
 import { useMemo, useState } from "react";
 import { normalizeExerciseSearch } from "../../services/exercises";
 import { ExerciseGifGallery } from "../exercises/ExerciseGif";
-import WorkoutRunner from "./WorkoutRunner";
+import WorkoutRunner from "./WorkoutRunnerV2";
 
 export default function RoutineView({ routine, exercises = [], actions = null, preview = false }) {
   const [open, setOpen] = useState(false);
