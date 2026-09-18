@@ -11,6 +11,7 @@
 - Profesor puede consultar entrenamientos finalizados del Cliente, con cargas, repeticiones y RIR por ejercicio.
 - Los RPC nuevos vuelven a validar rol Cliente y mensualidad vigente antes de exponer progreso de entrenamiento.
 - Se renueva la caché PWA y la versión visible pasa a V.1.09.0.
+- El ícono instalable de la PWA, Apple Touch y las notificaciones usa el isologo rojo/gris de Infytter sobre fondo negro.
 
 # V.1.08.6 — 15/09/2026
 
