@@ -1,3 +1,11 @@
+# V.1.09.1 — 18/09/2026
+
+- La PWA usa el isologo de Infytter como icono principal en Android y otros navegadores instalables.
+- iPhone/iPad usan el mismo isologo mediante un Apple Touch Icon específico de 180×180.
+- El manifest referencia archivos de icono nuevos para evitar reutilizar los iconos anteriores desde caché.
+- El service worker precarga los nuevos iconos, renueva su caché y las notificaciones usan también la nueva identidad visual.
+- Se mantiene el favicon del navegador con el mismo isologo de Infytter.
+
 # V.1.09.0 — 17/09/2026
 
 - El portal Cliente se reorganiza en cuatro áreas: Inicio, Entrenar, Progreso y Perfil.
