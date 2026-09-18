@@ -1,13 +1,13 @@
-const SW_VERSION = "infytter-push-v1-09-0";
-const CACHE_NAME = "infytter-shell-v1-09-0";
+const SW_VERSION = "infytter-push-v1-09-1";
+const CACHE_NAME = "infytter-shell-v1-09-1";
 const CORE_ASSETS = [
   "/",
   "/manifest.webmanifest",
   "/infytter-logo.svg",
   "/favicon.svg",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/apple-touch-icon.png",
+  "/icons/infytter-isologo-192.png",
+  "/icons/infytter-isologo-512.png",
+  "/icons/infytter-isologo-apple-180.png",
 ];
 
 function canCache(response) {
@@ -85,8 +85,8 @@ self.addEventListener("push", (event) => {
   try { payload = event.data?.json?.() || {}; } catch { payload = { body: event.data?.text?.() || "" }; }
   const options = {
     body: payload.body || "Tenés una nueva notificación.",
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
+    icon: "/icons/infytter-isologo-192.png",
+    badge: "/icons/infytter-isologo-192.png",
     tag: payload.tag || payload.type || `infytter-${Date.now()}`,
     renotify: true,
     vibrate: [180, 100, 180],
