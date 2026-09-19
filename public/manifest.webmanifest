@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "Infytter Fitness - Gestión de Gimnasio",
   "short_name": "Infytter",
   "description": "Gestión multi-sucursal de clientes, accesos y caja.",
@@ -9,16 +10,16 @@
   "theme_color": "#E30613",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/infytter-app-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icons/infytter-app-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
