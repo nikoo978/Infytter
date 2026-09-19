@@ -16,6 +16,13 @@ function blockedCopy(access) {
         title: "Todavía no podemos habilitar tu plataforma",
         body: "Tu cuenta está creada, pero aún no está vinculada a una ficha de Cliente del gimnasio. Acercate a recepción para que vinculen tu DNI con esta cuenta.",
       };
+    case "link_mismatch":
+      return {
+        Icon: Link2Off,
+        eyebrow: "Vínculo de cuenta incorrecto",
+        title: "Tu cuenta está vinculada a otra ficha",
+        body: "El DNI de tu cuenta no coincide con la ficha vinculada. Pedí en recepción que revisen el vínculo; tu membresía no se modificó.",
+      };
     case "expired":
       return {
         Icon: CalendarClock,
@@ -110,7 +117,7 @@ export default function ClientPlatformGate({ children }) {
     return <GateShell>
       <div className="mt-7 text-center"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-red-50 text-[#E30613]"><Icon className="size-7" /></span><p className="mt-5 text-[11px] font-black uppercase tracking-[.2em] text-[#E30613]">{copy.eyebrow}</p><h1 className="mt-2 text-2xl font-black leading-tight">{copy.title}</h1><p className="mt-3 text-sm leading-6 text-slate-500">{copy.body}</p></div>
       <div className="mt-6 rounded-2xl bg-slate-50 p-4"><p className="text-xs font-black uppercase tracking-wider text-slate-400">Para ingresar necesitás</p><div className="mt-3 space-y-2 text-sm font-bold text-slate-700"><p>✓ Cuenta vinculada a tu ficha de Cliente</p><p>✓ Mensualidad vigente</p></div></div>
-      <div className="mt-6 grid gap-2"><button onClick={() => checkAccess()} className="btn-primary min-h-12 w-full"><RefreshCw className="size-4" /> Ya renové · Verificar de nuevo</button><button onClick={logout} className="btn-secondary min-h-12 w-full"><LogOut className="size-4" /> Cerrar sesión</button></div>
+      <div className="mt-6 grid gap-2"><button onClick={() => checkAccess()} className="btn-primary min-h-12 w-full"><RefreshCw className="size-4" /> {access?.reason === "link_mismatch" ? "Verificar vínculo de nuevo" : "Ya renové · Verificar de nuevo"}</button><button onClick={logout} className="btn-secondary min-h-12 w-full"><LogOut className="size-4" /> Cerrar sesión</button></div>
     </GateShell>;
   }
 

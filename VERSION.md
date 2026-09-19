@@ -1,3 +1,11 @@
+# V.1.09.1 — 19/09/2026
+
+- Corrige vínculos de cuentas Cliente con fichas que pertenecen a otro DNI.
+- Supabase rechaza nuevos vínculos Cliente cuando el DNI de la cuenta no coincide con el DNI de la ficha.
+- El portal Cliente detecta vínculos incompatibles antes de evaluar inicio o vencimiento, evitando mostrar fechas de membresía de otra persona.
+- Usuarios sólo ofrece fichas Cliente libres con el mismo DNI y marca explícitamente vínculos heredados incompatibles.
+- Se renueva la caché PWA para distribuir el ajuste de acceso.
+
 # V.1.09.0 — 17/09/2026
 
 - El portal Cliente se reorganiza en cuatro áreas: Inicio, Entrenar, Progreso y Perfil.
