@@ -1,7 +1,7 @@
-import { ChevronDown, ChevronUp, Dumbbell, Play } from "lucide-react";
+import { ChevronDown, ChevronUp, Play } from "lucide-react";
 import { useMemo, useState } from "react";
 import { normalizeExerciseSearch } from "../../services/exercises";
-import { ExerciseGifGallery } from "../exercises/ExerciseGif";
+import ExerciseDetail from "../exercises/ExerciseDetail";
 import WorkoutRunner from "./WorkoutRunnerV2";
 
 export default function RoutineView({ routine, exercises = [], actions = null, preview = false }) {
@@ -62,11 +62,8 @@ export default function RoutineView({ routine, exercises = [], actions = null, p
                     {expanded ? <ChevronUp className="mt-1 size-4 shrink-0 text-slate-400" /> : <ChevronDown className="mt-1 size-4 shrink-0 text-slate-400" />}
                   </button>
                   {expanded && <div className="border-t border-black/5 p-3">
-                    <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400"><Dumbbell className="size-3.5" /> Técnica</p>
-                    <p className="mt-1.5 text-sm leading-6 text-slate-600">{source?.notes || "La explicación breve de este ejercicio todavía no está disponible."}</p>
-                    {source?.muscle_group && <p className="mt-2 text-xs font-bold text-slate-400">{source.muscle_group}{source.equipment ? ` · ${source.equipment}` : ""}</p>}
+                    <ExerciseDetail key={key} exercise={source || { name: item.exercise_name }} />
                     {item.notes && <div className="mt-3 rounded-xl bg-amber-50 p-3"><p className="text-[10px] font-black uppercase tracking-wider text-amber-700">Indicación de la rutina</p><p className="mt-1 text-xs leading-5 text-amber-800">{item.notes}</p></div>}
-                    {source && <div className="mt-3"><ExerciseGifGallery exercise={source} className="max-h-72 w-full object-contain" /></div>}
                   </div>}
                 </div>
               );

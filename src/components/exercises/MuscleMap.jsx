@@ -9,8 +9,9 @@ function Pair({ children }) {
   return <>{children}<g transform={MIRROR}>{children}</g></>;
 }
 
-function Muscle({ name, selected, onSelect, onHover, children }) {
+function Muscle({ name, selected, onSelect, onHover, children, interactive = true }) {
   const active = selected === name;
+  if (!interactive) return <g className={`muscle-map__region${active ? " is-selected" : ""}`}><title>{name}</title>{children}</g>;
   return (
     <g
       className={`muscle-map__region${active ? " is-selected" : ""}`}
@@ -51,16 +52,16 @@ function Head({ female, back }) {
   );
 }
 
-export function AnatomyFigure({ gender, back = false, detailed = false, selected = "", onSelect = () => {}, onHover = () => {} }) {
+export function AnatomyFigure({ gender, back = false, detailed = false, selected = "", interactive = true, onSelect = () => {}, onHover = () => {} }) {
   const female = gender === "female";
   const shoulder = female ? 81 : 73;
   const waist = female ? 108 : 100;
   const hip = female ? 81 : 87;
   const armShift = female ? 5 : 0;
-  const region = (name, children) => <Muscle name={name} selected={selected} onSelect={onSelect} onHover={onHover}>{children}</Muscle>;
+  const region = (name, children) => <Muscle name={name} interactive={interactive} selected={selected} onSelect={onSelect} onHover={onHover}>{children}</Muscle>;
 
   return (
-    <svg viewBox="0 0 260 600" className="muscle-map__figure" role="group" aria-label={`${back ? "Espalda" : "Frente"}, figura ${female ? "femenina" : "masculina"}`}>
+    <svg viewBox="0 0 260 600" className="muscle-map__figure" role={interactive ? "group" : "img"} aria-label={`${back ? "Espalda" : "Frente"}, figura ${female ? "femenina" : "masculina"}`}>
       <Head female={female} back={back} />
       <g className="muscle-map__body">
         <path d={`M115 78 L113 96 Q102 103 ${shoulder} 110 Q${shoulder - 10} 117 ${shoulder + 1} 151 L89 180 Q${waist - 2} 213 ${waist} 236 Q${waist - 3} 252 ${hip} 274 C${hip - 6} 298 ${hip - 4} 328 ${hip + 2} 357 L96 413 Q98 430 94 444 C87 466 90 490 94 513 L95 549 Q90 561 83 569 Q80 577 91 578 L111 577 Q117 576 116 570 L113 548 L114 506 Q125 464 115 439 L114 421 Q120 384 124 348 L130 322 L136 348 Q140 384 146 421 L145 439 Q135 464 146 506 L147 548 Q143 568 144 573 Q145 579 153 578 L170 578 Q181 577 177 570 Q170 561 165 549 L166 513 C170 490 173 466 166 444 Q162 430 164 413 L${260 - hip - 2} 357 C${264 - hip} 328 ${266 - hip} 298 ${260 - hip} 274 Q${263 - waist} 252 ${260 - waist} 236 Q${262 - waist} 213 171 180 L${259 - shoulder} 151 Q${270 - shoulder} 117 ${260 - shoulder} 110 Q158 103 147 96 L145 78`} />

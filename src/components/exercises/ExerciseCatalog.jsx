@@ -1,7 +1,7 @@
-import { ChevronDown, ChevronUp, Dumbbell, ExternalLink, Search, Video } from "lucide-react";
+import { ChevronDown, ChevronUp, Dumbbell, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { listExercises, matchesExerciseSearch, MUSCLE_GROUPS } from "../../services/exercises";
-import { ExerciseGifGallery } from "./ExerciseGif";
+import ExerciseDetail from "./ExerciseDetail";
 import MuscleMap from "./MuscleMap";
 
 const PAGE_SIZE = 48;
@@ -106,15 +106,12 @@ export default function ExerciseCatalog({ compact = false, preview = false }) {
 
               {open && (
                 <div className="border-t border-slate-100 p-3.5">
-                  <h2 className="text-base font-black leading-6 text-slate-900">{exercise.name}</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{exercise.notes || "La explicación de este ejercicio todavía no fue cargada."}</p>
+                  <ExerciseDetail key={exercise.id} exercise={exercise} />
                   <SecondaryNames exercise={exercise} />
                   <div className="mt-3 rounded-xl bg-slate-50 p-3">
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Referencia</p>
                     <p className="mt-1 text-xs font-bold text-slate-600">{exercise.default_sets || 3} series · {exercise.default_reps || "8-12"} reps · {exercise.rest_seconds ?? 60}s descanso</p>
                   </div>
-                  <div className="mt-3"><ExerciseGifGallery exercise={exercise} className="max-h-56 w-full object-contain" /></div>
-                  {exercise.video_url && <a href={exercise.video_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-[#050505] px-3 text-xs font-black text-white"><Video className="size-3.5" /> Ver video <ExternalLink className="size-3" /></a>}
                 </div>
               )}
             </article>
