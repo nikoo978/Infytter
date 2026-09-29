@@ -1,6 +1,6 @@
 import {
   Check, ChevronLeft, ChevronRight, Clock3, Cloud, CloudCheck, CloudOff, Dumbbell,
-  History, Info, LoaderCircle, Minus, Plus, RotateCcw, TimerReset, Trophy, X
+  History, LoaderCircle, Minus, Plus, RotateCcw, TimerReset, Trophy, X
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { normalizeExerciseSearch } from "../../services/exercises";
@@ -8,8 +8,7 @@ import {
   finishWorkoutSession, getExercisePerformance, getWorkoutHistory,
   openWorkoutSession, resetWorkoutSession, saveWorkoutProgress
 } from "../../services/routines";
-import { ExerciseGifGallery } from "../exercises/ExerciseGif";
-import { AnatomyFigure } from "../exercises/MuscleMap";
+import ExerciseDetail from "../exercises/ExerciseDetail";
 
 const CLOUD_SAVE_DEBOUNCE_MS = 320;
 
@@ -618,12 +617,7 @@ export default function WorkoutRunnerV2({ routine, exercises = [], open, onClose
           </section>
         </>}
 
-        {view === "tecnica" && <section className="space-y-3 rounded-[22px] bg-[#12151b] p-4">
-          <div><p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[.15em] text-white/35"><Info className="size-3.5" /> Guía del ejercicio</p><p className="mt-2 text-sm leading-6 text-white/70">{source?.notes || "La explicación técnica de este ejercicio todavía no está disponible."}</p></div>
-          {source && <ExerciseGifGallery exercise={source} className="max-h-[52dvh] w-full rounded-2xl bg-black/20 object-contain" />}
-          {source?.muscle_group && <div className="rounded-2xl bg-white/[.035] p-3"><p className="text-[10px] font-black uppercase tracking-[.15em] text-white/35">Músculo principal · {source.muscle_group}</p><div className="mx-auto mt-3 grid max-w-[230px] grid-cols-2 gap-2 rounded-xl bg-slate-100 p-2"><AnatomyFigure gender="male" selected={source.muscle_group} detailed /><AnatomyFigure gender="male" back selected={source.muscle_group} detailed /></div></div>}
-          {source?.equipment && <div className="rounded-xl bg-white/[.035] p-3"><p className="text-[10px] font-black uppercase tracking-[.15em] text-white/35">Equipo</p><p className="mt-1 text-sm font-black text-white/75">{source.equipment}</p></div>}
-        </section>}
+        {view === "tecnica" && <ExerciseDetail key={current.exerciseKey || activeIndex} exercise={source || { name: current.exercise_name }} />}
 
         {view === "historial" && <section className="space-y-3 rounded-[22px] bg-[#12151b] p-4">
           <div><p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[.15em] text-white/35"><History className="size-3.5" /> Historial del ejercicio</p><p className="mt-1 text-xs text-white/40">Se combinan tus registros de todas las rutinas que incluyan este ejercicio.</p></div>

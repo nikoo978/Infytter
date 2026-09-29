@@ -1,3 +1,12 @@
+# V.1.09.2 — 29/09/2026
+
+- Detalle visual compartido entre catálogo, rutinas y técnica durante el entrenamiento.
+- Figuras masculinas y femeninas locales, tarjetas claras, filtros tipo píldora y área de enfoque.
+- Las zonas específicas de brazos y piernas conservan un marcado SVG preciso; las láminas generales no se confunden con músculos individuales.
+- Las instrucciones, GIFs y videos están en “Cómo hacerlo”; se conservan indicaciones de rutina, series y registro de entrenamiento.
+- Las figuras informativas no agregan controles sin acción al recorrido del teclado.
+- Caché PWA renovada. Sin cambios de datos ni permisos.
+
 # V.1.09.1 — 19/09/2026
 
 - Corrige vínculos de cuentas Cliente con fichas que pertenecen a otro DNI.

@@ -1,0 +1,24 @@
+.exercise-detail { color: #161616; background: #fff; border-radius: 24px; padding: clamp(14px, 4vw, 24px); min-width: 0; }
+.exercise-detail__title { font-size: clamp(1.15rem, 4vw, 1.6rem); font-weight: 850; line-height: 1.3; margin: 0 0 18px; overflow-wrap: anywhere; }
+.exercise-detail h3 { font-size: 1rem; line-height: 1.4; font-weight: 800; margin: 0; }
+.exercise-detail__tabs { display: flex; padding: 4px; gap: 4px; border-radius: 999px; background: #f0f0f0; margin-bottom: 22px; }
+.exercise-detail__tabs button { flex: 1; min-height: 44px; border: 0; border-radius: 999px; color: #333; font-weight: 800; font-size: .875rem; cursor: pointer; }
+.exercise-detail__tabs button[aria-pressed="true"] { background: #171717; color: #fff; }
+.exercise-detail__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.exercise-detail__switch { display: flex; padding: 3px; background: #f1f1f1; border-radius: 999px; }
+.exercise-detail__switch button { min-height: 40px; padding: 6px 12px; border-radius: 999px; font-size: .75rem; font-weight: 750; color: #555; cursor: pointer; }
+.exercise-detail__switch button[aria-pressed="true"] { color: #fff; background: #171717; }
+.exercise-detail__chip { display: inline-flex; align-items: center; gap: 9px; max-width: 100%; overflow-wrap: anywhere; padding: 10px 18px; margin: 12px 0 0; border-radius: 24px; background: #f0f0f0; color: #333; font-size: .875rem; line-height: 1.5; font-weight: 650; }
+.exercise-detail__chip span { width: 8px; height: 8px; flex-shrink: 0; background: #e30613; border-radius: 50%; }
+.exercise-detail__anatomy { margin: 18px auto; max-width: 420px; }
+.exercise-detail__anatomy img { display: block; width: 100%; height: auto; max-height: 380px; object-fit: contain; }
+.exercise-detail__anatomy figcaption { text-align: center; margin-top: 10px; font-size: .7rem; color: #666; }
+.exercise-detail__figures { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; --map-body: #c7c7c7; --map-outline: #fff; --map-accent: #e30613; }
+.exercise-detail__figures .muscle-map__figure { max-height: 350px; }
+.exercise-detail__figures .muscle-map__region { cursor: default; pointer-events: none; }
+.exercise-detail__figures .muscle-map__region.is-selected { stroke: #fff; }
+.exercise-detail__technique { display: grid; gap: 14px; }
+.exercise-detail__technique > p { font-size: .875rem; line-height: 1.75; white-space: pre-line; }
+.exercise-detail__video { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: 14px; padding: 10px 16px; background: #171717; color: #fff; font-size: .8rem; font-weight: 750; }
+.exercise-detail__equipment { margin-top: 20px; border-top: 1px solid #eee; padding-top: 18px; }
+.exercise-detail button:focus-visible, .exercise-detail a:focus-visible { outline: 3px solid #e30613; outline-offset: 3px; }
