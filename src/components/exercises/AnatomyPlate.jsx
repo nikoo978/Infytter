@@ -31,7 +31,9 @@ export default function AnatomyPlate({ gender = "male", back = false, selected =
   const paths = Object.entries(AREAS).filter(([,area]) => area[side]);
   const selectedArea = AREAS[selected]?.[side];
   const plate = PLATES[selected];
-  return <svg viewBox={`${back ? 328 : 0} 0 328 614`} className="muscle-map__figure" role={interactive ? "group" : "img"} aria-label={`${back ? "Espalda" : "Frente"}, figura ${figure === "female" ? "femenina" : "masculina"}`}>
+  // Each viewport must hide the unused half of the combined plate.
+  // Otherwise the back image paints over the front highlight.
+  return <svg overflow="hidden" style={{ overflow: "hidden" }} viewBox={`${back ? 328 : 0} 0 328 614`} className="muscle-map__figure" role={interactive ? "group" : "img"} aria-label={`${back ? "Espalda" : "Frente"}, figura ${figure === "female" ? "femenina" : "masculina"}`}>
     <defs><clipPath id={`${id}-clip`}>{selectedArea && <path d={polygonPath(selectedArea)} />}</clipPath></defs>
     <image href={neutral} width="656" height="614" />
     {selected && plate && <image href={`/images/muscles/${figure}_muscle_${plate}.webp`} width="656" height="614" clipPath={selected === "Cuerpo completo" ? undefined : `url(#${id}-clip)`} />}

@@ -1,3 +1,10 @@
+## V1.09.5 — 30/09/2026
+
+- Corrige el resaltado frontal del mapa muscular: cada SVG recorta su propia mitad de la lámina y la vista posterior deja de superponerse a la frontal.
+- El ajuste compartido alcanza el catálogo, las rutinas y el detalle durante el entrenamiento, en figuras masculina y femenina.
+- Prueba de regresión para las dos vistas, ambos géneros y modos informativo/interactivo, incluyendo pecho, cuádriceps y cuerpo completo.
+- Caché PWA renovada para distribuir la corrección.
+
 ## V1.09.4 — 30/09/2026
 
 - Alumno: diseño adaptable a escritorio, inicio centrado en el entrenamiento de hoy, mejor contraste y mensajes de recuperación de cargas.

@@ -27,3 +27,21 @@ test("controlled selection keeps the reset and status", () => {
   assert.match(html, /Ver todos/);
   assert.match(html, /aria-pressed="true"/);
 });
+
+test("each anatomy viewport clips the unused half of the combined image", () => {
+  for (const gender of ["male", "female"]) {
+    for (const selected of ["Pecho", "Cuádriceps", "Cuerpo completo"]) {
+      for (const back of [false, true]) {
+        for (const interactive of [false, true]) {
+          const html = renderToStaticMarkup(React.createElement(AnatomyFigure, { gender, selected, back, interactive }));
+          assert.match(html, /<svg[^>]*overflow="hidden"/);
+          assert.match(html, /<svg[^>]*style="overflow:hidden"/);
+          assert.ok(html.includes(`viewBox="${back ? 328 : 0} 0 328 614"`));
+          assert.ok(html.includes(`${gender}_muscle_00.webp`));
+          // Both raster halves remain in the image; the SVG viewport clips the unused one.
+          assert.match(html, /<image[^>]*width="656"[^>]*height="614"/);
+        }
+      }
+    }
+  }
+});
