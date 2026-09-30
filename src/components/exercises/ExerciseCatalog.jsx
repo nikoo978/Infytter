@@ -33,6 +33,7 @@ function SecondaryNames({ exercise }) {
 
 export default function ExerciseCatalog({ compact = false, preview = false }) {
   const [exercises, setExercises] = useState([]);
+  const [showMap, setShowMap] = useState(false);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("Todos");
   const [openId, setOpenId] = useState("");
@@ -69,24 +70,25 @@ export default function ExerciseCatalog({ compact = false, preview = false }) {
       <div className="rounded-[20px] bg-white p-3 shadow-sm">
         <label className="flex h-11 items-center gap-2 rounded-xl border border-slate-200 px-3">
           <Search className="size-4 text-slate-400" />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" placeholder="Buscar nombre, alias u original" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" aria-label="Buscar ejercicios" placeholder="Buscar nombre, alias u original" />
         </label>
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-[11px] font-black text-slate-400">{loading ? "Cargando…" : `${visible.length} ejercicio${visible.length === 1 ? "" : "s"}`}</p>
           {query && <button type="button" onClick={() => setQuery("")} className="text-[11px] font-black text-[#9E0710]">Limpiar búsqueda</button>}
         </div>
 
-        <div className="mt-3"><MuscleMap value={group} onChange={setGroup} /></div>
+        <button type="button" aria-expanded={showMap} onClick={() => setShowMap((value) => !value)} className="mt-3 flex min-h-11 w-full items-center justify-between rounded-xl bg-slate-50 px-3 text-xs font-black text-slate-700">Mapa muscular · {group === "Todos" ? "elegir una zona" : group}{showMap ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}</button>
+        {showMap && <div className="mt-3"><MuscleMap value={group} onChange={setGroup} /></div>}
 
         <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-slate-400">Todos los filtros</p>
         <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <button type="button" onClick={() => setGroup("Todos")} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === "Todos" ? "bg-[#050505] text-white" : "bg-slate-100 text-slate-600"}`}>Todos</button>
-          {MUSCLE_GROUPS.map((item) => <button key={item} type="button" onClick={() => setGroup(item)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === item ? "bg-[#E30613] text-white" : "bg-slate-100 text-slate-600"}`}>{item}</button>)}
+          <button type="button" aria-pressed={group === "Todos"} onClick={() => setGroup("Todos")} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === "Todos" ? "bg-[#050505] text-white" : "bg-slate-100 text-slate-600"}`}>Todos</button>
+          {MUSCLE_GROUPS.map((item) => <button key={item} type="button" aria-pressed={group === item} onClick={() => setGroup(item)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === item ? "bg-[#E30613] text-white" : "bg-slate-100 text-slate-600"}`}>{item}</button>)}
         </div>
       </div>
 
       {loading && <p className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-500">Cargando ejercicios…</p>}
-      {error && <p className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}</p>}
+      {error && <div role="alert" className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}<button type="button" onClick={load} className="mt-3 block min-h-11 rounded-xl bg-white px-4">Volver a intentar</button></div>}
 
       <div className="space-y-2">
         {shown.map((exercise) => {
@@ -117,7 +119,7 @@ export default function ExerciseCatalog({ compact = false, preview = false }) {
             </article>
           );
         })}
-        {!loading && !visible.length && <p className="rounded-2xl border border-dashed border-slate-200 bg-white p-7 text-center text-sm text-slate-400">No hay ejercicios para ese filtro.</p>}
+        {!loading && !error && !visible.length && <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-7 text-center text-sm text-slate-400">No hay ejercicios para ese filtro.<button type="button" onClick={() => { setQuery(""); setGroup("Todos"); }} className="btn-secondary mx-auto mt-3 min-h-11">Limpiar filtros</button></div>}
       </div>
 
       {shown.length < visible.length && <button type="button" onClick={() => setVisibleCount((value) => value + PAGE_SIZE)} className="min-h-11 w-full rounded-2xl border border-black/10 bg-white text-sm font-black text-slate-700 shadow-sm">Mostrar más · {visible.length - shown.length} restantes</button>}

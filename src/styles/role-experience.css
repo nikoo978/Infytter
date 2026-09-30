@@ -1,0 +1,15 @@
+/* Shared reading and keyboard treatment for the student and professor shells. */
+.role-shell .text-slate-400 { color: #64748b; }
+.role-shell :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid #b80c19;
+  outline-offset: 3px;
+}
+.role-shell :is(button, a) { -webkit-tap-highlight-color: transparent; }
+.role-shell input::placeholder { color: #64748b; }
+@media (prefers-reduced-motion: reduce) {
+  .role-shell *, .role-shell *::before, .role-shell *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

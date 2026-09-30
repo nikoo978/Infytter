@@ -88,6 +88,7 @@ export function FullscreenGif({ url, alt, onClose }) {
   const gesture = useRef(null);
   const surface = useRef(null);
   const close = useRef(null);
+  const dialog = useRef(null);
   const clamp = (value) => Math.min(4, Math.max(1, value));
   const changeZoom = (value) => { const next = clamp(value); setZoom(next); if (next === 1) setPan({ x: 0, y: 0 }); };
   const point = (event) => ({ x: event.clientX, y: event.clientY });
@@ -114,13 +115,20 @@ export function FullscreenGif({ url, alt, onClose }) {
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     const previousFocus = document.activeElement;
-    const closeOnEscape = (event) => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") { event.stopPropagation(); onClose(); }
+      if (event.key !== "Tab") return;
+      const buttons = [...dialog.current.querySelectorAll("button:not(:disabled)")];
+      const first = buttons[0]; const last = buttons.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
     document.body.style.overflow = "hidden";
     close.current?.focus();
     window.addEventListener("keydown", closeOnEscape);
     return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", closeOnEscape); previousFocus?.focus?.(); };
   }, [onClose]);
-  return <div role="dialog" aria-modal="true" aria-label={alt} className="fixed inset-0 z-[140] flex flex-col bg-[#090b0f] text-white">
+  return <div ref={dialog} role="dialog" aria-modal="true" aria-label={alt} className="fixed inset-0 z-[140] flex flex-col bg-[#090b0f] text-white">
     <div className="flex shrink-0 items-center justify-between gap-3 p-3 pt-[max(.75rem,env(safe-area-inset-top))]">
       <p className="min-w-0 text-sm font-bold">{alt}</p>
       <button ref={close} type="button" onClick={onClose} className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/15" aria-label="Cerrar pantalla completa"><X /></button>

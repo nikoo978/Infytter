@@ -1,5 +1,6 @@
 import { ClipboardList, Edit3, Plus, RefreshCw, Search, Send, UserRoundSearch, UsersRound } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import RoutineEditor from "../components/routines/RoutineEditor";
 import ProfessorTrainingOverview from "../components/routines/ProfessorTrainingOverview";
 import FormDialog from "../components/ui/FormDialog";
@@ -7,6 +8,10 @@ import { listExercises } from "../services/exercises";
 import { assignProfessorRoutine, getClientRoutinesForProfessor, listProfessorRoutines, listRoutineClients, saveProfessorRoutine } from "../services/routines";
 
 export default function Routines() {
+  const [searchParams] = useSearchParams();
+  const requestId = useRef(0);
+  const linkedClient = useRef("");
+  const [clientLoading, setClientLoading] = useState(false);
   const [routines, setRoutines] = useState([]);
   const [clients, setClients] = useState([]);
   const [exercises, setExercises] = useState([]);
@@ -31,6 +36,7 @@ export default function Routines() {
     if (clientResult.error) setError((current) => current || clientResult.error.message || "No se pudieron cargar los clientes.");
     else setClients(clientResult.clients);
     if (!exerciseResult.error) setExercises(exerciseResult.exercises);
+    else setError((current) => current || "No se pudo cargar la biblioteca de ejercicios. Volvé a intentar antes de editar una rutina.");
     setLoading(false);
   };
 
@@ -42,12 +48,25 @@ export default function Routines() {
   const filteredAssignClients = useMemo(() => clients.filter((client) => `${client.display_name || ""} ${client.email || ""} ${client.dni || ""}`.toLowerCase().includes(assignQuery.trim().toLowerCase())), [clients, assignQuery]);
 
   const loadClient = async (personId) => {
-    setSelectedClientId(personId); setClientRoutines([]); setError("");
+    const currentRequest = ++requestId.current;
+    setSelectedClientId(String(personId)); setClientRoutines([]); setError(""); setClientLoading(Boolean(personId));
     if (!personId) return;
     const result = await getClientRoutinesForProfessor(personId);
+    if (currentRequest !== requestId.current) return;
+    setClientLoading(false);
     if (result.error) setError(result.error.message || "No se pudieron cargar las rutinas del cliente.");
     else setClientRoutines(result.routines);
   };
+
+  useEffect(() => {
+    const id = searchParams.get("alumno");
+    if (!id || loading || linkedClient.current === id || !clients.some((client) => String(client.person_id) === id)) return;
+    linkedClient.current = id;
+    setMobileView("clientes");
+    void loadClient(id);
+  }, [searchParams, clients, loading]);
+
+  const newRecipients = assignSelection.filter((id) => !(assigning?.assignedPersonIds || []).map(String).includes(id));
 
   const save = async (routine) => {
     setBusy(true); setError(""); setMessage("");
@@ -79,12 +98,12 @@ export default function Routines() {
   };
 
   return <div className="mx-auto max-w-[1480px] space-y-4 sm:space-y-6">
-    <section className="page-head gap-4"><div><p className="eyebrow">Entrenamiento</p><h1 className="page-title">Rutinas</h1><p className="page-subtitle">Creá una vez, ajustá fácil y enviala a uno o varios clientes.</p></div><div className="grid w-full grid-cols-[auto_1fr] gap-2 sm:flex sm:w-auto"><button onClick={load} disabled={loading} className="btn-secondary px-3"><RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} /><span className="hidden sm:inline">Actualizar</span></button><button onClick={() => setCreating(true)} className="btn-primary"><Plus className="size-4" /> Nueva rutina</button></div></section>
+    <section className="page-head gap-4"><div><p className="eyebrow">Entrenamiento</p><h1 className="page-title">Rutinas</h1><p className="page-subtitle">Creá una vez, ajustá fácil y enviala a uno o varios clientes.</p></div><div className="grid w-full grid-cols-[auto_1fr] gap-2 sm:flex sm:w-auto"><button aria-label="Actualizar rutinas" onClick={load} disabled={loading} className="btn-secondary px-3"><RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} /><span className="hidden sm:inline">Actualizar</span></button><button onClick={() => setCreating(true)} disabled={loading || busy || !exercises.length} className="btn-primary disabled:opacity-50"><Plus className="size-4" /> Nueva rutina</button></div></section>
 
-    {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{message}</p>}
-    {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
+    {message && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{message}</p>}
+    {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
 
-    <div className="grid grid-cols-2 rounded-2xl bg-slate-200/70 p-1 xl:hidden"><button onClick={() => setMobileView("rutinas")} className={`rounded-xl px-3 py-2.5 text-xs font-black ${mobileView === "rutinas" ? "bg-white text-[#050505] shadow-sm" : "text-slate-500"}`}><ClipboardList className="mr-1.5 inline size-4" /> Mis rutinas</button><button onClick={() => setMobileView("clientes")} className={`rounded-xl px-3 py-2.5 text-xs font-black ${mobileView === "clientes" ? "bg-white text-[#050505] shadow-sm" : "text-slate-500"}`}><UsersRound className="mr-1.5 inline size-4" /> Por cliente</button></div>
+    <div className="grid grid-cols-2 rounded-2xl bg-slate-200/70 p-1 xl:hidden"><button aria-pressed={mobileView === "rutinas"} onClick={() => setMobileView("rutinas")} className={`rounded-xl px-3 py-2.5 text-xs font-black ${mobileView === "rutinas" ? "bg-white text-[#050505] shadow-sm" : "text-slate-500"}`}><ClipboardList className="mr-1.5 inline size-4" /> Mis rutinas</button><button aria-pressed={mobileView === "clientes"} onClick={() => setMobileView("clientes")} className={`rounded-xl px-3 py-2.5 text-xs font-black ${mobileView === "clientes" ? "bg-white text-[#050505] shadow-sm" : "text-slate-500"}`}><UsersRound className="mr-1.5 inline size-4" /> Por cliente</button></div>
 
     <section className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
       <div className={`${mobileView === "rutinas" ? "block" : "hidden"} panel p-3.5 sm:p-5 xl:block`}><div className="flex items-center justify-between gap-3"><div><h2 className="section-title">Mis rutinas</h2><p className="mt-1 text-xs leading-5 text-slate-500">Editar una rutina actualiza automáticamente lo que ven los clientes que ya la recibieron.</p></div><ClipboardList className="size-5 shrink-0 text-[#E30613]" /></div>
@@ -92,14 +111,15 @@ export default function Routines() {
       </div>
 
       <div className={`${mobileView === "clientes" ? "block" : "hidden"} panel p-3.5 sm:p-5 xl:block`}><div className="flex items-center gap-2"><UserRoundSearch className="size-5 shrink-0 text-[#E30613]" /><div><h2 className="section-title">Ver por cliente</h2><p className="text-xs leading-5 text-slate-500">Incluye fichas del gimnasio aunque todavía no tengan una cuenta de acceso.</p></div></div>
-        <select value={selectedClientId} onChange={(event) => loadClient(event.target.value)} className="mt-4 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-black outline-none"><option value="">Seleccionar cliente</option>{clients.map((client) => <option key={client.person_id} value={client.person_id}>{client.display_name || client.email} · DNI {client.dni || "—"}</option>)}</select>
-        {selectedClient && <div className="mt-4 space-y-3"><p className="text-xs font-black uppercase tracking-wider text-slate-400">Rutinas de {clientName}</p>{clientRoutines.map((routine) => <article key={routine.id} className="rounded-2xl bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate font-black text-slate-800">{routine.title}</p><p className="mt-1 text-xs text-slate-400">{routine.items?.length || 0} ejercicios</p></div>{routine.canEdit && <button onClick={() => setEditing(routine)} className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-slate-600 shadow-sm" aria-label="Editar rutina"><Edit3 className="size-4" /></button>}</div></article>)}{!clientRoutines.length && <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">Este cliente todavía no recibió rutinas.</p>}</div>}
-        {selectedClient && <ProfessorTrainingOverview personId={selectedClientId} />}{!selectedClient && <div className="mt-5 rounded-2xl bg-slate-50 p-6 text-center"><UserRoundSearch className="mx-auto size-7 text-slate-300" /><p className="mt-2 text-sm font-bold text-slate-400">Elegí un cliente para ver sus rutinas y entrenamientos.</p></div>}
+        <select aria-label="Alumno para consultar rutinas" value={selectedClientId} onChange={(event) => loadClient(event.target.value)} className="mt-4 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-black outline-none"><option value="">Seleccionar cliente</option>{clients.map((client) => <option key={client.person_id} value={client.person_id}>{client.display_name || client.email} · DNI {client.dni || "—"}</option>)}</select>
+        {clientLoading && <p role="status" className="mt-4 text-sm text-slate-500">Cargando rutinas del alumno…</p>}
+        {selectedClient && <div className="mt-4 space-y-3"><p className="text-xs font-black uppercase tracking-wider text-slate-400">Rutinas de {clientName}</p>{clientRoutines.map((routine) => <article key={routine.id} className="rounded-2xl bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate font-black text-slate-800">{routine.title}</p><p className="mt-1 text-xs text-slate-400">{routine.items?.length || 0} ejercicios</p></div>{routine.canEdit && <button onClick={() => setEditing(routine)} className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-slate-600 shadow-sm" aria-label="Editar rutina"><Edit3 className="size-4" /></button>}</div></article>)}{!clientLoading && !error && !clientRoutines.length && <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">Este cliente todavía no recibió rutinas.</p>}</div>}
+        {selectedClient && <ProfessorTrainingOverview key={selectedClientId} personId={selectedClientId} />}{!selectedClient && <div className="mt-5 rounded-2xl bg-slate-50 p-6 text-center"><UserRoundSearch className="mx-auto size-7 text-slate-300" /><p className="mt-2 text-sm font-bold text-slate-400">Elegí un cliente para ver sus rutinas y entrenamientos.</p></div>}
       </div>
     </section>
 
-    <FormDialog open={creating} onOpenChange={setCreating} title="Nueva rutina" description="Buscá ejercicios, agregalos con un toque y configurá la rutina."><RoutineEditor exercises={exercises} onSave={save} busy={busy} /></FormDialog>
-    <FormDialog open={!!editing} onOpenChange={(value) => { if (!value) setEditing(null); }} title={`Editar ${editing?.title || "rutina"}`} description="Los cambios se reflejan en todos los clientes que ya recibieron esta rutina.">{editing && <RoutineEditor routine={editing} exercises={exercises} onSave={save} busy={busy} />}</FormDialog>
-    <FormDialog open={!!assigning} onOpenChange={(value) => { if (!value) setAssigning(null); }} title={`Enviar ${assigning?.title || "rutina"}`} description="Seleccioná uno o varios clientes. Los envíos existentes permanecen vinculados a su ficha."><label className="flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3"><Search className="size-4 text-slate-400" /><input value={assignQuery} onChange={(event) => setAssignQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" placeholder="Buscar nombre, DNI o email" /></label><div className="mt-3 max-h-[52dvh] space-y-2 overflow-y-auto">{filteredAssignClients.map((client) => { const clientId = String(client.person_id); const checked = assignSelection.includes(clientId); const locked = (assigning?.assignedPersonIds || []).map(String).includes(clientId); return <label key={clientId} className={`flex items-center gap-3 rounded-xl border p-3 ${checked ? "border-[#E30613]/20 bg-red-50/50" : "border-black/7"}`}><input type="checkbox" checked={checked} disabled={locked} onChange={(event) => setAssignSelection((current) => event.target.checked ? [...new Set([...current, clientId])] : current.filter((id) => id !== clientId))} className="size-5 shrink-0 accent-[#E30613]" /><div className="min-w-0"><p className="truncate text-sm font-black text-slate-800">{client.display_name || client.email}</p><p className="truncate text-xs text-slate-400">DNI {client.dni || "—"}{client.user_id ? " · Cuenta vinculada" : " · Ficha del gimnasio"}{locked ? " · Ya enviada" : ""}</p></div></label>; })}{!filteredAssignClients.length && <p className="py-6 text-center text-sm text-slate-400">No hay clientes que coincidan.</p>}</div><button onClick={assign} disabled={busy || !clients.length} className="btn-primary mt-4 min-h-11 w-full"><UsersRound className="size-4" /> {busy ? "Enviando…" : "Enviar a seleccionados"}</button></FormDialog>
+    <FormDialog open={creating} onOpenChange={setCreating} title="Nueva rutina" description="Buscá ejercicios, agregalos con un toque y configurá la rutina."><>{error && <p role="alert" className="mb-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}<RoutineEditor exercises={exercises} onSave={save} busy={busy} /></></FormDialog>
+    <FormDialog open={!!editing} onOpenChange={(value) => { if (!value) setEditing(null); }} title={`Editar ${editing?.title || "rutina"}`} description="Los cambios se reflejan en todos los clientes que ya recibieron esta rutina.">{error && <p role="alert" className="mb-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}{editing && <RoutineEditor routine={editing} exercises={exercises} onSave={save} busy={busy} />}</FormDialog>
+    <FormDialog open={!!assigning} onOpenChange={(value) => { if (!value) setAssigning(null); }} title={`Enviar ${assigning?.title || "rutina"}`} description="Seleccioná uno o varios clientes. Los envíos existentes permanecen vinculados a su ficha.">{error && <p role="alert" className="mb-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}<label className="flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3"><Search className="size-4 text-slate-400" /><input value={assignQuery} onChange={(event) => setAssignQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" aria-label="Buscar destinatarios" placeholder="Buscar nombre, DNI o email" /></label><div className="mt-3 max-h-[52dvh] space-y-2 overflow-y-auto">{filteredAssignClients.map((client) => { const clientId = String(client.person_id); const checked = assignSelection.includes(clientId); const locked = (assigning?.assignedPersonIds || []).map(String).includes(clientId); return <label key={clientId} className={`flex items-center gap-3 rounded-xl border p-3 ${checked ? "border-[#E30613]/20 bg-red-50/50" : "border-black/7"}`}><input type="checkbox" checked={checked} disabled={locked || busy} onChange={(event) => setAssignSelection((current) => event.target.checked ? [...new Set([...current, clientId])] : current.filter((id) => id !== clientId))} className="size-5 shrink-0 accent-[#E30613]" /><div className="min-w-0"><p className="truncate text-sm font-black text-slate-800">{client.display_name || client.email}</p><p className="break-words text-xs text-slate-500">DNI {client.dni || "—"}{client.user_id ? " · Cuenta vinculada" : " · Ficha del gimnasio"}{locked ? " · Ya enviada" : ""}</p></div></label>; })}{!filteredAssignClients.length && <p className="py-6 text-center text-sm text-slate-400">No hay clientes que coincidan.</p>}</div><button onClick={assign} disabled={busy || !newRecipients.length} className="btn-primary mt-4 min-h-11 w-full"><UsersRound className="size-4" /> {busy ? "Enviando…" : `Enviar a ${newRecipients.length} alumno${newRecipients.length === 1 ? "" : "s"}`}</button></FormDialog>
   </div>;
 }

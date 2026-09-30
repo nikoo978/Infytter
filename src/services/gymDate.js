@@ -18,6 +18,12 @@ export function gymDateISOOrNull(value) {
   try { return gymDateISO(value); } catch { return null; }
 }
 
+export function gymWeekDay(value = new Date()) {
+  const date = gymDateISO(value);
+  const day = new Date(`${date}T12:00:00Z`).getUTCDay();
+  return day === 0 ? 7 : day;
+}
+
 export function isCalendarDate(value) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number);

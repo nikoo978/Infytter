@@ -4,6 +4,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { APP_VERSION } from "../App";
+import { gymWeekDay, GYM_TIME_ZONE } from "../services/gymDate";
 import { statusOf, weeklyAccessUsage } from "../services/accessPolicy";
 import ExerciseCatalog from "../components/exercises/ExerciseCatalog";
 import BodyMetricsPanel from "../components/progress/BodyMetricsPanel";
@@ -79,7 +80,9 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
   const status = statusOf(member);
   const latest = latestMetrics[0] || null;
   const allRoutines = [...(routines.assigned || []), ...(routines.personal || [])];
-  const todayValue = (() => { const day = new Date().getDay(); return day === 0 ? 7 : day; })();
+  const todayValue = gymWeekDay();
+  const todayLabel = new Intl.DateTimeFormat("es-AR", { timeZone: GYM_TIME_ZONE, weekday: "long", day: "numeric", month: "long" }).format(new Date());
+  useEffect(() => { if (!preview) window.scrollTo({ top: 0, behavior: "instant" }); }, [tab, preview]);
   const todayRoutines = allRoutines.filter((routine) => (routine.scheduleDays || []).map(Number).includes(todayValue));
   const thisWeekDays = useMemo(() => {
     if (!member || member.plan !== "3 días") return null;
@@ -120,37 +123,40 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
 
   const navClass = preview
     ? "sticky bottom-2 mx-2"
-    : "fixed bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))]";
+    : "fixed bottom-0 left-1/2 w-full max-w-3xl -translate-x-1/2 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))]";
 
-  return <main className={`${preview ? "min-h-[760px]" : "min-h-dvh"} overflow-x-hidden bg-[#F5F5F5]`}>
-    <div className="mx-auto w-full max-w-md pb-[calc(7rem+env(safe-area-inset-bottom))]">
+  return <main className={`${preview ? "min-h-[760px]" : "min-h-dvh"} role-shell overflow-x-hidden bg-[#F4F5F7]`}>
+    <div className="mx-auto w-full max-w-5xl pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/10 bg-[#050505]/95 px-4 text-white shadow-lg backdrop-blur-xl sm:h-16">
         <img src="/infytter-logo.svg" alt="Infytter Fitness" className="h-8 w-28 object-contain object-left sm:h-9 sm:w-32" />
-        <div className="text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/50">Mi Infytter</p></div>
+        <div className="text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/70">Mi Infytter</p></div>
       </header>
 
       <div className="space-y-4 p-3.5 sm:p-4">
         {tab === "inicio" && <>
           <section className="overflow-hidden rounded-[26px] bg-[#050505] p-5 text-white shadow-xl">
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/45">Mi cuenta</p><h1 className="mt-2 truncate text-2xl font-black">Hola, {name}</h1><p className="mt-1 truncate text-xs text-white/50">{shownEmail}</p></div>
+              <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/65">Tu día en Infytter</p><h1 className="mt-2 break-words text-2xl font-black sm:text-3xl">Hola, {name}</h1><p className="mt-2 text-xs text-white/70">{todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}</p></div>
               <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613]"><ShieldCheck className="size-5" /></span>
             </div>
-            {member && <div className="mt-5 flex items-center justify-between rounded-2xl bg-white/8 px-4 py-3"><div><p className="text-[10px] font-black uppercase tracking-wider text-white/40">Membresía</p><p className="mt-1 text-lg font-black">{status}</p></div><span className={`rounded-full px-3 py-1.5 text-xs font-black ${statusTone}`}>{dateLabel(member.expiry)}</span></div>}
+            {member && <div className="mt-5 flex items-center justify-between rounded-2xl bg-white/8 px-4 py-3 border border-white/10"><div><p className="text-[10px] font-black uppercase tracking-wider text-white/40">Membresía</p><p className="mt-1 text-lg font-black">{status}</p></div><span className={`rounded-full px-3 py-1.5 text-xs font-black ${statusTone}`}>{dateLabel(member.expiry)}</span></div>}
           </section>
 
           {loading && <div className="flex items-center gap-2 rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 shadow-sm"><RefreshCw className="size-4 animate-spin" /> Cargando tu información…</div>}
-          {error && <div className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
+          {error && <div role="alert" className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}<button type="button" onClick={load} className="mt-3 block min-h-11 rounded-xl bg-white px-4">Volver a intentar</button></div>}
+          {!loading && !error && !member && <section className="rounded-2xl bg-white p-6 text-center"><UserRound className="mx-auto size-8 text-slate-400" /><h2 className="mt-3 font-black">Tu ficha todavía no está vinculada</h2><p className="mt-2 text-sm text-slate-500">Pedí en recepción que vinculen tu cuenta con tu DNI para ver tu plan y membresía.</p><button type="button" onClick={load} className="btn-secondary mt-4">Actualizar mi ficha</button></section>}
+
+          {routineError && tab === "inicio" && <div role="alert" className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{routineError}<button type="button" onClick={loadRoutines} className="btn-secondary mt-3 min-h-11">Volver a cargar mi plan</button></div>}
 
           {!loading && member && <>
-            <button onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} className="w-full overflow-hidden rounded-[24px] bg-[#E30613] p-5 text-left text-white shadow-lg active:scale-[.99]">
+            <button disabled={routineLoading} onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} className="w-full disabled:opacity-60 overflow-hidden rounded-[24px] bg-[#E30613] p-5 text-left text-white shadow-lg active:scale-[.99]">
               <div className="flex items-center justify-between gap-4">
-                <div><p className="text-[10px] font-black uppercase tracking-[.16em] text-white/65">Entrenar hoy</p><p className="mt-1 text-xl font-black">{todayRoutines.length ? todayRoutines[0].title : "Abrir mi plan"}</p><p className="mt-1 text-xs text-white/70">{todayRoutines.length ? `${todayRoutines.length} rutina${todayRoutines.length === 1 ? "" : "s"} programada${todayRoutines.length === 1 ? "" : "s"} para hoy` : "Revisá tu semana o elegí una rutina libre"}</p></div>
+                <div><p className="text-[10px] font-black uppercase tracking-[.16em] text-white/65">Entrenar hoy</p><p className="mt-1 text-xl font-black">{routineLoading ? "Cargando tu plan…" : todayRoutines.length ? todayRoutines[0].title : "Abrir mi plan"}</p><p className="mt-1 text-xs text-white/70">{todayRoutines.length ? `${todayRoutines.length} rutina${todayRoutines.length === 1 ? "" : "s"} programada${todayRoutines.length === 1 ? "" : "s"} para hoy` : "Revisá tu semana o elegí una rutina libre"}</p></div>
                 <Dumbbell className="size-9 shrink-0" />
               </div>
             </button>
 
-            <section className="grid grid-cols-2 gap-3">
+            <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <InfoCard label="Plan" value={member.plan || "—"} />
               <InfoCard label="Vence" value={dateLabel(member.expiry)} />
               <InfoCard icon={ScaleIcon} label="Peso" value={latest ? `${number(latest.weightKg)} kg` : "Sin medir"} />
@@ -175,6 +181,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
           onDeletePersonal={!preview ? removePersonal : undefined}
           onRemoveAssigned={!preview ? removeProfessor : undefined}
           onOpenLibrary={() => setTab("ejercicios")}
+          onRetry={loadRoutines}
         />}
 
         {tab === "entrenar" && trainingView === "biblioteca" && <>
@@ -182,16 +189,16 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
           <ExerciseCatalog preview={preview} />
         </>}
 
-        {tab === "ejercicios" && <ExerciseCatalog compact />}
+        {tab === "ejercicios" && <ExerciseCatalog compact preview={preview} />}
 
-        {tab === "progreso" && <>
+        {tab === "progreso" && <div className="space-y-5">
           <TrainingProgressPanel preview={preview} />
           <BodyMetricsPanel self preview={preview} title="Progreso corporal" subtitle="Registrá peso, altura y medidas. El IMC y la grasa corporal por Navy son estimaciones orientativas." />
-        </>}
+        </div>}
 
         {tab === "perfil" && <>
           <section className="overflow-hidden rounded-[26px] bg-[#050505] p-5 text-white shadow-xl">
-            <div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/45">Perfil</p><h1 className="mt-2 truncate text-2xl font-black">{name}</h1><p className="mt-1 truncate text-xs text-white/50">{shownEmail}</p></div><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white/8"><UserRound className="size-5" /></span></div>
+            <div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/70">Perfil</p><h1 className="mt-2 truncate text-2xl font-black">{name}</h1><p className="mt-1 truncate text-xs text-white/70">{shownEmail}</p></div><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white/8"><UserRound className="size-5" /></span></div>
           </section>
 
           {member && <>
@@ -203,8 +210,8 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
             </section>
 
             <section className="rounded-[22px] bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.16em] text-[#E30613]">Actividad</p><h2 className="mt-1 text-lg font-black text-[#050505]">Últimos accesos</h2></div>{!preview && <button onClick={load} className="grid size-10 place-items-center rounded-xl border border-black/8 text-slate-500"><RefreshCw className="size-4" /></button>}</div>
-              <div className="mt-3 divide-y divide-slate-100">{accesses.slice(0, 8).map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div className="flex min-w-0 items-center gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-xl ${item.allowed ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{item.allowed ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}</span><div className="min-w-0"><p className="truncate text-sm font-black text-slate-800">{item.allowed ? "Ingreso autorizado" : "Ingreso rechazado"}</p><p className="text-[11px] text-slate-400">{new Date(item.date).toLocaleDateString("es-AR")}</p></div></div><span className="shrink-0 text-xs font-bold text-slate-400"><Clock3 className="mr-1 inline size-3.5" />{new Date(item.date).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</span></div>)}{!accesses.length && <p className="py-7 text-center text-sm text-slate-400">Todavía no tenés accesos registrados.</p>}</div>
+              <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.16em] text-[#E30613]">Actividad</p><h2 className="mt-1 text-lg font-black text-[#050505]">Últimos accesos</h2></div>{!preview && <button aria-label="Actualizar accesos" onClick={load} className="grid size-11 place-items-center rounded-xl border border-black/8 text-slate-500"><RefreshCw className="size-4" /></button>}</div>
+              <div className="mt-3 divide-y divide-slate-100">{accesses.slice(0, 8).map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div className="flex min-w-0 items-center gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-xl ${item.allowed ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{item.allowed ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}</span><div className="min-w-0"><p className="truncate text-sm font-black text-slate-800">{item.allowed ? "Ingreso autorizado" : "Ingreso rechazado"}</p><p className="text-[11px] text-slate-400">{new Date(item.date).toLocaleDateString("es-AR", { timeZone: GYM_TIME_ZONE })}</p></div></div><span className="shrink-0 text-xs font-bold text-slate-400"><Clock3 className="mr-1 inline size-3.5" />{new Date(item.date).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: GYM_TIME_ZONE })}</span></div>)}{!accesses.length && <p className="py-7 text-center text-sm text-slate-400">Todavía no tenés accesos registrados.</p>}</div>
             </section>
           </>}
 
