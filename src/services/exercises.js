@@ -5,7 +5,7 @@ export const MUSCLE_GROUPS = ["Pecho", "Espalda", "Hombros", "Bíceps", "Trícep
 export const EXERCISE_CATEGORIES = ["Fuerza", "Hipertrofia", "Técnica", "Cardio", "Movilidad"];
 
 const EXERCISE_PAGE_SIZE = 500;
-const EXERCISE_SELECT = "id,name,muscle_group,category,equipment,image_url,video_url,default_sets,default_reps,rest_seconds,notes,is_system,created_by,created_at,updated_at,library_codes,aliases,original_name";
+const EXERCISE_SELECT = "id,name,muscle_group,category,equipment,image_url,video_url,default_sets,default_reps,rest_seconds,notes,is_system,created_by,created_at,updated_at,library_codes,aliases,original_name,is_hidden";
 
 export function normalizeExerciseSearch(value = "") {
   return String(value)
@@ -173,4 +173,12 @@ export async function deleteExercise(id) {
   if (!supabase) return { ok: false, error: new Error("Supabase no configurado") };
   const { error } = await supabase.from("gf_exercises").delete().eq("id", id);
   return { ok: !error, error };
+}
+
+// Update all grouped variants together so a hidden GIF cannot remain in the catalog.
+export async function setExerciseVisibility(exercise, hidden) {
+  if (!supabase) return { error: new Error("Supabase no configurado") };
+  const ids = exercise.variant_ids?.length ? exercise.variant_ids : [exercise.id];
+  const { error } = await supabase.from("gf_exercises").update({ is_hidden: hidden }).in("id", ids);
+  return { error };
 }

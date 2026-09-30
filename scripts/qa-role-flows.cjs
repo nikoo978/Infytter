@@ -30,6 +30,7 @@ const routine = {
       reps: "10",
       rest_seconds: 60,
     },
+    { exercise_id: "22222222-2222-4222-8222-222222222222", exercise_name: "Remo", sets: 3, reps: "10", rest_seconds: 60 },
   ],
 };
 const people = [
@@ -56,6 +57,7 @@ const people = [
 async function mock(page, role) {
   let failCatalog = false;
   const calls = [];
+  let routineDays = {};
   const uid = "6fd819fe-131d-4278-8a5c-df69b5c2530e";
   const user = {
     id: uid,
@@ -126,6 +128,14 @@ async function mock(page, role) {
         accesses: [],
         transactions: [],
       };
+    else if (url.includes("gf_get_my_routine_days")) data = routineDays;
+    else if (url.includes("gf_set_my_routine_days")) {
+      const payload = JSON.parse(route.request().postData());
+      routineDays[payload.p_routine_id] = payload.p_days;
+      data = true;
+    }
+    else if (url.includes("gf_open_workout_session")) data = { sessionId: "session-1", startedAt: new Date().toISOString(), sets: [] };
+    else if (url.includes("gf_save_workout_progress")) data = { updatedAt: new Date().toISOString() };
     else if (url.includes("gf_get_my_routines"))
       data = { personal: [], assigned: [routine] };
     else if (url.includes("gf_list_professor_routines")) data = [routine];
@@ -204,6 +214,26 @@ async function login(page, role) {
           await page
             .getByRole("button", { name: "Entrenar", exact: true })
             .click();
+          await page.getByRole("heading", { name: "Fuerza inicial", exact: true }).waitFor();
+          await page.getByRole("button", { name: "Lunes", exact: true }).click();
+          await page.getByRole("heading", { name: "Fuerza inicial", exact: true }).waitFor();
+          await page.getByRole("button", { name: "Organizar días (opcional)", exact: true }).click();
+          const dayDialog = page.getByRole("dialog", { name: "Organizar días", exact: true });
+          await dayDialog.getByRole("button", { name: "Miércoles", exact: true }).click();
+          await dayDialog.getByRole("button", { name: "Guardar días", exact: true }).click();
+          await dayDialog.waitFor({ state: "hidden" });
+          await page.getByText(/Sugeridos: Miércoles/).waitFor();
+          await page.getByRole("button", { name: "Comenzar entrenamiento", exact: true }).click();
+          const nextButton = page.getByRole("button", { name: "Siguiente", exact: true });
+          await page.getByText("Ejercicio 1 de 2", { exact: true }).waitFor();
+          const box = await nextButton.boundingBox();
+          assert.ok(box.y >= 0 && box.y + box.height <= 844, "Siguiente visible sin scroll");
+          await nextButton.click();
+          await page.getByText("Ejercicio 2 de 2", { exact: true }).waitFor();
+          await page.getByRole("button", { name: "Anterior", exact: true }).click();
+          await page.getByText("Ejercicio 1 de 2", { exact: true }).waitFor();
+          await page.screenshot({ path: path.join(output, "qa-alumno-siguiente-fijo.png") });
+          await page.getByRole("button", { name: "Salir del entrenamiento", exact: true }).click();
           await page
             .getByRole("button", { name: "Crear rutina personal" })
             .click();

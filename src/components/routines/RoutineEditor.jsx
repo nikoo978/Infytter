@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, CalendarDays, Check, Minus, Plus, Save, Search, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Minus, Plus, Save, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import ExerciseDetail from "../exercises/ExerciseDetail";
 import FormDialog from "../ui/FormDialog";
@@ -6,20 +6,12 @@ import { matchesExerciseSearch, MUSCLE_GROUPS } from "../../services/exercises";
 
 const input = "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20";
 const OPTION_LIMIT = 60;
-const DAYS = [
-  { value: 1, short: "L", label: "Lunes" },
-  { value: 2, short: "M", label: "Martes" },
-  { value: 3, short: "X", label: "Miércoles" },
-  { value: 4, short: "J", label: "Jueves" },
-  { value: 5, short: "V", label: "Viernes" },
-  { value: 6, short: "S", label: "Sábado" },
-  { value: 7, short: "D", label: "Domingo" },
-];
+
 
 export default function RoutineEditor({ routine = null, exercises = [], onSave, busy = false, compact = false }) {
   const [title, setTitle] = useState(routine?.title || "");
   const [description, setDescription] = useState(routine?.description || "");
-  const [scheduleDays, setScheduleDays] = useState((routine?.scheduleDays || []).map(Number));
+  const scheduleDays = routine?.scheduleDays || [];
   const [items, setItems] = useState((routine?.items || []).map((item) => ({ ...item })));
   const [group, setGroup] = useState("Todos");
   const [query, setQuery] = useState("");
@@ -57,10 +49,6 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
       return [...current, { exercise_id: exercise.id, exercise_name: exercise.name, sets: exercise.default_sets || 3, reps: exercise.default_reps || "8-12", rest_seconds: exercise.rest_seconds ?? 60, notes: "" }];
     });
   };
-
-  const toggleDay = (value) => setScheduleDays((current) => current.includes(value)
-    ? current.filter((day) => day !== value)
-    : [...current, value].sort((a, b) => a - b));
 
   const patchItem = (index, patch) => setItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
   const removeItem = (index) => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
@@ -108,20 +96,7 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
         </label>
       </div>
 
-      <div className="border-t border-black/6 p-3.5 sm:p-4">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="size-4 text-[#E30613]" />
-          <div>
-            <p className="text-xs font-black uppercase tracking-wide text-slate-500">Días del plan</p>
-            <p className="text-[10px] font-bold text-slate-400">Opcional. Si no elegís días, queda disponible como rutina libre.</p>
-          </div>
-        </div>
-        <div className="mt-3 grid grid-cols-7 gap-1.5">{DAYS.map((day) => {
-          const active = scheduleDays.includes(day.value);
-          return <button key={day.value} type="button" title={day.label} onClick={() => toggleDay(day.value)} className={`min-h-10 rounded-xl text-xs font-black transition ${active ? "bg-[#E30613] text-white" : "bg-slate-100 text-slate-500"}`}>{day.short}</button>;
-        })}</div>
-        <p className="mt-2 text-[10px] font-bold text-slate-400">{scheduleDays.length ? scheduleDays.map((value) => DAYS.find((day) => day.value === value)?.label).filter(Boolean).join(" · ") : "Sin día fijo"}</p>
-      </div>
+      <p className="border-t border-black/6 p-4 text-xs text-slate-500">Guardá tu rutina y elegí cuándo entrenarla. Los días se organizan después, desde Entrenar.</p>
     </section>
 
     <section className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
