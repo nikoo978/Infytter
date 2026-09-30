@@ -549,7 +549,7 @@ export default function WorkoutRunnerV2({ routine, exercises = [], open, onClose
   const restProgress = restTotal > 0 ? Math.max(0, Math.min(100, (restLeft / restTotal) * 100)) : 0;
 
   return <div className="fixed inset-0 z-[110] overflow-y-auto bg-[#090b0f] text-white">
-    <div className="mx-auto min-h-dvh w-full max-w-md pb-[max(6.5rem,env(safe-area-inset-bottom))]">
+    <div className="mx-auto min-h-dvh w-full max-w-md pb-[calc(10rem+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-30 border-b border-white/8 bg-[#090b0f]/95 px-3 pb-3 pt-[max(.75rem,env(safe-area-inset-top))] backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <button onClick={close} disabled={saving} className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/7 text-white/70 disabled:opacity-40" aria-label="Salir del entrenamiento"><X className="size-5" /></button>
@@ -642,15 +642,17 @@ export default function WorkoutRunnerV2({ routine, exercises = [], open, onClose
 
         {error && <p className="rounded-xl border border-red-400/15 bg-red-400/10 p-3 text-sm font-bold text-red-200">{error}</p>}
 
-        <div className="flex items-center justify-between gap-3">
-          <button disabled={activeIndex === 0} onClick={() => { setActiveIndex((index) => Math.max(0, index - 1)); setView("entrenamiento"); }} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white/7 text-xs font-black text-white/55 disabled:opacity-25"><ChevronLeft className="size-4" /> Anterior</button>
-          <button disabled={activeIndex >= items.length - 1} onClick={() => { setActiveIndex((index) => Math.min(items.length - 1, index + 1)); setView("entrenamiento"); }} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white/7 text-xs font-black text-white/55 disabled:opacity-25">Siguiente <ChevronRight className="size-4" /></button>
-        </div>
+
       </div> : error ? <div className="p-4"><p className="rounded-2xl border border-red-400/15 bg-red-400/10 p-4 text-sm font-bold leading-6 text-red-200">{error}</p></div> : null}
     </div>
 
     <div className="fixed inset-x-0 bottom-0 z-[115] mx-auto w-full max-w-md border-t border-white/8 bg-[#090b0f]/96 px-3 pb-[max(.65rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl">
-      <button onClick={finish} disabled={saving || loading || !items.length || (!preview && !sessionId)} className="min-h-12 w-full rounded-2xl bg-[#E30613] px-4 text-sm font-black text-white disabled:opacity-45">
+        <div className="flex items-center justify-between gap-3">
+          <button disabled={activeIndex === 0} onClick={() => { setActiveIndex((index) => Math.max(0, index - 1)); setView("entrenamiento"); }} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-white/10 text-sm font-black text-white disabled:opacity-25"><ChevronLeft className="size-4" /> Anterior</button>
+          <button disabled={activeIndex >= items.length - 1} onClick={() => { setActiveIndex((index) => Math.min(items.length - 1, index + 1)); setView("entrenamiento"); }} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#E30613] text-sm font-black text-white disabled:opacity-25">Siguiente <ChevronRight className="size-4" /></button>
+        </div>
+      <p className="my-2 text-center text-xs font-bold text-white/70">Ejercicio {items.length ? activeIndex + 1 : 0} de {items.length}</p>
+      <button onClick={finish} disabled={saving || loading || !items.length || (!preview && !sessionId)} className="min-h-11 w-full rounded-2xl bg-white/10 px-4 text-sm font-black text-white disabled:opacity-45">
         {saving ? <><LoaderCircle className="mr-2 inline size-4 animate-spin" /> Sincronizando…</> : `Finalizar · ${completedExercises}/${items.length} ejercicios`}
       </button>
     </div>

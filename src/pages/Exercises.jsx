@@ -1,10 +1,10 @@
-import { ChevronDown, ChevronUp, Dumbbell, ExternalLink, Pencil, Plus, RefreshCw, Search, Trash2, Video } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, EyeOff, Dumbbell, ExternalLink, Pencil, Plus, RefreshCw, Search, Trash2, Video } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ExerciseGifGallery } from "../components/exercises/ExerciseGif";
 import MuscleMap from "../components/exercises/MuscleMap";
 import FormDialog from "../components/ui/FormDialog";
 import { useAuth } from "../context/AuthContext";
-import { createExercise, deleteExercise, EXERCISE_CATEGORIES, listExercises, matchesExerciseSearch, MUSCLE_GROUPS, updateExercise } from "../services/exercises";
+import { createExercise, deleteExercise, EXERCISE_CATEGORIES, listExercises, matchesExerciseSearch, MUSCLE_GROUPS, setExerciseVisibility, updateExercise } from "../services/exercises";
 
 const input = "mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20";
 const PAGE_SIZE = 48;
@@ -134,6 +134,14 @@ export default function Exercises() {
     setBusy(false);
   };
 
+  const toggleVisibility = async (exercise) => {
+    setBusy(true); setError(""); setMessage("");
+    const result = await setExerciseVisibility(exercise, !exercise.is_hidden);
+    if (result.error) setError(result.error.message || "No se pudo cambiar la visibilidad.");
+    else { setMessage(exercise.is_hidden ? "Ejercicio visible para profesores y alumnos." : "Ejercicio oculto para profesores y alumnos. No se eliminó."); await load(); }
+    setBusy(false);
+  };
+
   const canEdit = (exercise) => isManager || (!exercise.is_system && exercise.created_by === user?.id);
 
   return (
@@ -181,7 +189,7 @@ export default function Exercises() {
                 <div className="flex min-w-0 flex-1 items-start gap-3">
                   <span className="mt-0.5 grid size-11 shrink-0 place-items-center rounded-2xl bg-red-50 text-[#E30613]"><Dumbbell className="size-5" /></span>
                   <div className="min-w-0 flex-1">
-                    <p className="break-words font-black leading-5 text-slate-900">{exercise.name}</p>
+                    <p className="break-words font-black leading-5 text-slate-900">{exercise.name}</p>{exercise.is_hidden && <span className="mt-1 inline-block rounded-full bg-amber-50 px-2 py-1 text-xs font-bold text-amber-800">Oculto para profesores y alumnos</span>}
                     <p className="mt-1 break-words text-xs font-bold leading-4 text-slate-400">{exercise.muscle_group}{exercise.equipment ? ` · ${exercise.equipment}` : ""}</p>
                   </div>
                 </div>
@@ -200,6 +208,7 @@ export default function Exercises() {
                   <div className="mt-4"><ExerciseGifGallery exercise={exercise} /></div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {exercise.video_url && <a href={exercise.video_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-700"><Video className="size-3.5" /> Ver video <ExternalLink className="size-3" /></a>}
+                    {isManager && <button type="button" onClick={() => toggleVisibility(exercise)} disabled={busy} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-100 px-3 text-xs font-black text-slate-700">{exercise.is_hidden ? <Eye className="size-4" /> : <EyeOff className="size-4" />}{exercise.is_hidden ? "Mostrar al público" : "Ocultar al público"}</button>}
                     {canEdit(exercise) && <button onClick={() => setEditing(exercise)} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-700"><Pencil className="size-3.5" /> Editar</button>}
                     {canEdit(exercise) && !exercise.is_system && <button onClick={() => remove(exercise)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-xs font-black text-[#9E0710]"><Trash2 className="size-3.5" /> Eliminar</button>}
                   </div>

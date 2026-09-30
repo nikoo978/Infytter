@@ -5,7 +5,11 @@ const noSupabase = () => new Error("Supabase no configurado");
 export async function getMyRoutines() {
   if (!supabase) return { routines: { personal: [], assigned: [] }, error: noSupabase() };
   const { data, error } = await supabase.rpc("gf_get_my_routines");
-  return { routines: data || { personal: [], assigned: [] }, error };
+  if (error) return { routines: { personal: [], assigned: [] }, error };
+  const { data: days, error: daysError } = await supabase.rpc("gf_get_my_routine_days");
+  if (daysError) return { routines: { personal: [], assigned: [] }, error: daysError };
+  const applyDays = (routine) => ({ ...routine, scheduleDays: days?.[routine.id] ?? (routine.sourceType === "professor" ? [] : routine.scheduleDays || []) });
+  return { routines: { personal: (data?.personal || []).map(applyDays), assigned: (data?.assigned || []).map(applyDays) }, error: null };
 }
 
 export async function saveMyRoutine(routine) {
@@ -132,7 +136,7 @@ export async function saveProfessorRoutine(routine) {
     p_title: routine?.title || "",
     p_description: routine?.description || "",
     p_items: routine?.items || [],
-    p_schedule_days: routine?.scheduleDays || [],
+    p_schedule_days: [],
   });
   return { routine: data || null, error };
 }
@@ -152,4 +156,10 @@ export async function getClientRoutinesForProfessor(personId) {
     p_person_id: personId,
   });
   return { routines: data || [], error };
+}
+
+export async function setMyRoutineDays(routineId, days) {
+  if (!supabase) return { error: noSupabase() };
+  const { error } = await supabase.rpc("gf_set_my_routine_days", { p_routine_id: routineId, p_days: days });
+  return { error };
 }

@@ -4,7 +4,7 @@ import { normalizeExerciseSearch } from "../../services/exercises";
 import ExerciseDetail from "../exercises/ExerciseDetail";
 import FormDialog from "../ui/FormDialog";
 import WorkoutRunner from "./WorkoutRunnerV2";
-import { gymWeekDay } from "../../services/gymDate";
+
 
 export const TRAINING_DAYS = [
   { value: 1, short: "L", label: "Lunes" },
@@ -16,7 +16,7 @@ export const TRAINING_DAYS = [
   { value: 7, short: "D", label: "Domingo" },
 ];
 
-const todayDay = gymWeekDay;
+
 
 const sourceMaps = (exercises) => {
   const byId = new Map();
@@ -34,7 +34,7 @@ function routineSource(item, maps) {
   return maps.byId.get(String(item?.exercise_id || "")) || maps.byName.get(normalizeExerciseSearch(item?.exercise_name));
 }
 
-function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemove, preview }) {
+function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemove, onSchedule, preview }) {
   const [detail, setDetail] = useState(null);
   const maps = useMemo(() => sourceMaps(exercises), [exercises]);
   const totalSets = (routine.items || []).reduce((sum, item) => sum + Math.max(1, Number(item.sets || 1)), 0);
@@ -47,7 +47,7 @@ function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemo
         <div className="min-w-0">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black ${isProfessor ? "bg-red-50 text-[#9E0710]" : "bg-slate-100 text-slate-600"}`}>
             {isProfessor ? <UsersRound className="size-3" /> : <UserRound className="size-3" />}
-            {isProfessor ? "Plan del profesor" : "Rutina personal"}
+            {isProfessor ? "Rutina del profesor" : "Rutina personal"}
           </span>
           <h3 className="mt-2 text-xl font-black leading-6 text-[#050505]">{routine.title}</h3>
           {routine.description && <p className="mt-1.5 text-xs leading-5 text-slate-500">{routine.description}</p>}
@@ -80,6 +80,8 @@ function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemo
         <Play className="size-4 fill-current" /> Comenzar entrenamiento
       </button>
 
+      {!preview && onSchedule && <button type="button" onClick={() => onSchedule(routine)} className="btn-secondary mt-2 min-h-11 w-full"><CalendarDays className="size-4" /> Organizar días (opcional)</button>}
+      {!!routine.scheduleDays?.length && <p className="mt-2 text-xs text-slate-500">Sugeridos: {TRAINING_DAYS.filter((day) => routine.scheduleDays.includes(day.value)).map((day) => day.label).join(" · ")}. Podés entrenarla cualquier día.</p>}
       {!preview && <div className="mt-2 grid grid-cols-2 gap-2">
         {!isProfessor && onEdit && <button type="button" onClick={() => onEdit(routine)} className="btn-secondary min-h-10"><Edit3 className="size-4" /> Editar</button>}
         {!isProfessor && onDelete && <button type="button" onClick={() => onDelete(routine)} className="btn-secondary min-h-10 text-[#9E0710]"><Trash2 className="size-4" /> Eliminar</button>}
@@ -101,8 +103,20 @@ export default function TrainingPlan({
   onRemoveAssigned,
   onOpenLibrary,
   onRetry,
+  onChangeDays,
 }) {
-  const [selectedDay, setSelectedDay] = useState(todayDay());
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [scheduling, setScheduling] = useState(null);
+  const [draftDays, setDraftDays] = useState([]);
+  const [savingDays, setSavingDays] = useState(false);
+  const [daysError, setDaysError] = useState("");
+  const openSchedule = (routine) => { setScheduling(routine); setDraftDays(routine.scheduleDays || []); setDaysError(""); };
+  const saveDays = async () => {
+    setSavingDays(true); setDaysError("");
+    try { await onChangeDays(scheduling, draftDays); setScheduling(null); }
+    catch (error) { setDaysError(error.message || "No se pudieron guardar los días."); }
+    finally { setSavingDays(false); }
+  };
   const [activeRoutine, setActiveRoutine] = useState(null);
   const allRoutines = useMemo(() => [
     ...(routines.assigned || []),
@@ -110,7 +124,7 @@ export default function TrainingPlan({
   ], [routines]);
 
   const scheduled = useMemo(() => allRoutines.filter((routine) => (routine.scheduleDays || []).map(Number).includes(selectedDay)), [allRoutines, selectedDay]);
-  const unscheduled = useMemo(() => allRoutines.filter((routine) => !(routine.scheduleDays || []).length), [allRoutines]);
+
   const selectedLabel = TRAINING_DAYS.find((day) => day.value === selectedDay)?.label || "Día";
 
   return <>
@@ -118,13 +132,15 @@ export default function TrainingPlan({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#ff5f69]">Entrenamiento</p>
-          <h1 className="mt-1 text-2xl font-black">Mi plan</h1>
-          <p className="mt-1 text-xs leading-5 text-white/70">Tu semana, tus cargas y tu historial en un solo lugar.</p>
+          <h1 className="mt-1 text-2xl font-black">Mis rutinas</h1>
+          <p className="mt-1 text-xs leading-5 text-white/70">Elegí qué entrenar hoy. Todas tus rutinas están siempre disponibles.</p>
         </div>
         {!preview && onCreatePersonal && <button onClick={onCreatePersonal} disabled={(routines.personal || []).length >= 3} className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613] text-white disabled:opacity-30" aria-label="Crear rutina personal"><Plus className="size-5" /></button>}
       </div>
 
-      <div className="mt-4 grid grid-cols-7 gap-1.5">{TRAINING_DAYS.map((day) => {
+      <button type="button" aria-pressed={selectedDay === null} onClick={() => setSelectedDay(null)} className="mt-4 min-h-11 rounded-xl bg-white/10 px-4 text-sm font-black">Todas mis rutinas</button>
+      <p className="mt-3 text-xs text-white/70">Días opcionales: consultá tus sugerencias sin limitar cuándo entrenás.</p>
+      <div className="mt-2 grid grid-cols-7 gap-1.5">{TRAINING_DAYS.map((day) => {
         const hasPlan = allRoutines.some((routine) => (routine.scheduleDays || []).map(Number).includes(day.value));
         const active = selectedDay === day.value;
         return <button key={day.value} type="button" aria-label={day.label} aria-pressed={active} onClick={() => setSelectedDay(day.value)} className={`relative grid min-h-12 place-items-center rounded-xl text-xs font-black transition ${active ? "bg-[#E30613] text-white" : "bg-white/7 text-white/70"}`}>
@@ -138,36 +154,27 @@ export default function TrainingPlan({
     {loading && <p className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 shadow-sm">Cargando tu plan…</p>}
 
     {!loading && <section>
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#E30613]"><CalendarDays className="mr-1 inline size-3.5" /> {selectedLabel}</p>
-          <h2 className="mt-1 text-lg font-black text-[#050505]">{scheduled.length ? "Entrenamientos programados" : "Sin entrenamiento programado"}</h2>
-        </div>
-        {onOpenLibrary && <button onClick={onOpenLibrary} className="text-xs font-black text-slate-500">Ver ejercicios</button>}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-black">Todas mis rutinas</h2>
+        {onOpenLibrary && <button type="button" onClick={onOpenLibrary} className="min-h-11 text-xs font-black text-slate-600">Ver ejercicios</button>}
       </div>
-
-      <div className="space-y-3">
-        {scheduled.map((routine) => <RoutinePlanCard key={routine.id} routine={routine} exercises={exercises} onStart={setActiveRoutine} onEdit={onEditPersonal} onDelete={onDeletePersonal} onRemove={onRemoveAssigned} preview={preview} />)}
-        {!!allRoutines.length && !scheduled.length && <div className="rounded-[22px] border border-dashed border-slate-200 bg-white p-6 text-center">
-          <CalendarDays className="mx-auto size-7 text-slate-300" />
-          <p className="mt-3 text-sm font-black text-slate-700">No hay una rutina asignada para {selectedLabel.toLowerCase()}.</p>
-          <p className="mt-1 text-xs leading-5 text-slate-400">Podés elegir otro día o usar una rutina sin día fijo.</p>
-        </div>}
-      </div>
-    </section>}
-
-    {!loading && !!unscheduled.length && <section>
-      <div className="mb-3"><p className="text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Sin día fijo</p><h2 className="mt-1 text-lg font-black text-[#050505]">Entrenamientos disponibles</h2></div>
-      <div className="space-y-3">{unscheduled.map((routine) => <RoutinePlanCard key={routine.id} routine={routine} exercises={exercises} onStart={setActiveRoutine} onEdit={onEditPersonal} onDelete={onDeletePersonal} onRemove={onRemoveAssigned} preview={preview} />)}</div>
+      {selectedDay !== null && <p role="status" className="mb-3 rounded-xl bg-slate-100 p-3 text-sm text-slate-600">{selectedLabel}: {scheduled.length ? scheduled.map((routine) => routine.title).join(" · ") : "Sin sugerencias"}. Podés elegir cualquiera de tus rutinas.</p>}
+      <div className="space-y-3">{allRoutines.map((routine) => <RoutinePlanCard key={routine.id} routine={routine} exercises={exercises} onStart={setActiveRoutine} onEdit={onEditPersonal} onDelete={onDeletePersonal} onRemove={onRemoveAssigned} onSchedule={onChangeDays ? openSchedule : null} preview={preview} />)}</div>
     </section>}
 
     {!loading && !error && !allRoutines.length && <div className="rounded-[22px] border border-dashed border-slate-200 bg-white p-8 text-center">
       <Dumbbell className="mx-auto size-8 text-slate-300" />
-      <p className="mt-3 font-black text-slate-700">Todavía no tenés un plan.</p>
-      <p className="mt-1 text-xs leading-5 text-slate-400">Tu profesor puede asignarte uno o podés crear hasta 3 rutinas personales.</p>
+      <p className="mt-3 font-black text-slate-700">Todavía no tenés rutinas.</p>
+      <p className="mt-1 text-xs leading-5 text-slate-400">Tu profesor puede compartirte una o podés crear hasta 3 rutinas personales.</p>
       {!preview && onCreatePersonal && <button type="button" onClick={onCreatePersonal} className="btn-primary mt-4 min-h-11"><Plus className="size-4" /> Crear mi primera rutina</button>}
     </div>}
 
+    <FormDialog open={!!scheduling} onOpenChange={(open) => { if (!open && !savingDays) setScheduling(null); }} title="Organizar días" description="Sólo organiza tu semana. La rutina seguirá disponible todos los días.">
+      <p className="font-black">{scheduling?.title}</p>
+      <div className="my-4 grid grid-cols-7 gap-1">{TRAINING_DAYS.map((day) => <button key={day.value} type="button" aria-label={day.label} aria-pressed={draftDays.includes(day.value)} disabled={savingDays} onClick={() => setDraftDays((days) => days.includes(day.value) ? days.filter((value) => value !== day.value) : [...days, day.value].sort())} className={`min-h-11 rounded-xl font-black ${draftDays.includes(day.value) ? "bg-[#E30613] text-white" : "bg-slate-100 text-slate-700"}`}>{day.short}</button>)}</div>
+      {daysError && <p role="alert" className="mb-3 text-sm text-red-700">{daysError}</p>}
+      <div className="flex gap-2"><button type="button" disabled={savingDays} onClick={() => setDraftDays([])} className="btn-secondary">Sin día fijo</button><button type="button" disabled={savingDays} onClick={saveDays} className="btn-primary flex-1">{savingDays ? "Guardando…" : "Guardar días"}</button></div>
+    </FormDialog>
     <WorkoutRunner open={!!activeRoutine} onClose={() => setActiveRoutine(null)} routine={activeRoutine} exercises={exercises} preview={preview} />
   </>;
 }

@@ -1,3 +1,10 @@
+## V1.09.6 — 30/09/2026
+
+- Administración puede ocultar y volver a mostrar ejercicios sin eliminarlos. Supabase limita su lectura para profesores y alumnos y protege la visibilidad contra cambios de profesores.
+- Entrenar muestra siempre todas las rutinas. Los días se organizan después y son opcionales, personales y compatibles con rutinas compartidas por el profesor.
+- El profesor comparte contenidos, sin imponer días a sus alumnos. Se conservan rutinas, referencias e historial existentes.
+- Anterior/Siguiente quedan fijos junto al progreso del ejercicio; Finalizar se diferencia de la navegación.
+
 ## V1.09.5 — 30/09/2026
 
 - Corrige el resaltado frontal del mapa muscular: cada SVG recorta su propia mitad de la lámina y la vista posterior deja de superponerse a la frontal.

@@ -21,7 +21,9 @@ test("Cliente usa navegación Inicio, Entrenar, Progreso y Perfil", () => {
 
 test("las rutinas permiten programar días y el plan los muestra por semana", () => {
   assert.match(editor, /scheduleDays/);
-  assert.match(editor, /Días del plan/);
+  assert.doesNotMatch(editor, /Días del plan/);
+  assert.match(plan, /Todas mis rutinas/);
+  assert.match(plan, /allRoutines.map/);
   assert.match(plan, /TRAINING_DAYS/);
   assert.match(plan, /Comenzar entrenamiento/);
   assert.match(migration, /schedule_days/);

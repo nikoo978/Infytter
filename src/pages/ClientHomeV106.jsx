@@ -16,7 +16,7 @@ import { useAuth } from "../context/AuthContext";
 import { getMyBodyMetrics } from "../services/bodyMetrics";
 import { listExercises } from "../services/exercises";
 import { getMyClientPortal } from "../services/roles";
-import { deleteMyRoutine, getMyRoutines, removeAssignedRoutine, saveMyRoutine } from "../services/routines";
+import { deleteMyRoutine, getMyRoutines, removeAssignedRoutine, saveMyRoutine, setMyRoutineDays } from "../services/routines";
 
 const dateLabel = (value) => value ? new Date(`${String(value).slice(0, 10)}T12:00:00`).toLocaleDateString("es-AR") : "—";
 const number = (value, digits = 1) => value == null ? "—" : Number(value).toLocaleString("es-AR", { maximumFractionDigits: digits });
@@ -90,6 +90,12 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
   }, [member, accesses]);
   const statusTone = status === "Vigente" ? "bg-emerald-50 text-emerald-700" : status === "Por vencer" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700";
 
+  const changeRoutineDays = async (routine, days) => {
+    const result = await setMyRoutineDays(routine.id, days);
+    if (result.error) throw result.error;
+    setRoutines((current) => Object.fromEntries(Object.entries(current).map(([key, list]) => [key, list.map((item) => item.id === routine.id ? { ...item, scheduleDays: days } : item)])));
+  };
+
   const saveRoutine = async (routine) => {
     setRoutineBusy(true);
     setRoutineError("");
@@ -151,7 +157,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
           {!loading && member && <>
             <button disabled={routineLoading} onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} className="w-full disabled:opacity-60 overflow-hidden rounded-[24px] bg-[#E30613] p-5 text-left text-white shadow-lg active:scale-[.99]">
               <div className="flex items-center justify-between gap-4">
-                <div><p className="text-[10px] font-black uppercase tracking-[.16em] text-white/65">Entrenar hoy</p><p className="mt-1 text-xl font-black">{routineLoading ? "Cargando tu plan…" : todayRoutines.length ? todayRoutines[0].title : "Abrir mi plan"}</p><p className="mt-1 text-xs text-white/70">{todayRoutines.length ? `${todayRoutines.length} rutina${todayRoutines.length === 1 ? "" : "s"} programada${todayRoutines.length === 1 ? "" : "s"} para hoy` : "Revisá tu semana o elegí una rutina libre"}</p></div>
+                <div><p className="text-[10px] font-black uppercase tracking-[.16em] text-white/65">Entrenar hoy</p><p className="mt-1 text-xl font-black">{routineLoading ? "Cargando tus rutinas…" : todayRoutines.length ? todayRoutines[0].title : "Elegir una rutina"}</p><p className="mt-1 text-xs text-white/70">{todayRoutines.length ? `${todayRoutines.length} rutina${todayRoutines.length === 1 ? "" : "s"} programada${todayRoutines.length === 1 ? "" : "s"} para hoy` : "Todas tus rutinas, disponibles cuando quieras"}</p></div>
                 <Dumbbell className="size-9 shrink-0" />
               </div>
             </button>
@@ -172,6 +178,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
 
         {tab === "entrenar" && trainingView === "plan" && <TrainingPlan
           routines={routines}
+          onChangeDays={changeRoutineDays}
           exercises={exercises}
           preview={preview}
           loading={routineLoading}
@@ -229,8 +236,8 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
     </div>
 
     {routineError && (creatingRoutine || editingRoutine) && <p role="alert" className="fixed bottom-24 inset-x-3 z-[60] rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{routineError}</p>}
-    <FormDialog open={creatingRoutine} onOpenChange={setCreatingRoutine} title="Nueva rutina" description="Elegí días, ejercicios, series, repeticiones y descanso."><RoutineEditor exercises={exercises} onSave={saveRoutine} busy={routineBusy} compact /></FormDialog>
-    <FormDialog open={!!editingRoutine} onOpenChange={(value) => { if (!value) setEditingRoutine(null); }} title={`Editar ${editingRoutine?.title || "rutina"}`} description="Actualizá el plan y sus días.">{editingRoutine && <RoutineEditor routine={editingRoutine} exercises={exercises} onSave={saveRoutine} busy={routineBusy} compact />}</FormDialog>
+    <FormDialog open={creatingRoutine} onOpenChange={setCreatingRoutine} title="Nueva rutina" description="Elegí ejercicios, series, repeticiones y descanso. Entrenala cuando quieras."><RoutineEditor exercises={exercises} onSave={saveRoutine} busy={routineBusy} compact /></FormDialog>
+    <FormDialog open={!!editingRoutine} onOpenChange={(value) => { if (!value) setEditingRoutine(null); }} title={`Editar ${editingRoutine?.title || "rutina"}`} description="Actualizá los ejercicios de tu rutina.">{editingRoutine && <RoutineEditor routine={editingRoutine} exercises={exercises} onSave={saveRoutine} busy={routineBusy} compact />}</FormDialog>
   </main>;
 }
 
