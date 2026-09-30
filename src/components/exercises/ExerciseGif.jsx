@@ -1,5 +1,5 @@
-import { Image as ImageIcon, Maximize2, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Image as ImageIcon, Maximize2, Minus, Plus, RotateCcw, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const CLOUDINARY_GIF_BASE = "https://res.cloudinary.com/po0pnxfc/image/upload/";
 
@@ -81,24 +81,63 @@ function GifButton({ url, alt, className, onOpen, onError }) {
   );
 }
 
-function FullscreenGif({ url, alt, onClose }) {
+export function FullscreenGif({ url, alt, onClose }) {
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const pointers = useRef(new Map());
+  const gesture = useRef(null);
+  const surface = useRef(null);
+  const close = useRef(null);
+  const clamp = (value) => Math.min(4, Math.max(1, value));
+  const changeZoom = (value) => { const next = clamp(value); setZoom(next); if (next === 1) setPan({ x: 0, y: 0 }); };
+  const point = (event) => ({ x: event.clientX, y: event.clientY });
+  const snapshot = () => {
+    const pts = [...pointers.current.values()];
+    gesture.current = { pts, zoom, pan, distance: pts.length > 1 ? Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) : 0 };
+  };
+  const start = (event) => { surface.current?.setPointerCapture(event.pointerId); pointers.current.set(event.pointerId, point(event)); snapshot(); };
+  const move = (event) => {
+    if (!pointers.current.has(event.pointerId)) return;
+    pointers.current.set(event.pointerId, point(event));
+    const pts = [...pointers.current.values()]; const initial = gesture.current;
+    if (!initial) return;
+    if (pts.length > 1 && initial.distance > 0) {
+      changeZoom(initial.zoom * Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) / initial.distance);
+    } else if (pts.length === 1 && zoom > 1) {
+      const bounds = surface.current?.getBoundingClientRect();
+      const limitX = (bounds?.width || 300) * (zoom - 1) / 2;
+      const limitY = (bounds?.height || 500) * (zoom - 1) / 2;
+      setPan({ x: Math.max(-limitX, Math.min(limitX, initial.pan.x + pts[0].x - initial.pts[0].x)), y: Math.max(-limitY, Math.min(limitY, initial.pan.y + pts[0].y - initial.pts[0].y)) });
+    }
+  };
+  const end = (event) => { pointers.current.delete(event.pointerId); snapshot(); };
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
-    const closeOnEscape = (event) => { if (event.key === "Escape") onClose(); };
+    const previousFocus = document.activeElement;
+    const closeOnEscape = (event) => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } };
     document.body.style.overflow = "hidden";
+    close.current?.focus();
     window.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
-    };
+    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", closeOnEscape); previousFocus?.focus?.(); };
   }, [onClose]);
-
-  return (
-    <div role="dialog" aria-modal="true" aria-label={alt} className="fixed inset-0 z-[140] grid place-items-center bg-black/95 p-3 sm:p-6" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <button type="button" onClick={onClose} className="absolute right-3 top-[max(.75rem,env(safe-area-inset-top))] grid size-12 place-items-center rounded-2xl bg-white text-black shadow-xl sm:right-6" aria-label="Cerrar pantalla completa"><X className="size-6" /></button>
-      <img src={url} alt={alt} className="max-h-[calc(100dvh-5.5rem)] max-w-full rounded-2xl bg-white object-contain shadow-2xl" />
+  return <div role="dialog" aria-modal="true" aria-label={alt} className="fixed inset-0 z-[140] flex flex-col bg-[#090b0f] text-white">
+    <div className="flex shrink-0 items-center justify-between gap-3 p-3 pt-[max(.75rem,env(safe-area-inset-top))]">
+      <p className="min-w-0 text-sm font-bold">{alt}</p>
+      <button ref={close} type="button" onClick={onClose} className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/15" aria-label="Cerrar pantalla completa"><X /></button>
     </div>
-  );
+    <div ref={surface} data-exercise-zoom className="relative grid min-h-0 flex-1 place-items-center overflow-hidden p-3" style={{ touchAction: "none" }} onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onWheel={(event) => changeZoom(zoom + (event.deltaY < 0 ? .2 : -.2))}>
+      <img src={url} alt={alt} draggable={false} className="max-h-full max-w-full select-none rounded-xl bg-white object-contain" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, pointerEvents: "none" }} />
+    </div>
+    <div className="shrink-0 p-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="flex items-center justify-center gap-3">
+        <button type="button" onClick={() => changeZoom(zoom - .5)} disabled={zoom === 1} aria-label="Reducir zoom" className="grid size-11 place-items-center rounded-xl bg-white/15 disabled:opacity-30"><Minus /></button>
+        <output aria-label="Nivel de zoom" className="w-16 text-center font-bold">{Math.round(zoom * 100)}%</output>
+        <button type="button" onClick={() => changeZoom(zoom + .5)} disabled={zoom === 4} aria-label="Aumentar zoom" className="grid size-11 place-items-center rounded-xl bg-white/15 disabled:opacity-30"><Plus /></button>
+        <button type="button" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} aria-label="Restablecer zoom" className="grid size-11 place-items-center rounded-xl bg-white/15"><RotateCcw /></button>
+      </div>
+      <p className="mt-3 text-center text-xs text-white/60">Pellizcá para ampliar. Arrastrá para mover la imagen.</p>
+    </div>
+  </div>;
 }
 
 function GifUnavailable() {

@@ -38,3 +38,7 @@
 @media (hover: hover) { .muscle-map__region:hover { fill: #ffb6be; stroke: #be123c; } .muscle-map__region.is-selected:hover { fill: #c90512; } }
 @media (max-width: 380px) { .muscle-map { padding: 12px; } .muscle-map__canvas { padding: 8px 0; gap: 0; } }
 @media (prefers-reduced-motion: reduce) { .muscle-map__region { transition: none; } }
+
+.anatomy-plate__target { cursor: pointer; }
+.anatomy-plate__target:focus-visible { outline: none; stroke: #9e0710; stroke-width: 3; fill: #e3061322; }
+@media (hover: hover) { .anatomy-plate__target:hover { fill: #e3061322; } }

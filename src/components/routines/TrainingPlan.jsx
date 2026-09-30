@@ -1,6 +1,8 @@
 import { CalendarDays, Dumbbell, Edit3, Play, Plus, Trash2, UserRound, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { normalizeExerciseSearch } from "../../services/exercises";
+import ExerciseDetail from "../exercises/ExerciseDetail";
+import FormDialog from "../ui/FormDialog";
 import WorkoutRunner from "./WorkoutRunnerV2";
 
 export const TRAINING_DAYS = [
@@ -35,12 +37,13 @@ function routineSource(item, maps) {
 }
 
 function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemove, preview }) {
+  const [detail, setDetail] = useState(null);
   const maps = useMemo(() => sourceMaps(exercises), [exercises]);
   const totalSets = (routine.items || []).reduce((sum, item) => sum + Math.max(1, Number(item.sets || 1)), 0);
   const muscles = [...new Set((routine.items || []).map((item) => routineSource(item, maps)?.muscle_group).filter(Boolean))].slice(0, 4);
   const isProfessor = routine.sourceType === "professor";
 
-  return <article className="overflow-hidden rounded-[24px] border border-black/6 bg-white shadow-sm">
+  return <><article className="overflow-hidden rounded-[24px] border border-black/6 bg-white shadow-sm">
     <div className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -63,7 +66,7 @@ function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemo
         {(routine.items || []).map((item, index) => {
           const source = routineSource(item, maps);
           const image = source?.image_url || source?.variant_image_urls?.[0] || null;
-          return <div key={item.id || `${item.exercise_name}-${index}`} className="flex items-center gap-3 rounded-2xl bg-slate-50 p-2.5">
+          return <button type="button" onClick={() => setDetail(source || { name: item.exercise_name })} aria-label={`Ver ejercicio: ${item.exercise_name}`} key={item.id || `${item.exercise_name}-${index}`} className="flex w-full items-center gap-3 rounded-2xl bg-slate-50 p-2.5 text-left">
             <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-white shadow-sm">
               {image ? <img src={image} alt="" className="h-full w-full object-contain" loading="lazy" /> : <Dumbbell className="size-5 text-slate-300" />}
             </div>
@@ -71,7 +74,7 @@ function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemo
               <p className="truncate text-sm font-black text-slate-800">{item.exercise_name}</p>
               <p className="mt-0.5 text-[11px] font-bold text-slate-400">{item.sets} series · {item.reps} reps{source?.equipment ? ` · ${source.equipment}` : ""}</p>
             </div>
-          </div>;
+          </button>;
         })}
       </div>
 
@@ -85,7 +88,7 @@ function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemo
         {isProfessor && onRemove && <button type="button" onClick={() => onRemove(routine)} className="btn-secondary col-span-2 min-h-10 text-[#9E0710]"><Trash2 className="size-4" /> Quitar de mi cuenta</button>}
       </div>}
     </div>
-  </article>;
+  </article><FormDialog open={!!detail} onOpenChange={(open) => { if (!open) setDetail(null); }} title="Consultar ejercicio">{detail && <ExerciseDetail exercise={detail} />}</FormDialog></>;
 }
 
 export default function TrainingPlan({
@@ -125,7 +128,7 @@ export default function TrainingPlan({
       <div className="mt-4 grid grid-cols-7 gap-1.5">{TRAINING_DAYS.map((day) => {
         const hasPlan = allRoutines.some((routine) => (routine.scheduleDays || []).map(Number).includes(day.value));
         const active = selectedDay === day.value;
-        return <button key={day.value} type="button" onClick={() => setSelectedDay(day.value)} className={`relative grid min-h-12 place-items-center rounded-xl text-xs font-black transition ${active ? "bg-[#E30613] text-white" : "bg-white/7 text-white/45"}`}>
+        return <button key={day.value} type="button" aria-label={day.label} aria-pressed={active} onClick={() => setSelectedDay(day.value)} className={`relative grid min-h-12 place-items-center rounded-xl text-xs font-black transition ${active ? "bg-[#E30613] text-white" : "bg-white/7 text-white/45"}`}>
           {day.short}
           {hasPlan && !active && <span className="absolute bottom-1.5 size-1 rounded-full bg-[#E30613]" />}
         </button>;
@@ -141,7 +144,7 @@ export default function TrainingPlan({
           <p className="text-[10px] font-black uppercase tracking-[.16em] text-[#E30613]"><CalendarDays className="mr-1 inline size-3.5" /> {selectedLabel}</p>
           <h2 className="mt-1 text-lg font-black text-[#050505]">{scheduled.length ? "Entrenamientos programados" : "Sin entrenamiento programado"}</h2>
         </div>
-        {onOpenLibrary && <button onClick={onOpenLibrary} className="text-xs font-black text-slate-500">Biblioteca</button>}
+        {onOpenLibrary && <button onClick={onOpenLibrary} className="text-xs font-black text-slate-500">Ver ejercicios</button>}
       </div>
 
       <div className="space-y-3">

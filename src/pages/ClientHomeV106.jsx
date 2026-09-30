@@ -58,6 +58,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
     if (routineResult.error) setRoutineError(routineResult.error.message || "No se pudieron cargar tus rutinas.");
     else setRoutines(routineResult.routines);
     if (!exerciseResult.error) setExercises(exerciseResult.exercises);
+    else setRoutineError(exerciseResult.error.message || "No se pudo cargar la biblioteca de ejercicios.");
     setRoutineLoading(false);
   };
 
@@ -158,7 +159,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
 
             <section className="grid grid-cols-2 gap-3">
               <button onClick={() => setTab("progreso")} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Activity className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Ver progreso</p><p className="mt-1 text-[10px] font-bold text-slate-400">Cuerpo + rendimiento</p></button>
-              <button onClick={() => { setTab("entrenar"); setTrainingView("biblioteca"); }} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Dumbbell className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Biblioteca</p><p className="mt-1 text-[10px] font-bold text-slate-400">Técnica y ejercicios</p></button>
+              <button onClick={() => { setTab("ejercicios"); }} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Dumbbell className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Ejercicios</p><p className="mt-1 text-[10px] font-bold text-slate-400">Técnica y ejercicios</p></button>
             </section>
           </>}
         </>}
@@ -173,13 +174,15 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
           onEditPersonal={!preview ? setEditingRoutine : undefined}
           onDeletePersonal={!preview ? removePersonal : undefined}
           onRemoveAssigned={!preview ? removeProfessor : undefined}
-          onOpenLibrary={() => setTrainingView("biblioteca")}
+          onOpenLibrary={() => setTab("ejercicios")}
         />}
 
         {tab === "entrenar" && trainingView === "biblioteca" && <>
           <button onClick={() => setTrainingView("plan")} className="flex items-center gap-2 text-sm font-black text-slate-600"><ChevronLeft className="size-4" /> Volver a mi plan</button>
           <ExerciseCatalog preview={preview} />
         </>}
+
+        {tab === "ejercicios" && <ExerciseCatalog compact />}
 
         {tab === "progreso" && <>
           <TrainingProgressPanel preview={preview} />
@@ -209,14 +212,16 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
         </>}
       </div>
 
-      <div className={`${navClass} z-40`}><nav className="grid grid-cols-4 gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl">
+      <div className={`${navClass} z-40`}><nav className="grid grid-cols-5 gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl">
         <NavButton active={tab === "inicio"} onClick={() => setTab("inicio")} icon={Home} label="Inicio" />
         <NavButton active={tab === "entrenar"} onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} icon={Dumbbell} label="Entrenar" />
+        <NavButton active={tab === "ejercicios"} onClick={() => setTab("ejercicios")} icon={Dumbbell} label="Ejercicios" />
         <NavButton active={tab === "progreso"} onClick={() => { setTab("progreso"); if (!preview) void load(); }} icon={Activity} label="Progreso" />
         <NavButton active={tab === "perfil"} onClick={() => setTab("perfil")} icon={UserRound} label="Perfil" />
       </nav></div>
     </div>
 
+    {routineError && (creatingRoutine || editingRoutine) && <p role="alert" className="fixed bottom-24 inset-x-3 z-[60] rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{routineError}</p>}
     <FormDialog open={creatingRoutine} onOpenChange={setCreatingRoutine} title="Nueva rutina" description="Elegí días, ejercicios, series, repeticiones y descanso."><RoutineEditor exercises={exercises} onSave={saveRoutine} busy={routineBusy} compact /></FormDialog>
     <FormDialog open={!!editingRoutine} onOpenChange={(value) => { if (!value) setEditingRoutine(null); }} title={`Editar ${editingRoutine?.title || "rutina"}`} description="Actualizá el plan y sus días.">{editingRoutine && <RoutineEditor routine={editingRoutine} exercises={exercises} onSave={saveRoutine} busy={routineBusy} compact />}</FormDialog>
   </main>;
@@ -229,5 +234,5 @@ function InfoCard({ icon: Icon = CalendarDays, label, value }) {
 function ScaleIcon(props) { return <Activity {...props} />; }
 
 function NavButton({ active, onClick, icon: Icon, label }) {
-  return <button onClick={onClick} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 text-[10px] font-black leading-none transition active:scale-95 ${active ? "bg-[#E30613] text-white shadow-sm" : "text-slate-500"}`}><Icon className="size-4" /><span className="truncate">{label}</span></button>;
+  return <button type="button" aria-current={active ? "page" : undefined} onClick={onClick} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 text-[10px] font-black leading-none transition active:scale-95 ${active ? "bg-[#E30613] text-white shadow-sm" : "text-slate-500"}`}><Icon className="size-4" /><span className="truncate">{label}</span></button>;
 }

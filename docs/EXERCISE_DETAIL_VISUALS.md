@@ -8,7 +8,7 @@ Las imágenes WebP de `public/images/muscles/` provienen del ZIP aportado por el
 
 Correspondencias revisadas visualmente para las figuras masculina y femenina: 00 = neutral; 01 = espalda; 02 = hombros; 04 = pecho; 05 = core; 06 = glúteos; 08 = cuerpo completo. Las láminas son referencias de zona, no una clasificación nueva de músculos secundarios por ejercicio.
 
-Las láminas 03 y 07 del paquete resaltan brazos/piernas completos. No se usan para representar bíceps, tríceps, antebrazos, cuádriceps, isquiotibiales o gemelos de forma individual. Esos grupos, cuello y cadera usan el SVG existente en modo informativo con marcado preciso. Cardio, movilidad y grupos desconocidos muestran una figura neutral. Si una imagen falla, se usa el SVG local.
+Las láminas 03 y 07 se usan desde V1.09.3 con recortes individuales sobre una base neutral para brazos y piernas. El mapa usa la misma lámina y coordenadas para selección por clic o teclado. Las siluetas SVG esquemáticas anteriores fueron reemplazadas. Cardio y movilidad muestran la base neutral.
 
 ## Comprobaciones
 

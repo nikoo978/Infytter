@@ -421,6 +421,9 @@ export default function WorkoutRunnerV2({ routine, exercises = [], open, onClose
       const seconds = Math.max(0, Number(current.rest_seconds || 0));
       setRestTotal(seconds);
       setRestLeft(seconds);
+    } else {
+      setRestLeft(0);
+      setRestTotal(0);
     }
   };
 
@@ -607,7 +610,7 @@ export default function WorkoutRunnerV2({ routine, exercises = [], open, onClose
               <input value={set.reps} onChange={(event) => patchSet(activeIndex, setIndex, { reps: event.target.value.replace(/\D/g, "").slice(0, 4) })} onBlur={() => { if (!preview) void flushCloud(itemsRef.current); }} inputMode="numeric" className="h-10 min-w-0 rounded-lg border border-white/8 bg-black/20 px-2 text-center text-sm font-black text-white outline-none focus:border-[#E30613]" aria-label={`Repeticiones serie ${set.setNumber}`} />
               <input value={set.weightKg} onChange={(event) => patchSet(activeIndex, setIndex, { weightKg: event.target.value.replace(/[^0-9,.]/g, "").slice(0, 7) })} onBlur={() => { if (!preview) void flushCloud(itemsRef.current); }} inputMode="decimal" placeholder="0" className="h-10 min-w-0 rounded-lg border border-white/8 bg-black/20 px-2 text-center text-sm font-black text-white outline-none focus:border-[#E30613]" aria-label={`Peso serie ${set.setNumber}`} />
               <input value={set.rir} onChange={(event) => patchSet(activeIndex, setIndex, { rir: event.target.value.replace(/\D/g, "").slice(0, 2) })} onBlur={() => { if (!preview) void flushCloud(itemsRef.current); }} inputMode="numeric" placeholder="—" className="h-10 min-w-0 rounded-lg border border-white/8 bg-black/20 px-1 text-center text-xs font-black text-white outline-none focus:border-[#E30613]" aria-label={`RIR serie ${set.setNumber}`} />
-              <button onClick={() => toggleSet(setIndex)} className={`grid size-10 place-items-center rounded-lg border ${set.completed ? "border-emerald-400 bg-emerald-400 text-[#06130d]" : "border-white/10 bg-white/5 text-white/25"}`} aria-label={`Marcar serie ${set.setNumber}`}><Check className="size-5" /></button>
+              <button onClick={() => toggleSet(setIndex)} className={`grid size-10 place-items-center rounded-lg border ${set.completed ? "border-emerald-400 bg-emerald-400 text-[#06130d]" : "border-white/10 bg-white/5 text-white/25"}`} aria-pressed={set.completed} aria-label={`${set.completed ? "Desmarcar" : "Marcar"} serie ${set.setNumber}`}><Check className="size-5" /></button>
             </div>)}</div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button type="button" onClick={removeSet} disabled={current.sets.length <= 1} className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-white/7 text-xs font-black text-white/45 disabled:opacity-25"><Minus className="size-4" /> Quitar serie</button>
