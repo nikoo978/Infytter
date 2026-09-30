@@ -20,7 +20,7 @@
 .muscle-map__detail input { width: 18px; height: 18px; accent-color: var(--map-accent); cursor: pointer; }
 .muscle-map__canvas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 12px 4px; border: 1px solid #e5e9ee; border-radius: 16px; background: #e9eef1; }
 .muscle-map__view { min-width: 0; }
-.muscle-map__figure { display: block; width: 100%; height: auto; max-height: 520px; margin: 0 auto; overflow: visible; }
+.muscle-map__figure { display: block; width: 100%; height: auto; max-height: 520px; margin: 0 auto; overflow: hidden; }
 .muscle-map__body, .muscle-map__region { fill: var(--map-body); stroke: var(--map-outline); stroke-width: 1.65; stroke-linejoin: round; stroke-linecap: round; }
 .muscle-map__region { cursor: pointer; transition: fill .15s, stroke .15s; }
 .muscle-map__region.is-selected { fill: var(--map-accent); stroke: #a30712; }

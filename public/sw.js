@@ -1,5 +1,5 @@
-const SW_VERSION = "infytter-push-v1-09-4";
-const CACHE_NAME = "infytter-shell-v1-09-4";
+const SW_VERSION = "infytter-push-v1-09-5";
+const CACHE_NAME = "infytter-shell-v1-09-5";
 const CORE_ASSETS = [
   "/",
   "/manifest.webmanifest?v=1090-icon2",
