@@ -4,6 +4,7 @@ import { normalizeExerciseSearch } from "../../services/exercises";
 import ExerciseDetail from "../exercises/ExerciseDetail";
 import FormDialog from "../ui/FormDialog";
 import WorkoutRunner from "./WorkoutRunnerV2";
+import { gymWeekDay } from "../../services/gymDate";
 
 export const TRAINING_DAYS = [
   { value: 1, short: "L", label: "Lunes" },
@@ -15,10 +16,7 @@ export const TRAINING_DAYS = [
   { value: 7, short: "D", label: "Domingo" },
 ];
 
-const todayDay = () => {
-  const day = new Date().getDay();
-  return day === 0 ? 7 : day;
-};
+const todayDay = gymWeekDay;
 
 const sourceMaps = (exercises) => {
   const byId = new Map();
@@ -56,7 +54,7 @@ function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemo
         </div>
         <div className="rounded-2xl bg-[#050505] px-3 py-2 text-center text-white">
           <p className="text-base font-black">{totalSets}</p>
-          <p className="text-[9px] font-black uppercase tracking-wider text-white/50">series</p>
+          <p className="text-[9px] font-black uppercase tracking-wider text-white/70">series</p>
         </div>
       </div>
 
@@ -102,6 +100,7 @@ export default function TrainingPlan({
   onDeletePersonal,
   onRemoveAssigned,
   onOpenLibrary,
+  onRetry,
 }) {
   const [selectedDay, setSelectedDay] = useState(todayDay());
   const [activeRoutine, setActiveRoutine] = useState(null);
@@ -120,7 +119,7 @@ export default function TrainingPlan({
         <div>
           <p className="text-[10px] font-black uppercase tracking-[.18em] text-[#ff5f69]">Entrenamiento</p>
           <h1 className="mt-1 text-2xl font-black">Mi plan</h1>
-          <p className="mt-1 text-xs leading-5 text-white/45">Tu semana, tus cargas y tu historial en un solo lugar.</p>
+          <p className="mt-1 text-xs leading-5 text-white/70">Tu semana, tus cargas y tu historial en un solo lugar.</p>
         </div>
         {!preview && onCreatePersonal && <button onClick={onCreatePersonal} disabled={(routines.personal || []).length >= 3} className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613] text-white disabled:opacity-30" aria-label="Crear rutina personal"><Plus className="size-5" /></button>}
       </div>
@@ -128,14 +127,14 @@ export default function TrainingPlan({
       <div className="mt-4 grid grid-cols-7 gap-1.5">{TRAINING_DAYS.map((day) => {
         const hasPlan = allRoutines.some((routine) => (routine.scheduleDays || []).map(Number).includes(day.value));
         const active = selectedDay === day.value;
-        return <button key={day.value} type="button" aria-label={day.label} aria-pressed={active} onClick={() => setSelectedDay(day.value)} className={`relative grid min-h-12 place-items-center rounded-xl text-xs font-black transition ${active ? "bg-[#E30613] text-white" : "bg-white/7 text-white/45"}`}>
+        return <button key={day.value} type="button" aria-label={day.label} aria-pressed={active} onClick={() => setSelectedDay(day.value)} className={`relative grid min-h-12 place-items-center rounded-xl text-xs font-black transition ${active ? "bg-[#E30613] text-white" : "bg-white/7 text-white/70"}`}>
           {day.short}
           {hasPlan && !active && <span className="absolute bottom-1.5 size-1 rounded-full bg-[#E30613]" />}
         </button>;
       })}</div>
     </section>
 
-    {error && <p className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}</p>}
+    {error && <div role="alert" className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}{onRetry && <button type="button" onClick={onRetry} className="mt-3 block min-h-11 rounded-xl bg-white px-4">Volver a intentar</button>}</div>}
     {loading && <p className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 shadow-sm">Cargando tu plan…</p>}
 
     {!loading && <section>
@@ -149,7 +148,7 @@ export default function TrainingPlan({
 
       <div className="space-y-3">
         {scheduled.map((routine) => <RoutinePlanCard key={routine.id} routine={routine} exercises={exercises} onStart={setActiveRoutine} onEdit={onEditPersonal} onDelete={onDeletePersonal} onRemove={onRemoveAssigned} preview={preview} />)}
-        {!scheduled.length && <div className="rounded-[22px] border border-dashed border-slate-200 bg-white p-6 text-center">
+        {!!allRoutines.length && !scheduled.length && <div className="rounded-[22px] border border-dashed border-slate-200 bg-white p-6 text-center">
           <CalendarDays className="mx-auto size-7 text-slate-300" />
           <p className="mt-3 text-sm font-black text-slate-700">No hay una rutina asignada para {selectedLabel.toLowerCase()}.</p>
           <p className="mt-1 text-xs leading-5 text-slate-400">Podés elegir otro día o usar una rutina sin día fijo.</p>
@@ -162,10 +161,11 @@ export default function TrainingPlan({
       <div className="space-y-3">{unscheduled.map((routine) => <RoutinePlanCard key={routine.id} routine={routine} exercises={exercises} onStart={setActiveRoutine} onEdit={onEditPersonal} onDelete={onDeletePersonal} onRemove={onRemoveAssigned} preview={preview} />)}</div>
     </section>}
 
-    {!loading && !allRoutines.length && <div className="rounded-[22px] border border-dashed border-slate-200 bg-white p-8 text-center">
+    {!loading && !error && !allRoutines.length && <div className="rounded-[22px] border border-dashed border-slate-200 bg-white p-8 text-center">
       <Dumbbell className="mx-auto size-8 text-slate-300" />
       <p className="mt-3 font-black text-slate-700">Todavía no tenés un plan.</p>
       <p className="mt-1 text-xs leading-5 text-slate-400">Tu profesor puede asignarte uno o podés crear hasta 3 rutinas personales.</p>
+      {!preview && onCreatePersonal && <button type="button" onClick={onCreatePersonal} className="btn-primary mt-4 min-h-11"><Plus className="size-4" /> Crear mi primera rutina</button>}
     </div>}
 
     <WorkoutRunner open={!!activeRoutine} onClose={() => setActiveRoutine(null)} routine={activeRoutine} exercises={exercises} preview={preview} />

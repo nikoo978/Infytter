@@ -24,14 +24,14 @@ export default function ProfessorLayout({ currentPath = "/", children, preview =
     const Icon = item.icon;
     const active = currentPath === item.path;
     const classes = compact
-      ? `flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 text-[9px] font-black leading-none transition active:scale-95 ${active ? "bg-[#E30613] text-white shadow-sm" : "text-slate-500"}`
+      ? `flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-3 text-[10px] font-black leading-none transition active:scale-95 ${active ? "bg-[#E30613] text-white shadow-sm" : "text-slate-500"}`
       : `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-black ${active ? "bg-[#E30613] text-white" : "text-slate-600 hover:bg-slate-100"}`;
-    if (preview && onPreviewNavigate) return <button type="button" onClick={() => onPreviewNavigate(item.path)} className={classes}><Icon className="size-4" />{item.label}</button>;
+    if (preview && onPreviewNavigate) return <button type="button" aria-current={active ? "page" : undefined} onClick={() => onPreviewNavigate(item.path)} className={classes}><Icon className="size-4" />{item.label}</button>;
     if (preview) return <span className={classes}><Icon className="size-4" />{item.label}</span>;
-    return <Link to={item.path} className={classes}><Icon className="size-4" />{item.label}</Link>;
+    return <Link aria-current={active ? "page" : undefined} to={item.path} className={classes}><Icon className="size-4" />{item.label}</Link>;
   };
 
-  return <div className="min-h-dvh overflow-x-hidden bg-[#F5F5F5]">
+  return <div className="role-shell min-h-dvh overflow-x-hidden bg-[#F4F5F7]">
     <header className="sticky top-0 z-30 border-b border-black/8 bg-white/95 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-[1480px] items-center justify-between gap-2 px-3 sm:h-16 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">

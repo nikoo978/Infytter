@@ -1,3 +1,13 @@
+## V1.09.4 — 30/09/2026
+
+- Alumno: diseño adaptable a escritorio, inicio centrado en el entrenamiento de hoy, mejor contraste y mensajes de recuperación de cargas.
+- Profesor: fichas con accesos directos al progreso y rutinas del alumno, búsqueda prioritaria y navegación accesible.
+- Cambio de sede: el progreso sólo muestra fichas activas de la sede elegida.
+- Rutinas: carga por alumno protegida frente a respuestas tardías, contador de nuevos destinatarios y errores visibles dentro de los diálogos.
+- Ejercicios: mapa muscular desplegable para reducir desplazamientos y recuperación de filtros y errores.
+- Diálogos: bloqueo del desplazamiento de fondo, foco controlado, Escape y restauración del foco; consulta anidada compatible con pantalla completa.
+- Calendario de entrenamientos calculado en horario argentino, independientemente de la zona del dispositivo.
+
 # V.1.09.3 — 29/09/2026
 
 - Alumno tiene acceso directo a Ejercicios desde el menú principal.
