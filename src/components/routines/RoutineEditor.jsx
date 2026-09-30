@@ -1,5 +1,7 @@
 import { ArrowDown, ArrowUp, CalendarDays, Check, Minus, Plus, Save, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import ExerciseDetail from "../exercises/ExerciseDetail";
+import FormDialog from "../ui/FormDialog";
 import { matchesExerciseSearch, MUSCLE_GROUPS } from "../../services/exercises";
 
 const input = "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20";
@@ -21,6 +23,7 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
   const [items, setItems] = useState((routine?.items || []).map((item) => ({ ...item })));
   const [group, setGroup] = useState("Todos");
   const [query, setQuery] = useState("");
+  const [detailExercise, setDetailExercise] = useState(null);
 
   const exerciseById = useMemo(() => {
     const map = new Map();
@@ -46,16 +49,13 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
   const titleTooShort = titleLength === 1;
   const canSave = titleLength >= 2 && items.length > 0;
 
-  const addExercise = (exercise) => {
-    if (!exercise || selectedIds.has(String(exercise.id))) return;
-    setItems((current) => [...current, {
-      exercise_id: exercise.id,
-      exercise_name: exercise.name,
-      sets: exercise.default_sets || 3,
-      reps: exercise.default_reps || "8-12",
-      rest_seconds: exercise.rest_seconds ?? 60,
-      notes: "",
-    }]);
+  const toggleExercise = (exercise) => {
+    if (!exercise) return;
+    setItems((current) => {
+      const matches = (item) => String(exerciseById.get(String(item.exercise_id || ""))?.id || item.exercise_id) === String(exercise.id);
+      if (current.some(matches)) return current.filter((item) => !matches(item));
+      return [...current, { exercise_id: exercise.id, exercise_name: exercise.name, sets: exercise.default_sets || 3, reps: exercise.default_reps || "8-12", rest_seconds: exercise.rest_seconds ?? 60, notes: "" }];
+    });
   };
 
   const toggleDay = (value) => setScheduleDays((current) => current.includes(value)
@@ -94,7 +94,7 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
     });
   };
 
-  return <form onSubmit={submit} className="space-y-5">
+  return <><form onSubmit={submit} className="space-y-5">
     <section className="rounded-2xl border border-black/6 bg-white">
       <div className={`grid gap-3 p-3.5 ${compact ? "" : "sm:grid-cols-2 sm:p-4"}`}>
         <label className="text-xs font-black uppercase tracking-wide text-slate-500">
@@ -125,7 +125,7 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
     </section>
 
     <section className="rounded-2xl bg-slate-50 p-3.5 sm:p-4">
-      <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-wider text-slate-500">1. Elegí ejercicios</p><p className="mt-1 text-xs text-slate-400">Tocá un ejercicio para agregarlo.</p></div><span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm">{items.length} elegidos</span></div>
+      <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-wider text-slate-500">1. Elegí ejercicios</p><p className="mt-1 text-xs text-slate-400">Tocá para elegir o desmarcar. Consultá la técnica antes de agregarlo.</p></div><span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-slate-500 shadow-sm">{items.length} elegidos</span></div>
 
       <label className="mt-3 flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:ring-2 focus-within:ring-[#E30613]/15"><Search className="size-4 shrink-0 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" placeholder="Buscar nombre, alias u original" /></label>
 
@@ -135,7 +135,12 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
 
       <div className="mt-2 max-h-64 space-y-2 overflow-y-auto pr-0.5">{shownOptions.map((exercise) => {
         const added = selectedIds.has(String(exercise.id));
-        return <button key={exercise.id} type="button" onClick={() => addExercise(exercise)} disabled={added} className={`flex w-full items-start justify-between gap-3 rounded-xl border p-3 text-left transition ${added ? "border-emerald-100 bg-emerald-50" : "border-black/6 bg-white active:scale-[.99]"}`}><div className="min-w-0 flex-1"><p className="break-words text-sm font-black leading-5 text-slate-800">{exercise.name}</p><p className="mt-0.5 break-words text-[11px] font-bold leading-4 text-slate-400">{exercise.muscle_group}{exercise.equipment ? ` · ${exercise.equipment}` : ""}</p></div><span className={`grid size-8 shrink-0 place-items-center rounded-xl ${added ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600"}`}>{added ? <Check className="size-4" /> : <Plus className="size-4" />}</span></button>;
+        return <article key={exercise.id} className={`rounded-xl border p-3 ${added ? "border-emerald-200 bg-emerald-50" : "border-black/6 bg-white"}`}>
+          <button type="button" onClick={() => toggleExercise(exercise)} aria-pressed={added} aria-label={`${added ? "Desmarcar" : "Elegir"} ${exercise.name}`} className="flex min-h-11 w-full items-start justify-between gap-3 text-left">
+            <div className="min-w-0 flex-1"><p className="break-words text-sm font-black leading-5 text-slate-800">{exercise.name}</p><p className="mt-0.5 text-[11px] font-bold text-slate-500">{exercise.muscle_group}{exercise.equipment ? ` · ${exercise.equipment}` : ""}</p></div><span className={`grid size-10 shrink-0 place-items-center rounded-xl ${added ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-600"}`}>{added ? <Check className="size-4" /> : <Plus className="size-4" />}</span>
+          </button>
+          <button type="button" onClick={() => setDetailExercise(exercise)} className="mt-2 min-h-10 rounded-lg px-2 text-xs font-black text-[#9E0710]" aria-label={`Ver ejercicio: ${exercise.name}`}>Ver ejercicio · técnica y músculos</button>
+        </article>;
       })}{!options.length && <p className="rounded-xl border border-dashed border-slate-200 bg-white p-5 text-center text-xs text-slate-400">No hay ejercicios para este filtro.</p>}</div>
     </section>
 
@@ -158,5 +163,5 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
     </section>
 
     <div className="sticky bottom-0 z-10 -mx-4 border-t border-black/6 bg-white/95 px-4 pb-[max(.25rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0"><button disabled={busy || !canSave} className="btn-primary min-h-11 w-full disabled:opacity-50"><Save className="size-4" /> {busy ? "Guardando…" : routine ? "Guardar cambios" : "Crear rutina"}</button><p className={`mt-2 text-center text-[10px] font-bold ${titleTooShort ? "text-red-600" : "text-slate-400"}`}>{titleTooShort ? "El nombre necesita al menos 2 caracteres." : !items.length ? "Agregá al menos un ejercicio" : titleLength < 2 ? "Escribí un nombre de al menos 2 caracteres" : `${items.length} ejercicios listos para guardar`}</p></div>
-  </form>;
+  </form><FormDialog open={!!detailExercise} onOpenChange={(open) => { if (!open) setDetailExercise(null); }} title="Consultar ejercicio">{detailExercise && <ExerciseDetail key={detailExercise.id} exercise={detailExercise} />}</FormDialog></>;
 }

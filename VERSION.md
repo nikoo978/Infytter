@@ -1,3 +1,13 @@
+# V.1.09.3 — 29/09/2026
+
+- Alumno tiene acceso directo a Ejercicios desde el menú principal.
+- El editor permite ver técnica, GIF y músculos antes de elegir un ejercicio y desmarcarlo en el mismo lugar.
+- Las rutinas permiten consultar cada ejercicio sin iniciar el entrenamiento.
+- Se reemplazan las siluetas esquemáticas por láminas anatómicas con áreas táctiles alineadas, para hombre y mujer.
+- Zoom de 1× a 4×, pellizco y desplazamiento exclusivamente dentro del visor de ejercicio en pantalla completa.
+- Al desmarcar una serie se cancela el descanso automático y se conserva el resto del entrenamiento.
+- Actualización de versión y caché PWA.
+
 # V.1.09.2 — 29/09/2026
 
 - Detalle visual compartido entre catálogo, rutinas y técnica durante el entrenamiento.
