@@ -397,6 +397,7 @@ async function login(page, role) {
           await page.getByRole("dialog", { name: "Rutina del alumno", exact: true }).waitFor();
           await page.evaluate(() => history.back());
           await page.getByRole("dialog", { name: "Rutina del alumno", exact: true }).waitFor({ state: "hidden" });
+          assert.ok(page.url().includes("/rutinas"), "Atrás del diálogo conserva la ruta del profesor");
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, "Por cliente no desborda en móvil");
           await page
             .getByRole("button", { name: "Mis rutinas", exact: true })

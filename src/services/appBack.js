@@ -36,3 +36,22 @@ export function installBackGuard(win, { getCurrent, goHome, notify, now = Date.n
   win.addEventListener("popstate", back, true);
   return () => { if (!released) win.removeEventListener("popstate", back, true); };
 }
+
+let bindings;
+let bootstrapped = false;
+// Register before BrowserRouter constructs its history listener. popstate cannot
+// be cancelled, so the app listener must run before the router receives it.
+export function bootstrapAppBack(win) {
+  if (bootstrapped) return;
+  bootstrapped = true;
+  const initial = { path: win.location.pathname, url: win.location.href, state: win.history.state };
+  installBackGuard(win, {
+    getCurrent: () => bindings?.getCurrent() || initial,
+    goHome: () => bindings?.goHome(),
+    notify: (message) => bindings?.notify(message),
+  });
+}
+export function bindAppBack(next) {
+  bindings = next;
+  return () => { if (bindings === next) bindings = undefined; };
+}
