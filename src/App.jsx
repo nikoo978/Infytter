@@ -29,7 +29,7 @@ import "./styles/v1066-admin-menu.css";
 import "./styles/mobile-role-branding.css";
 import "./styles/role-experience.css";
 
-export const APP_VERSION = "V.1.09.6";
+export const APP_VERSION = "V.1.09.7";
 export const navigation = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "coadmin"] },
   { label: "Clientes", path: "/clientes", icon: UsersRound, roles: ["admin", "coadmin"] },

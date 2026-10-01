@@ -1,3 +1,4 @@
+import useAppBack from "../../hooks/useAppBack";
 import { ChevronDown, ChevronUp, Clock3, Dumbbell, RefreshCw, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getPersonTrainingOverview } from "../../services/routines";
@@ -14,6 +15,7 @@ export default function ProfessorTrainingOverview({ personId }) {
   const [error, setError] = useState("");
   const [openSession, setOpenSession] = useState("");
 
+  useAppBack(Boolean(openSession), () => setOpenSession(""), 20);
   const load = async () => {
     if (!personId) return;
     setLoading(true);

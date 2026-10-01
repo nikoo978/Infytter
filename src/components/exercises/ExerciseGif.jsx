@@ -1,3 +1,4 @@
+import useAppBack from "../../hooks/useAppBack";
 import { Image as ImageIcon, Maximize2, Minus, Plus, RotateCcw, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -82,6 +83,7 @@ function GifButton({ url, alt, className, onOpen, onError }) {
 }
 
 export function FullscreenGif({ url, alt, onClose }) {
+  useAppBack(true, onClose, 1000);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const pointers = useRef(new Map());

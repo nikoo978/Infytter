@@ -1,3 +1,4 @@
+import useAppBack from "../hooks/useAppBack";
 import { ChevronRight, Eye, Smartphone, UserCog, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useGym } from "../context/GymContext";
@@ -10,6 +11,7 @@ function PreviewClose({ onClose }) {
 export default function InterfacePreview() {
   const { data } = useGym();
   const [previewRole, setPreviewRole] = useState("");
+  useAppBack(Boolean(previewRole), () => setPreviewRole(""), 150);
   const clients = useMemo(() => data.people.filter((person) => person.role === "Cliente" && !person.archivedAt), [data.people]);
   const client = clients[0] || null;
 

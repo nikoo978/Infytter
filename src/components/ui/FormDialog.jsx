@@ -1,11 +1,15 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+
+import useAppBack, { BackDepth } from "../../hooks/useAppBack";
 
 const dialogs = [];
 let originalOverflow = "";
 
 export default function FormDialog({ trigger, title, description, open, onOpenChange, children }) {
+  const depth = useContext(BackDepth);
+  useAppBack(open, () => onOpenChange?.(false), 300 + depth);
   const panel = useRef(null);
   const close = useRef(null);
   const change = useRef(onOpenChange);
@@ -49,8 +53,8 @@ export default function FormDialog({ trigger, title, description, open, onOpenCh
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pb-6 sm:pt-5">{children}</div>
       </section>
     </div>;
-  return <>
+  return <BackDepth.Provider value={depth + 1}>
     {trigger && <span onClick={() => onOpenChange?.(true)}>{trigger}</span>}
     {dialog && (typeof document === "undefined" ? dialog : createPortal(dialog, document.body))}
-  </>;
+  </BackDepth.Provider>;
 }
