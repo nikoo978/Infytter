@@ -1,3 +1,4 @@
+import useAppBack from "../hooks/useAppBack";
 import { ArrowUpRight, CalendarCheck2, CircleDollarSign, Clock3, UserCheck, UsersRound, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
@@ -12,6 +13,7 @@ const today = () => gymDateISO();
 const dateLabel = (value) => value ? new Date(`${String(value).slice(0, 10)}T12:00:00`).toLocaleDateString("es-AR") : "—";
 
 function DetailModal({ type, onClose, people, tx, accesses, expiring, data }) {
+  useAppBack(Boolean(type), onClose, 300);
   if (!type) return null;
   const titles = {
     people: "Personas activas y registradas",
