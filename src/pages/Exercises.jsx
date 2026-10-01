@@ -1,3 +1,4 @@
+import useAppBack from "../hooks/useAppBack";
 import { ChevronDown, ChevronUp, Eye, EyeOff, Dumbbell, ExternalLink, Pencil, Plus, RefreshCw, Search, Trash2, Video } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ExerciseGifGallery } from "../components/exercises/ExerciseGif";
@@ -87,6 +88,8 @@ export default function Exercises() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const isManager = ["admin", "coadmin"].includes(role);
   const canCreate = ["admin", "coadmin", "profe"].includes(role);
+
+  useAppBack(Boolean(openId), () => setOpenId(""), 20);
 
   const load = async () => {
     setLoading(true);

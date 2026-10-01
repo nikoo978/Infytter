@@ -1,3 +1,4 @@
+import useAppBack from "../../hooks/useAppBack";
 "use client";
 
 import { Bell, ChevronDown, Cloud, CloudOff, HardDrive, LogOut, Menu, RefreshCw, ShieldCheck, WifiOff, X } from "lucide-react";
@@ -44,6 +45,7 @@ function Nav({ currentPath, onNavigate, onSync }) {
 
 function NotificationsMenu({ data, canOpenAll, accountEvents = [] }) {
   const [open, setOpen] = useState(false);
+  useAppBack(open, () => setOpen(false), 100);
   const boxRef = useRef(null);
   const latest = [
     ...(data.notificationLog || []),
@@ -85,6 +87,7 @@ export default function AppLayout({ currentPath, children }) {
   const { data, setBranch, sync, pendingCount, syncPendingNow } = useGym();
   const { role, permissions, isCloud, isLocal, isOnline, canUseLocalMode, requestLocalMode } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  useAppBack(mobileOpen, () => setMobileOpen(false), 100);
   const [accountEvents, setAccountEvents] = useState([]);
   const now = new Date();
 

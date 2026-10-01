@@ -1,3 +1,10 @@
+## V1.09.7 — 01/10/2026
+
+- Profesor consulta rutinas personales y compartidas del alumno, con origen visible; las personales permanecen de sólo lectura.
+- Encabezado centrado en móvil, selector limitado al ancho de la tarjeta y texto adaptable en “Por cliente”.
+- Atrás cierra primero GIF, diálogo, entrenamiento, menú o contenido desplegado; vuelve al Inicio antes de ofrecer salida con doble pulsación rápida.
+- El manejo de Atrás conserva el estado de React Router y el guardado de entrenamientos; no fuerza el cierre de pestañas del navegador.
+
 ## V1.09.6 — 30/09/2026
 
 - Administración puede ocultar y volver a mostrar ejercicios sin eliminarlos. Supabase limita su lectura para profesores y alumnos y protege la visibilidad contra cambios de profesores.

@@ -1,3 +1,4 @@
+import useAppBack from "../../hooks/useAppBack";
 import {
   Check, ChevronLeft, ChevronRight, Clock3, Cloud, CloudCheck, CloudOff, Dumbbell,
   History, LoaderCircle, Minus, Plus, RotateCcw, TimerReset, Trophy, X
@@ -389,6 +390,8 @@ export default function WorkoutRunnerV2({ routine, exercises = [], open, onClose
     document.addEventListener("visibilitychange", persistBeforeBackground);
     return () => document.removeEventListener("visibilitychange", persistBeforeBackground);
   }, [open, preview, queueCloudSave]);
+
+  useAppBack(open, () => { if (saving) return; if (summary) onClose?.(); else void close(); }, 200);
 
   if (!open || !routine) return null;
   if (summary) return <Summary summary={summary} routine={routine} previousVolume={Number(history.recent?.[0]?.totalVolumeKg || 0)} onClose={() => { setSummary(null); onClose?.(); }} />;

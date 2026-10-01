@@ -1,3 +1,4 @@
+import useAppBack from "../hooks/useAppBack";
 import {
   Activity, CalendarDays, CheckCircle2, ChevronLeft, Clock3, Dumbbell, Fingerprint,
   Home, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, UserRound, XCircle
@@ -74,6 +75,8 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
     void load();
     void loadRoutines();
   }, [user?.id, preview, previewPortal]);
+
+  useAppBack(tab !== "inicio", () => { setTab("inicio"); setTrainingView("plan"); }, 0);
 
   const member = portal?.member;
   const accesses = portal?.accesses || [];

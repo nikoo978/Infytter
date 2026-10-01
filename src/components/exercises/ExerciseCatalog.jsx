@@ -1,3 +1,4 @@
+import useAppBack from "../../hooks/useAppBack";
 import { ChevronDown, ChevronUp, Dumbbell, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { listExercises, matchesExerciseSearch, MUSCLE_GROUPS } from "../../services/exercises";
@@ -40,6 +41,9 @@ export default function ExerciseCatalog({ compact = false, preview = false }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  useAppBack(Boolean(openId), () => setOpenId(""), 20);
+  useAppBack(showMap, () => setShowMap(false), 10);
 
   const load = async () => {
     setLoading(true);

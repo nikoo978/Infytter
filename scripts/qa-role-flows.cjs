@@ -148,7 +148,7 @@ async function mock(page, role) {
     else if (url.includes("gf_get_person_routines_for_professor")) {
       const id = JSON.parse(route.request().postData() || "{}").p_person_id;
       if (id === "person-1") await new Promise((r) => setTimeout(r, 700));
-      data = [{ ...routine, title: id + " · Fuerza inicial" }];
+      data = [{ ...routine, title: id + " · Fuerza inicial" }, { ...routine, id: "personal-" + id, title: "Personal de " + id, sourceType: "client", canEdit: false }];
     } else if (url.includes("body_metrics"))
       data = {
         items: [],
@@ -233,7 +233,8 @@ async function login(page, role) {
           await page.getByRole("button", { name: "Anterior", exact: true }).click();
           await page.getByText("Ejercicio 1 de 2", { exact: true }).waitFor();
           await page.screenshot({ path: path.join(output, "qa-alumno-siguiente-fijo.png") });
-          await page.getByRole("button", { name: "Salir del entrenamiento", exact: true }).click();
+          await page.evaluate(() => history.back());
+          await page.getByRole("button", { name: "Comenzar entrenamiento", exact: true }).waitFor();
           await page
             .getByRole("button", { name: "Crear rutina personal" })
             .click();
@@ -275,10 +276,10 @@ async function login(page, role) {
             true,
           );
           await page.getByText("150%", { exact: true }).waitFor();
-          await page
-            .getByRole("button", { name: "Cerrar pantalla completa" })
-            .click();
-          await page.keyboard.press("Escape");
+          await page.evaluate(() => history.back());
+          await page.getByRole("button", { name: "Cerrar pantalla completa" }).waitFor({ state: "hidden" });
+          await page.evaluate(() => history.back());
+          await page.getByRole("dialog", { name: "Consultar ejercicio", exact: true }).waitFor({ state: "hidden" });
           assert.equal(
             await page
               .getByRole("dialog", { name: "Consultar ejercicio", exact: true })
@@ -291,7 +292,8 @@ async function login(page, role) {
               .count(),
             1,
           );
-          await page.keyboard.press("Escape");
+          await page.evaluate(() => history.back());
+          await page.getByRole("dialog", { name: "Nueva rutina", exact: true }).waitFor({ state: "hidden" });
           assert.equal(
             await page.evaluate(() => document.body.style.overflow),
             "",
@@ -390,6 +392,12 @@ async function login(page, role) {
               .count(),
             0,
           );
+          await page.getByText("Personal del alumno", { exact: false }).waitFor();
+          await page.getByRole("button", { name: "Consultar rutina: Personal de person-2", exact: true }).click();
+          await page.getByRole("dialog", { name: "Rutina del alumno", exact: true }).waitFor();
+          await page.evaluate(() => history.back());
+          await page.getByRole("dialog", { name: "Rutina del alumno", exact: true }).waitFor({ state: "hidden" });
+          assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, "Por cliente no desborda en móvil");
           await page
             .getByRole("button", { name: "Mis rutinas", exact: true })
             .click();
@@ -436,6 +444,21 @@ async function login(page, role) {
           role +
             ": OK; mobile/desktop, navigation, dialogs and role interactions",
         );
+        // Fresh app entry with a real previous page: only the rapid double tap exits.
+        if (role === "cliente") {
+          const exitContext = await browser.newContext({ serviceWorkers: "block" });
+          const exitPage = await exitContext.newPage();
+          await exitPage.route("https://outside.example.test/", (route) => route.fulfill({ contentType: "text/html", body: "<h1>Fuera de Infytter</h1>" }));
+          await exitPage.goto("https://outside.example.test/");
+          await login(exitPage, role);
+          await exitPage.getByRole("button", { name: "Entrenar", exact: true }).waitFor();
+          await exitPage.evaluate(() => history.back());
+          await exitPage.getByText("Presioná Atrás otra vez para salir", { exact: true }).waitFor();
+          assert.equal(new URL(exitPage.url()).hostname, "127.0.0.1");
+          await exitPage.evaluate(() => history.back());
+          await exitPage.waitForURL("https://outside.example.test/");
+          await exitContext.close();
+        }
         await context.close();
       } finally {
         await browser.close();

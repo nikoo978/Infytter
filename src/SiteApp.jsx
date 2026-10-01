@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { BrowserRouter } from "react-router-dom";
+import AppBackController from "./components/ui/AppBackController";
 import App from "./App";
 import EmailConfirmedWelcome from "./components/auth/EmailConfirmedWelcome";
 import { AuthProvider } from "./context/AuthContext";
@@ -21,6 +22,7 @@ export default function SiteApp() {
 
   return (
     <BrowserRouter>
+      <AppBackController />
       <AuthProvider><GymProvider><App /></GymProvider></AuthProvider>
     </BrowserRouter>
   );
