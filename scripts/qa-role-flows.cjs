@@ -14,6 +14,7 @@ const exercise = {
   default_reps: "10",
   rest_seconds: 60,
   is_system: false,
+  created_by: "6fd819fe-131d-4278-8a5c-df69b5c2530e",
   notes: "Bajá la barra con control.",
 };
 const routine = {
@@ -54,10 +55,11 @@ const people = [
     expiry: "2026-10-31",
   },
 ];
-async function mock(page, role) {
+async function mock(page, role, permissions = true) {
   let failCatalog = false;
   const calls = [];
   let routineDays = {};
+  const professorPermissions = {userId:"profe-fixture", name:"Martín López",email:"profe@example.test",canGrantAccess:false,canViewStudents:false,canCreateExercises:false,canEditExercises:false,canDeleteExercises:false};
   const uid = "6fd819fe-131d-4278-8a5c-df69b5c2530e";
   const user = {
     id: uid,
@@ -96,7 +98,8 @@ async function mock(page, role) {
         email: user.email,
         display_name: user.user_metadata.name,
         role,
-        is_master: false,
+        is_master: role === "admin",
+        can_view_students: permissions, can_create_exercises: permissions, can_edit_exercises: permissions, can_delete_exercises: permissions,
       };
     else if (url.includes("/gf_exercises")) {
       if (failCatalog) {
@@ -138,6 +141,13 @@ async function mock(page, role) {
     else if (url.includes("gf_save_workout_progress")) data = { updatedAt: new Date().toISOString() };
     else if (url.includes("gf_get_my_routines"))
       data = { personal: [], assigned: [routine] };
+    else if (url.includes("gf_list_account_events")) data=[];
+    else if (url.includes("gf_list_professor_permissions")) data=[professorPermissions];
+    else if (url.includes("gf_set_professor_permission")) {
+      const payload=JSON.parse(route.request().postData());
+      professorPermissions[payload.p_permission]=payload.p_enabled;
+      data={userId:professorPermissions.userId,[payload.p_permission]:payload.p_enabled};
+    }
     else if (url.includes("gf_list_professor_routines")) data = [routine];
     else if (url.includes("gf_list_routine_clients"))
       data = people.map((p) => ({
@@ -166,8 +176,8 @@ async function mock(page, role) {
   });
   return { calls, setFailure: (v) => (failCatalog = v) };
 }
-async function login(page, role) {
-  const controls = await mock(page, role);
+async function login(page, role, permissions = true) {
+  const controls = await mock(page, role, permissions);
   await page.goto("http://127.0.0.1:5174");
   await page.locator("input[type=email]").fill(role + "@example.test");
   await page.locator("input[type=password]").fill("Fixture123!");
@@ -207,6 +217,16 @@ async function login(page, role) {
           await page
             .getByRole("button", { name: "Entrenar", exact: true })
             .waitFor();
+          for (const viewport of [{width:390,height:844},{width:360,height:640},{width:320,height:568}]) {
+            await page.setViewportSize(viewport);
+            const shortcut = await page.getByText("Técnica y ejercicios", {exact:true}).boundingBox();
+            const nav = await page.getByRole("button", {name:"Inicio",exact:true}).boundingBox();
+            await page.screenshot({path:path.join(output,`qa-alumno-${viewport.width}.png`)});
+            assert.ok(shortcut && shortcut.y + shortcut.height < nav.y - 10, "Atajos del inicio visibles " + JSON.stringify(viewport));
+            assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+            await page.screenshot({path:path.join(output,`qa-alumno-${viewport.width}.png`)});
+          }
+          await page.setViewportSize({width:390,height:844});
           await page.screenshot({
             path: path.join(output, "qa-alumno-inicio.png"),
             fullPage: true,
@@ -309,7 +329,7 @@ async function login(page, role) {
           await page
             .getByRole("button", { name: "Ejercicios", exact: true })
             .click();
-          await page.getByRole("button", { name: /Mapa muscular/ }).click();
+          await page.getByRole("button", { name: "Hombre", exact: true }).waitFor();
           await page
             .getByRole("button", { name: "Mujer", exact: true })
             .click();
@@ -347,19 +367,20 @@ async function login(page, role) {
             fullPage: true,
           });
         } else {
-          await page
-            .getByRole("link", { name: "Ver progreso", exact: true })
-            .first()
-            .waitFor();
+          await page.getByRole("link", {name:"Rutinas",exact:true}).first().waitFor();
+          assert.equal(await page.getByPlaceholder("Buscar por nombre o DNI").count(),0,"Inicio sin consulta duplicada");
+          await page.getByRole("link", {name:"Progreso",exact:true}).first().waitFor();
           await page.screenshot({
             path: path.join(output, "qa-profesor-inicio.png"),
             fullPage: true,
           });
           await page
-            .getByRole("link", { name: "Ver progreso", exact: true })
+            .getByRole("link", { name: "Progreso", exact: true })
             .first()
             .click();
           await page.getByRole("button", { name: /Tomás Fernández/ }).waitFor();
+          await page.getByRole("button", { name: /Tomás Fernández/ }).click();
+          await page.waitForFunction(() => Array.from(document.querySelectorAll("button[aria-pressed]")).some(el => el.textContent.includes("Tomás Fernández") && el.getAttribute("aria-pressed") === "true"));
           assert.equal(
             await page
               .getByRole("button", { name: /Tomás Fernández/ })
@@ -379,14 +400,12 @@ async function login(page, role) {
           await page.getByLabel("Sucursal").selectOption("centro");
           await page.getByRole("link", { name: "Inicio", exact: true }).click();
           await page
-            .getByRole("link", { name: "Ver rutinas", exact: true })
+            .getByRole("link", { name: "Rutinas", exact: true })
             .first()
             .click();
+          await page.getByRole("button", {name:"Por cliente",exact:true}).click();
           await page.getByLabel("Alumno para consultar rutinas").waitFor();
-          assert.equal(
-            await page.getByLabel("Alumno para consultar rutinas").inputValue(),
-            "person-1",
-          );
+          await page.getByLabel("Alumno para consultar rutinas").selectOption("person-1");
           await page
             .getByLabel("Alumno para consultar rutinas")
             .selectOption("person-2");
@@ -437,6 +456,13 @@ async function login(page, role) {
             fullPage: true,
           });
           await page.keyboard.press("Escape");
+          await page.getByRole("link", {name:"Ejercicios",exact:true}).first().click();
+          await page.getByRole("button", {name:"Nuevo",exact:true}).click();
+          await page.getByRole("dialog", {name:"Nuevo ejercicio",exact:true}).locator("select[name=muscle_group]").waitFor();
+          await page.keyboard.press("Escape");
+          await page.getByRole("button", {name:/Press banca/}).first().click();
+          await page.getByRole("button",{name:"Editar",exact:true}).waitFor();
+          await page.getByRole("button",{name:"Eliminar",exact:true}).waitFor();
           await page.setViewportSize({ width: 1440, height: 1000 });
           await page.getByRole("link", { name: "Inicio", exact: true }).click();
           await page.waitForTimeout(150);
@@ -476,6 +502,52 @@ async function login(page, role) {
         await browser.close();
       }
     }
+    const restrictedBrowser = await chromium.launch({executablePath:process.env.QA_BROWSER_PATH || undefined,args:["--no-sandbox","--disable-dev-shm-usage"],headless:true});
+    try {
+      const context = await restrictedBrowser.newContext({viewport:{width:390,height:844},serviceWorkers:"block"});
+      const page = await context.newPage();
+      const controls = await login(page,"profe",false);
+      await page.getByRole("link",{name:"Rutinas",exact:true}).first().waitFor();
+      assert.equal(await page.getByRole("link",{name:"Alumnos",exact:true}).count(),0);
+      await page.getByRole("link",{name:"Progreso",exact:true}).first().click();
+      await page.getByText("Mi progreso",{exact:true}).waitFor();
+      assert.equal(await page.getByLabel("Buscar alumno").count(),0);
+      await page.getByRole("link",{name:"Inicio",exact:true}).click();
+      await page.goto("http://127.0.0.1:5174/clientes");
+      await page.waitForURL("http://127.0.0.1:5174/");
+      await page.getByRole("link",{name:"Ejercicios",exact:true}).first().click();
+      await page.getByLabel("Buscar ejercicios").waitFor();
+      assert.equal(await page.getByRole("button",{name:"Nuevo",exact:true}).count(),0);
+      await page.getByRole("button",{name:/Press banca/}).first().click();
+      assert.equal(await page.getByRole("button",{name:"Editar",exact:true}).count(),0);
+      assert.equal(await page.getByRole("button",{name:"Eliminar",exact:true}).count(),0);
+      await page.getByRole("link",{name:"Rutinas",exact:true}).first().click();
+      await page.getByRole("button",{name:"Nueva rutina",exact:true}).waitFor();
+      assert.equal(await page.getByRole("button",{name:"Por cliente",exact:true}).count(),0);
+      assert.equal(controls.calls.some(url=>url.includes("gf_list_routine_clients")),false);
+      console.log("profe sin permisos: OK; menú, rutas, ejercicios y rutinas");
+      await context.close();
+      const adminContext=await restrictedBrowser.newContext({viewport:{width:390,height:844},serviceWorkers:"block"});
+      const adminPage=await adminContext.newPage();
+      const adminErrors=[]; adminPage.on("pageerror",e=>{adminErrors.push(e.message);console.error("Admin page:",e.message)});
+      await login(adminPage,"admin");
+      await adminPage.waitForFunction(()=>JSON.parse(localStorage.getItem("gymflow-profile-v1")||"null")?.role==="admin");
+      await adminPage.goto("http://127.0.0.1:5174/permisos");
+      for (const label of ["Consultar alumnos","Agregar ejercicios","Modificar ejercicios propios","Quitar ejercicios propios","Permitir acceso"]) {
+        const toggle=adminPage.getByRole("switch",{name:label,exact:true});
+        await toggle.waitFor();
+        assert.equal(await toggle.getAttribute("aria-checked"),"false");
+        await toggle.click();
+        await adminPage.waitForFunction(label=>Array.from(document.querySelectorAll('[role="switch"]')).find(el=>document.getElementById(el.getAttribute('aria-labelledby'))?.textContent===label)?.getAttribute('aria-checked')==='true',label);
+        await toggle.click();
+        await adminPage.waitForFunction(label=>Array.from(document.querySelectorAll('[role="switch"]')).find(el=>document.getElementById(el.getAttribute('aria-labelledby'))?.textContent===label)?.getAttribute('aria-checked')==='false',label);
+      }
+      await adminPage.screenshot({path:path.join(output,"qa-admin-permisos.png"),fullPage:true});
+      assert.deepEqual(adminErrors,[]);
+      assert.equal(await adminPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+      await adminContext.close();
+      console.log("admin: OK; cinco permisos independientes reversibles");
+    } finally {await restrictedBrowser.close();}
   } finally {
     server.kill();
   }

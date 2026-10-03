@@ -4,6 +4,7 @@ import { Activity, ClipboardList, Dumbbell, LayoutDashboard, LogOut, UsersRound 
 import { Link } from "react-router-dom";
 import { APP_VERSION } from "../../App";
 import { useAuth } from "../../context/AuthContext";
+import { permissionsForRole } from "../../services/roles";
 import { useGym } from "../../context/GymContext";
 
 const professorNavigation = [
@@ -18,6 +19,8 @@ export default function ProfessorLayout({ currentPath = "/", children, preview =
   const { profile, logout } = useAuth();
   const { data, setBranch, sync } = useGym();
   const shownProfile = previewProfile || profile;
+  const canViewStudents = permissionsForRole("profe", shownProfile).canViewStudents;
+  const visibleNavigation = professorNavigation.filter((item) => canViewStudents || item.path !== "/clientes");
   const displayName = shownProfile?.display_name || "Profesor";
 
   const NavItem = ({ item, compact = false }) => {
@@ -46,14 +49,14 @@ export default function ProfessorLayout({ currentPath = "/", children, preview =
         </div>
       </div>
       <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-3 border-t border-black/5 px-3 py-1.5 text-[10px] font-bold text-slate-400 sm:px-6 md:hidden"><span className="truncate">{displayName}</span><span className="shrink-0">{sync}</span></div>
-      <nav className="mx-auto hidden max-w-[1480px] items-center justify-center gap-1 border-t border-black/5 px-4 py-2 md:flex lg:border-0 lg:py-0">{professorNavigation.map((item) => <NavItem key={item.path} item={item} />)}</nav>
+      <nav className="mx-auto hidden max-w-[1480px] items-center justify-center gap-1 border-t border-black/5 px-4 py-2 md:flex lg:border-0 lg:py-0">{visibleNavigation.map((item) => <NavItem key={item.path} item={item} />)}</nav>
     </header>
 
     <main className="px-3 pb-[calc(6.75rem+env(safe-area-inset-bottom))] pt-4 sm:p-6 sm:pb-28 md:pb-8 lg:p-8">{children}</main>
 
     <div className="fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(.45rem,env(safe-area-inset-bottom))] md:hidden">
-      <nav className="grid grid-cols-5 gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.10)] backdrop-blur-xl">
-        {professorNavigation.map((item) => <NavItem key={item.path} item={item} compact />)}
+      <nav style={{ gridTemplateColumns: `repeat(${visibleNavigation.length}, minmax(0, 1fr))` }} className="grid gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.10)] backdrop-blur-xl">
+        {visibleNavigation.map((item) => <NavItem key={item.path} item={item} compact />)}
       </nav>
     </div>
   </div>;

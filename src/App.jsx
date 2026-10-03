@@ -29,7 +29,7 @@ import "./styles/v1066-admin-menu.css";
 import "./styles/mobile-role-branding.css";
 import "./styles/role-experience.css";
 
-export const APP_VERSION = "V.1.09.8";
+export const APP_VERSION = "V.1.09.9";
 export const navigation = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "coadmin"] },
   { label: "Clientes", path: "/clientes", icon: UsersRound, roles: ["admin", "coadmin"] },
@@ -48,11 +48,12 @@ export const navigation = [
 export const productMeta = { name: "Infytter Fitness", icon: Dumbbell, branchIcon: Building2 };
 
 function ProfessorApp({ currentPath }) {
+  const { permissions } = useAuth();
   return (
     <ProfessorLayout currentPath={currentPath}>
       <Routes>
         <Route path="/" element={<ProfessorDashboard />} />
-        <Route path="/clientes" element={<Clientes />} />
+        <Route path="/clientes" element={permissions.canViewStudents ? <Clientes /> : <Navigate to="/" replace />} />
         <Route path="/progreso" element={<ProfessorProgress />} />
         <Route path="/ejercicios" element={<Exercises />} />
         <Route path="/rutinas" element={<Routines />} />

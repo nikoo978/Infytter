@@ -431,7 +431,7 @@ export function AuthProvider({ children }) {
   if (user && profileLoading && !profile) return <div className="min-h-screen bg-[#050505]" />;
   if (user && profileError && !profile) return <main className="grid min-h-screen place-items-center bg-[#050505] p-4"><section className="w-full max-w-lg rounded-[24px] bg-white p-7 shadow-2xl"><h1 className="text-2xl font-black uppercase text-[#050505]">Actualización requerida</h1><p className="mt-3 text-sm leading-6 text-slate-500">{profileError}</p><button onClick={logout} className="btn-primary mt-5 w-full">Cerrar sesión</button></section></main>;
 
-  const permissions = permissionsForRole(profile?.role);
+  const permissions = permissionsForRole(profile?.role, profile);
   const value = { mode, session, user, profile, role: profile?.role || "cliente", permissions, refreshProfile, isCloud: mode === "cloud" && Boolean(user), isLocal: mode === "local" && Boolean(user), isOnline, canUseLocalMode: permissions.canUseLocalMode && Boolean(profile?.is_master) && desktopPc && Boolean(user) && !isOnline, requestLocalMode, exitLocalMode, logout, openCloudLogin };
 
   return <AuthContext.Provider value={value}>{children}<LocalPinModal open={pinOpen} onClose={() => setPinOpen(false)} onConfirm={confirmLocalMode} error={pinError} busy={pinBusy} /></AuthContext.Provider>;

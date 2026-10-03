@@ -22,3 +22,13 @@ export async function allowProfessorManualAccess(branch) {
   const { data, error } = await supabase.rpc("gf_professor_allow_manual_access", { p_branch: branch });
   return { event: data || null, error };
 }
+
+export async function setProfessorPermission(userId, permission, enabled) {
+  if (!supabase) return { result: null, error: noSupabase() };
+  const allowed = ["canGrantAccess", "canViewStudents", "canCreateExercises", "canEditExercises", "canDeleteExercises"];
+  if (!allowed.includes(permission)) return { result: null, error: new Error("Permiso inválido.") };
+  const { data, error } = await supabase.rpc("gf_set_professor_permission", {
+    p_user_id: userId, p_permission: permission, p_enabled: Boolean(enabled),
+  });
+  return { result: data || null, error };
+}

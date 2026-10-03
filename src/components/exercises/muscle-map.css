@@ -42,3 +42,13 @@
 .anatomy-plate__target { cursor: pointer; }
 .anatomy-plate__target:focus-visible { outline: none; stroke: #9e0710; stroke-width: 3; fill: #e3061322; }
 @media (hover: hover) { .anatomy-plate__target:hover { fill: #e3061322; } }
+
+/* The exercise explorer opens on the anatomy, without instructional blocks. */
+.muscle-map--minimal { border: 0; padding: 0; background: transparent; }
+.muscle-map--minimal .muscle-map__header { justify-content: center; margin-bottom: 12px; }
+.muscle-map--minimal .muscle-map__gender { background: #f1f5f9; border: 0; }
+.muscle-map--minimal .muscle-map__gender button { min-width: 96px; }
+.muscle-map--minimal .muscle-map__gender button[aria-pressed="true"] { background: #e30613; }
+.muscle-map--minimal .muscle-map__canvas { max-width: 600px; margin-inline: auto; border: 0; background: radial-gradient(ellipse, #fff1f2 0, #f8fafc 60%, white 85%); padding: 0; }
+.muscle-map--minimal .muscle-map__figure { height: clamp(230px, 40svh, 330px); max-height: 330px; }
+.muscle-map--minimal .muscle-map__caption { font-size: .75rem; }

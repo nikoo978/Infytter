@@ -1,3 +1,10 @@
+## V1.09.9 — 03/10/2026
+
+- Inicio de profesores sin búsqueda ni fichas duplicadas de alumnos.
+- Admin Master habilita individualmente consulta de alumnos, creación, edición y borrado de ejercicios propios; permisos validados en Supabase.
+- Ejercicios abre con las figuras musculares, selector Hombre/Mujer, búsqueda y filtros de músculos, sin instrucciones repetidas.
+- Inicio del alumno más compacto y adaptable; vencimiento sin duplicar y accesos semanales visibles.
+
 ## V1.09.8 — 02/10/2026
 
 - Rutinas cerradas por defecto para alumnos y profesores, con nombre, origen y resumen visibles.
