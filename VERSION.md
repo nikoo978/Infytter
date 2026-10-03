@@ -1,3 +1,9 @@
+## V1.09.8 — 02/10/2026
+
+- Rutinas cerradas por defecto para alumnos y profesores, con nombre, origen y resumen visibles.
+- Al desplegar aparecen ejercicios y acciones de entrenamiento, organización, edición y envío.
+- Atrás cierra la rutina desplegada; la consulta por alumno mantiene personales y compartidas sin habilitar entrenamiento ajeno.
+
 ## V1.09.7 — 01/10/2026
 
 - Profesor consulta rutinas personales y compartidas del alumno, con origen visible; las personales permanecen de sólo lectura.

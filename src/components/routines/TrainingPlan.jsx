@@ -1,4 +1,5 @@
-import { CalendarDays, Dumbbell, Edit3, Play, Plus, Trash2, UserRound, UsersRound } from "lucide-react";
+import useAppBack from "../../hooks/useAppBack";
+import { ChevronDown, ChevronUp, CalendarDays, Dumbbell, Edit3, Play, Plus, Trash2, UserRound, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { normalizeExerciseSearch } from "../../services/exercises";
 import ExerciseDetail from "../exercises/ExerciseDetail";
@@ -35,7 +36,9 @@ function routineSource(item, maps) {
 }
 
 function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemove, onSchedule, preview }) {
+  const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState(null);
+  useAppBack(open, () => setOpen(false), 20);
   const maps = useMemo(() => sourceMaps(exercises), [exercises]);
   const totalSets = (routine.items || []).reduce((sum, item) => sum + Math.max(1, Number(item.sets || 1)), 0);
   const muscles = [...new Set((routine.items || []).map((item) => routineSource(item, maps)?.muscle_group).filter(Boolean))].slice(0, 4);
@@ -43,20 +46,20 @@ function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemo
 
   return <><article className="overflow-hidden rounded-[24px] border border-black/6 bg-white shadow-sm">
     <div className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={`Rutina: ${routine.title}`} className="flex min-h-11 w-full items-start justify-between gap-3 text-left">
+        <div className="min-w-0 flex-1">
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black ${isProfessor ? "bg-red-50 text-[#9E0710]" : "bg-slate-100 text-slate-600"}`}>
             {isProfessor ? <UsersRound className="size-3" /> : <UserRound className="size-3" />}
             {isProfessor ? "Rutina del profesor" : "Rutina personal"}
           </span>
           <h3 className="mt-2 text-xl font-black leading-6 text-[#050505]">{routine.title}</h3>
-          {routine.description && <p className="mt-1.5 text-xs leading-5 text-slate-500">{routine.description}</p>}
+          <p className="mt-1.5 text-xs leading-5 text-slate-500">{routine.items?.length || 0} ejercicios · {totalSets} series</p>
         </div>
-        <div className="rounded-2xl bg-[#050505] px-3 py-2 text-center text-white">
-          <p className="text-base font-black">{totalSets}</p>
-          <p className="text-[9px] font-black uppercase tracking-wider text-white/70">series</p>
-        </div>
-      </div>
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500">{open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}</span>
+      </button>
+
+      {open && <>
+      {routine.description && <p className="mt-3 text-xs leading-5 text-slate-500">{routine.description}</p>}
 
       {!!muscles.length && <div className="mt-3 flex flex-wrap gap-1.5">{muscles.map((muscle) => <span key={muscle} className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">{muscle}</span>)}</div>}
 
@@ -87,6 +90,7 @@ function RoutinePlanCard({ routine, exercises, onStart, onEdit, onDelete, onRemo
         {!isProfessor && onDelete && <button type="button" onClick={() => onDelete(routine)} className="btn-secondary min-h-10 text-[#9E0710]"><Trash2 className="size-4" /> Eliminar</button>}
         {isProfessor && onRemove && <button type="button" onClick={() => onRemove(routine)} className="btn-secondary col-span-2 min-h-10 text-[#9E0710]"><Trash2 className="size-4" /> Quitar de mi cuenta</button>}
       </div>}
+      </>}
     </div>
   </article><FormDialog open={!!detail} onOpenChange={(open) => { if (!open) setDetail(null); }} title="Consultar ejercicio">{detail && <ExerciseDetail exercise={detail} />}</FormDialog></>;
 }

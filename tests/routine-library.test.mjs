@@ -13,7 +13,9 @@ test("scheduled, unscheduled and professor routines stay visible together", () =
     onChangeDays: () => {},
   }));
   for (const title of ["Bíceps libre", "Piernas miércoles", "Torso del profesor"]) assert.ok(html.includes(title));
-  assert.equal((html.match(/Comenzar entrenamiento/g) || []).length, 3);
-  assert.equal((html.match(/Organizar días \(opcional\)/g) || []).length, 3);
-  assert.ok(html.includes("Podés entrenarla cualquier día"));
+  assert.equal((html.match(/aria-expanded="false"/g) || []).length, 3);
+  assert.ok(!html.includes("Press"));
+  assert.ok(!html.includes("Comenzar entrenamiento"));
+  assert.ok(!html.includes("Organizar días (opcional)"));
+  assert.ok(html.includes("Todas tus rutinas están siempre disponibles"));
 });

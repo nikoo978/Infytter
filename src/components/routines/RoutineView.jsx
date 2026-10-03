@@ -5,13 +5,13 @@ import { normalizeExerciseSearch } from "../../services/exercises";
 import ExerciseDetail from "../exercises/ExerciseDetail";
 import WorkoutRunner from "./WorkoutRunnerV2";
 
-export default function RoutineView({ routine, exercises = [], actions = null, preview = false, allowTraining = true }) {
+export default function RoutineView({ routine, exercises = [], actions = null, preview = false, allowTraining = true, summary = "" }) {
   const [open, setOpen] = useState(false);
   const [openExercise, setOpenExercise] = useState("");
   const [workoutOpen, setWorkoutOpen] = useState(false);
 
   const depth = useContext(BackDepth);
-  useAppBack(Boolean(openExercise), () => setOpenExercise(""), depth * 300 + 30);
+  useAppBack(open && Boolean(openExercise), () => setOpenExercise(""), depth * 300 + 30);
   useAppBack(open, () => setOpen(false), depth * 300 + 20);
 
   const exerciseById = useMemo(() => {
@@ -41,17 +41,18 @@ export default function RoutineView({ routine, exercises = [], actions = null, p
       <article className="overflow-hidden rounded-[22px] bg-white shadow-sm">
         <div className="p-4">
           <div className="flex items-start justify-between gap-3">
-            <button type="button" onClick={() => setOpen((value) => !value)} className="min-w-0 flex-1 text-left" aria-expanded={open}>
+            <button type="button" onClick={() => setOpen((value) => !value)} className="min-w-0 flex-1 text-left" aria-expanded={open} aria-label={`Rutina: ${routine.title}`}>
               <p className="truncate font-black text-slate-900">{routine.title}</p>
-              <p className="mt-1 text-xs leading-5 text-slate-400">{total} ejercicios · {totalSets} series{routine.description ? ` · ${routine.description}` : ""}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-400">{total} ejercicios · {totalSets} series{summary ? ` · ${summary}` : ""}</p>
             </button>
             <button type="button" onClick={() => setOpen((value) => !value)} className="grid size-9 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500" aria-label={open ? "Cerrar detalle" : "Ver detalle"}>{open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}</button>
           </div>
-          {allowTraining && total > 0 && <button type="button" onClick={() => setWorkoutOpen(true)} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#E30613] px-4 text-sm font-black text-white shadow-sm active:scale-[.99]"><Play className="size-4 fill-current" /> Iniciar entrenamiento</button>}
+          {open && allowTraining && total > 0 && <button type="button" onClick={() => setWorkoutOpen(true)} className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#E30613] px-4 text-sm font-black text-white shadow-sm active:scale-[.99]"><Play className="size-4 fill-current" /> Iniciar entrenamiento</button>}
         </div>
 
         {open && (
           <div className="space-y-2 border-t border-slate-100 bg-slate-50/70 p-3">
+            {routine.description && <p className="px-1 text-sm leading-5 text-slate-500">{routine.description}</p>}
             {(routine.items || []).map((item, index) => {
               const key = itemKey(item, index);
               const source = exerciseById.get(String(item.exercise_id || "")) || exerciseByName.get(normalizeExerciseSearch(item.exercise_name));
