@@ -380,6 +380,7 @@ async function login(page, role, permissions = true) {
             .click();
           await page.getByRole("button", { name: /Tomás Fernández/ }).waitFor();
           await page.getByRole("button", { name: /Tomás Fernández/ }).click();
+          await page.waitForFunction(() => Array.from(document.querySelectorAll("button[aria-pressed]")).some(el => el.textContent.includes("Tomás Fernández") && el.getAttribute("aria-pressed") === "true"));
           assert.equal(
             await page
               .getByRole("button", { name: /Tomás Fernández/ })
