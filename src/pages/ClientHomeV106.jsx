@@ -134,21 +134,21 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
     ? "sticky bottom-2 mx-2"
     : "fixed bottom-0 left-1/2 w-full max-w-3xl -translate-x-1/2 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))]";
 
-  return <main className={`${preview ? "min-h-[760px]" : "min-h-dvh"} role-shell overflow-x-hidden bg-[#F4F5F7]`}>
-    <div className="mx-auto w-full max-w-5xl pb-[calc(7rem+env(safe-area-inset-bottom))]">
+  return <main className={`${preview ? "min-h-full" : "min-h-dvh"} role-shell client-shell overflow-x-hidden bg-[#F4F5F7]`}>
+    <div className="client-shell__inner mx-auto w-full max-w-5xl pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/10 bg-[#050505]/95 px-4 text-white shadow-lg backdrop-blur-xl sm:h-16">
         <img src="/infytter-logo.svg" alt="Infytter Fitness" className="h-8 w-28 object-contain object-left sm:h-9 sm:w-32" />
         <div className="text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/70">Mi Infytter</p></div>
       </header>
 
-      <div className="space-y-4 p-3.5 sm:p-4">
+      <div className={`${tab === "inicio" ? "student-home" : "space-y-4"} p-3.5 sm:p-4`}>
         {tab === "inicio" && <>
-          <section className="overflow-hidden rounded-[26px] bg-[#050505] p-5 text-white shadow-xl">
+          <section className="student-home__welcome overflow-hidden rounded-[26px] bg-[#050505] p-5 text-white shadow-xl">
             <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/65">Tu día en Infytter</p><h1 className="mt-2 break-words text-2xl font-black sm:text-3xl">Hola, {name}</h1><p className="mt-2 text-xs text-white/70">{todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}</p></div>
+              <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/65">Tu día en Infytter</p><h1 className="student-home__greeting mt-2 break-words text-2xl font-black sm:text-3xl">Hola, {name}</h1><p className="mt-2 text-xs text-white/70">{todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}</p></div>
               <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613]"><ShieldCheck className="size-5" /></span>
             </div>
-            {member && <div className="mt-5 flex items-center justify-between rounded-2xl bg-white/8 px-4 py-3 border border-white/10"><div><p className="text-[10px] font-black uppercase tracking-wider text-white/40">Membresía</p><p className="mt-1 text-lg font-black">{status}</p></div><span className={`rounded-full px-3 py-1.5 text-xs font-black ${statusTone}`}>{dateLabel(member.expiry)}</span></div>}
+            {member && <div className="student-home__membership mt-5 flex items-center justify-between rounded-2xl bg-white/8 px-4 py-3 border border-white/10"><div><p className="text-[10px] font-black uppercase tracking-wider text-white/40">Membresía</p><p className="mt-1 text-lg font-black">{status}</p></div><span className={`rounded-full px-3 py-1.5 text-xs font-black ${statusTone}`}>{dateLabel(member.expiry)}</span></div>}
           </section>
 
           {loading && <div className="flex items-center gap-2 rounded-2xl bg-white p-4 text-sm font-bold text-slate-500 shadow-sm"><RefreshCw className="size-4 animate-spin" /> Cargando tu información…</div>}
@@ -158,21 +158,21 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
           {routineError && tab === "inicio" && <div role="alert" className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{routineError}<button type="button" onClick={loadRoutines} className="btn-secondary mt-3 min-h-11">Volver a cargar mi plan</button></div>}
 
           {!loading && member && <>
-            <button disabled={routineLoading} onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} className="w-full disabled:opacity-60 overflow-hidden rounded-[24px] bg-[#E30613] p-5 text-left text-white shadow-lg active:scale-[.99]">
+            <button disabled={routineLoading} onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} className="student-home__training w-full disabled:opacity-60 overflow-hidden rounded-[24px] bg-[#E30613] p-5 text-left text-white shadow-lg active:scale-[.99]">
               <div className="flex items-center justify-between gap-4">
                 <div><p className="text-[10px] font-black uppercase tracking-[.16em] text-white/65">Entrenar hoy</p><p className="mt-1 text-xl font-black">{routineLoading ? "Cargando tus rutinas…" : todayRoutines.length ? todayRoutines[0].title : "Elegir una rutina"}</p><p className="mt-1 text-xs text-white/70">{todayRoutines.length ? `${todayRoutines.length} rutina${todayRoutines.length === 1 ? "" : "s"} programada${todayRoutines.length === 1 ? "" : "s"} para hoy` : "Todas tus rutinas, disponibles cuando quieras"}</p></div>
                 <Dumbbell className="size-9 shrink-0" />
               </div>
             </button>
 
-            <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <section className="student-home__stats grid grid-cols-2 gap-3 sm:grid-cols-4">
               <InfoCard label="Plan" value={member.plan || "—"} />
-              <InfoCard label="Vence" value={dateLabel(member.expiry)} />
+              <InfoCard icon={Fingerprint} label="Accesos esta semana" value={thisWeekDays === null ? "Sin límite" : `${thisWeekDays} / 3 días`} />
               <InfoCard icon={ScaleIcon} label="Peso" value={latest ? `${number(latest.weightKg)} kg` : "Sin medir"} />
               <InfoCard icon={Activity} label="IMC / grasa" value={latest ? `${number(latest.bmi, 2)}${latest.bodyFatPct != null ? ` · ${number(latest.bodyFatPct)}%` : ""}` : "Sin datos"} />
             </section>
 
-            <section className="grid grid-cols-2 gap-3">
+            <section className="student-home__shortcuts grid grid-cols-2 gap-3">
               <button onClick={() => setTab("progreso")} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Activity className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Ver progreso</p><p className="mt-1 text-[10px] font-bold text-slate-400">Cuerpo + rendimiento</p></button>
               <button onClick={() => { setTab("ejercicios"); }} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Dumbbell className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Ejercicios</p><p className="mt-1 text-[10px] font-bold text-slate-400">Técnica y ejercicios</p></button>
             </section>

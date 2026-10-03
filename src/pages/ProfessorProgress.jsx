@@ -1,15 +1,19 @@
 import { Search, UserRound, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import { useSearchParams } from "react-router-dom";
 import BodyMetricsPanel from "../components/progress/BodyMetricsPanel";
 import { useGym } from "../context/GymContext";
 
 export default function ProfessorProgress() {
   const { data } = useGym();
+  const { permissions } = useAuth();
+  const canViewStudents = permissions.canViewStudents;
   const [searchParams, setSearchParams] = useSearchParams();
   const [mode, setMode] = useState("alumnos");
   const [query, setQuery] = useState("");
-  const selectedId = searchParams.get("alumno") || "";
+  const selectedId = canViewStudents ? searchParams.get("alumno") || "" : "";
+  const shownMode = canViewStudents ? mode : "mio";
   const selectClient = (id) => setSearchParams(id ? { alumno: String(id) } : {});
 
   const clients = useMemo(() => (data.people || [])
@@ -22,14 +26,14 @@ export default function ProfessorProgress() {
   return <div className="mx-auto max-w-[1200px] space-y-4 sm:space-y-6">
     <section className="page-head"><div><p className="eyebrow">Seguimiento</p><h1 className="page-title">Progreso</h1><p className="page-subtitle">Medidas propias y seguimiento corporal de alumnos, pensado para usar desde el celular.</p></div></section>
 
-    <div className="grid grid-cols-2 rounded-2xl bg-slate-200/70 p-1">
+    {canViewStudents && <div className="grid grid-cols-2 rounded-2xl bg-slate-200/70 p-1">
       <button type="button" aria-pressed={mode === "alumnos"} onClick={() => setMode("alumnos")} className={`min-h-11 rounded-xl px-3 text-xs font-black ${mode === "alumnos" ? "bg-white text-[#050505] shadow-sm" : "text-slate-500"}`}><UsersRound className="mr-1.5 inline size-4" /> Alumnos</button>
       <button type="button" aria-pressed={mode === "mio"} onClick={() => setMode("mio")} className={`min-h-11 rounded-xl px-3 text-xs font-black ${mode === "mio" ? "bg-white text-[#050505] shadow-sm" : "text-slate-500"}`}><UserRound className="mr-1.5 inline size-4" /> Mis medidas</button>
-    </div>
+    </div>}
 
-    {mode === "mio" && <div className="rounded-[24px] bg-[#F5F5F5]"><BodyMetricsPanel self title="Mi progreso" subtitle="Registrá tus propias medidas y seguí tu evolución." /></div>}
+    {shownMode === "mio" && <div className="rounded-[24px] bg-[#F5F5F5]"><BodyMetricsPanel self title="Mi progreso" subtitle="Registrá tus propias medidas y seguí tu evolución." /></div>}
 
-    {mode === "alumnos" && <section className="grid gap-5 xl:grid-cols-[360px_1fr]">
+    {shownMode === "alumnos" && <section className="grid gap-5 xl:grid-cols-[360px_1fr]">
       <div className="panel p-3.5 sm:p-5">
         <div className="flex items-center justify-between"><h2 className="section-title">Elegir alumno</h2><span className="text-xs font-bold text-slate-500">{clients.length} encontrados</span></div>
         <label className="mt-3 flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:ring-2 focus-within:ring-[#E30613]/15"><Search className="size-4 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" aria-label="Buscar alumno" placeholder="Nombre o DNI" /></label>

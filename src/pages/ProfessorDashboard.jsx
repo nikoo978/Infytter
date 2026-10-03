@@ -1,4 +1,4 @@
-import { Activity, ArrowUpRight, CalendarClock, ClipboardList, DoorOpen, Dumbbell, Search, UserCheck, UsersRound } from "lucide-react";
+import { Activity, ArrowUpRight, CalendarClock, ClipboardList, DoorOpen, Dumbbell, UserCheck, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { statusOf, useGym } from "../context/GymContext";
@@ -7,12 +7,10 @@ import { allowProfessorManualAccess } from "../services/professorAccess";
 import { gymDateISO, gymDateISOOrNull } from "../services/gymDate";
 
 const today = () => gymDateISO();
-const dateLabel = (value) => value ? new Date(`${String(value).slice(0, 10)}T12:00:00`).toLocaleDateString("es-AR") : "—";
 
 export default function ProfessorDashboard({ previewProfile = null }) {
   const { data, sync, syncPendingNow } = useGym();
-  const { profile } = useAuth();
-  const [query, setQuery] = useState("");
+  const { profile, permissions } = useAuth();
   const [accessBusy, setAccessBusy] = useState(false);
   const [accessMessage, setAccessMessage] = useState("");
   const [accessError, setAccessError] = useState("");
@@ -22,8 +20,8 @@ export default function ProfessorDashboard({ previewProfile = null }) {
   const active = people.filter((person) => statusOf(person) !== "Vencida");
   const expiring = people.filter((person) => statusOf(person) === "Por vencer").sort((a, b) => String(a.expiry).localeCompare(String(b.expiry)));
   const accessesToday = data.accesses.filter((item) => item.branch === branch && gymDateISOOrNull(item.date) === today());
-  const filtered = people.filter((person) => `${person.name} ${person.dni}`.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8);
-  const canGrantAccess = !previewProfile && Boolean(profile?.can_grant_access);
+  const canViewStudents = previewProfile ? previewProfile.can_view_students === true : permissions.canViewStudents;
+  const canGrantAccess = !previewProfile && permissions.canGrantManualAccess;
 
   const grantAccess = async () => {
     if (!canGrantAccess || accessBusy) return;
@@ -38,7 +36,7 @@ export default function ProfessorDashboard({ previewProfile = null }) {
   return <div className="mx-auto max-w-[1480px] flex flex-col gap-4 sm:gap-6">
     <section className="overflow-hidden rounded-[26px] bg-[#050505] p-5 text-white shadow-xl sm:p-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.2em] text-[#ff7a82]">Panel profesor</p><h1 className="mt-2 truncate text-2xl font-black sm:text-3xl">Hola, {shownProfile?.display_name || "Profe"}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">Elegí un alumno para revisar su progreso o preparar su próximo entrenamiento.</p></div>
+        <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.2em] text-[#ff7a82]">Panel profesor</p><h1 className="mt-2 truncate text-2xl font-black sm:text-3xl">Hola, {shownProfile?.display_name || "Profe"}</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">Organizá tus rutinas y consultá los ejercicios para preparar tus entrenamientos.</p></div>
         {canGrantAccess && <button onClick={grantAccess} disabled={accessBusy} className="min-h-14 w-full rounded-2xl bg-[#E30613] px-5 text-base font-black text-white shadow-lg shadow-red-950/20 transition active:scale-[.98] disabled:opacity-60 lg:w-auto"><DoorOpen className="mr-2 inline size-5" /> {accessBusy ? "Permitiendo…" : "Permitir acceso"}</button>}
       </div>
     </section>
@@ -48,28 +46,20 @@ export default function ProfessorDashboard({ previewProfile = null }) {
     {accessMessage && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{accessMessage}</p>}
     {accessError && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{accessError}</p>}
 
-    <section className="order-1 grid grid-cols-2 gap-3 xl:grid-cols-4">
+    {canViewStudents && <section className="order-1 grid grid-cols-2 gap-3 xl:grid-cols-4">
       <Stat icon={UsersRound} value={people.length} label="Alumnos" />
       <Stat icon={UserCheck} value={active.length} label="Membresías activas" />
       <Stat icon={Activity} value={accessesToday.filter((item) => item.allowed).length} label="Ingresos hoy" />
       <Stat icon={CalendarClock} value={expiring.length} label="Por vencer" />
-    </section>
+    </section>}
 
-    <section className="order-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <QuickLink to="/clientes" icon={UsersRound} label="Alumnos" detail="Consultar fichas" />
-      <QuickLink to="/progreso" icon={Activity} label="Progreso" detail="Medidas y evolución" />
+    <section className="order-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <QuickLink to="/progreso" icon={Activity} label="Progreso" detail={canViewStudents ? "Medidas y evolución" : "Mis medidas"} />
       <QuickLink to="/ejercicios" icon={Dumbbell} label="Ejercicios" detail="Resolver dudas" />
       <QuickLink to="/rutinas" icon={ClipboardList} label="Rutinas" detail="Crear y enviar" />
     </section>
 
-    <section className="order-2 grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
-      <div className="panel p-3.5 sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="section-title">Alumnos</h2><p className="mt-1 text-xs text-slate-500">Acceso rápido a estado y vencimiento.</p></div><label className="flex h-11 items-center gap-2 rounded-xl border border-slate-200 px-3"><Search className="size-4 text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" aria-label="Buscar alumnos por nombre o DNI" placeholder="Nombre o DNI" /></label></div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">{filtered.map((person) => { const status = statusOf(person); return <article key={person.id} className="rounded-2xl border border-black/7 bg-white p-3.5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate font-black text-slate-900">{person.name}</p><p className="mt-1 text-xs font-bold text-slate-400">DNI {person.dni} · {person.plan}</p></div><span className={`status shrink-0 ${status === "Vigente" ? "status-ok" : status === "Por vencer" ? "status-warn" : "status-bad"}`}>{status}</span></div><p className="mt-3 text-xs font-bold text-slate-500">Vence {dateLabel(person.expiry)}</p><div className="mt-3 grid grid-cols-2 gap-2"><Link to={`/progreso?alumno=${encodeURIComponent(person.id)}`} className="btn-secondary min-h-11 text-xs"><Activity className="size-4" /> Ver progreso</Link><Link to={`/rutinas?alumno=${encodeURIComponent(person.id)}`} className="btn-primary min-h-11 text-xs"><ClipboardList className="size-4" /> Ver rutinas</Link></div></article>; })}{!filtered.length && <p className="py-8 text-center text-sm text-slate-400 sm:col-span-2">No encontramos alumnos en esta sede. Probá otro nombre, DNI o sede.</p>}</div>
-      </div>
 
-      <div className="panel p-3.5 sm:p-5"><h2 className="section-title">Próximos vencimientos</h2><div className="mt-4 space-y-2">{expiring.slice(0, 6).map((person) => <div key={person.id} className="flex items-center justify-between gap-3 rounded-xl bg-amber-50 px-3 py-3"><div className="min-w-0"><p className="truncate text-sm font-black text-slate-800">{person.name}</p><p className="text-xs text-slate-500">{person.plan}</p></div><span className="shrink-0 text-xs font-black text-amber-700">{dateLabel(person.expiry)}</span></div>)}{!expiring.length && <p className="py-6 text-center text-sm text-slate-400">Sin vencimientos cercanos.</p>}</div></div>
-    </section>
   </div>;
 }
 

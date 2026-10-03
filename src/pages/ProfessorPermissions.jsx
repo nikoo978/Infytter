@@ -1,7 +1,15 @@
-import { RefreshCw, ShieldCheck, ShieldOff, UserCog } from "lucide-react";
+import { RefreshCw, UserCog } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { listProfessorAccessPermissions, setProfessorAccessPermission } from "../services/professorAccess";
+import { listProfessorAccessPermissions, setProfessorPermission } from "../services/professorAccess";
+
+const controls = [
+  ["canViewStudents", "Consultar alumnos", "Buscar fichas, consultar progreso y enviar rutinas."],
+  ["canCreateExercises", "Agregar ejercicios", "Crear ejercicios personalizados."],
+  ["canEditExercises", "Modificar ejercicios propios", "Editar los ejercicios personalizados que creó."],
+  ["canDeleteExercises", "Quitar ejercicios propios", "Eliminar sus ejercicios personalizados; conserva el catálogo base."],
+  ["canGrantAccess", "Permitir acceso", "Autorizar un ingreso manual al gimnasio."],
+];
 
 export default function ProfessorPermissions() {
   const { permissions } = useAuth();
@@ -10,7 +18,6 @@ export default function ProfessorPermissions() {
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
   const load = async () => {
     setLoading(true); setError("");
     const result = await listProfessorAccessPermissions();
@@ -18,29 +25,29 @@ export default function ProfessorPermissions() {
     else setProfessors(result.professors || []);
     setLoading(false);
   };
-
-  useEffect(() => { if (permissions?.isMaster) load(); }, [permissions?.isMaster]);
-
-  const toggle = async (professor) => {
-    const next = !professor.canGrantAccess;
-    setSaving(professor.userId); setError(""); setMessage("");
-    const result = await setProfessorAccessPermission(professor.userId, next);
-    if (result.error) setError(result.error.message || "No se pudo actualizar el permiso.");
-    else {
-      setProfessors((current) => current.map((item) => item.userId === professor.userId ? { ...item, canGrantAccess: next } : item));
-      setMessage(`${professor.name || professor.email}: “Permitir acceso” ${next ? "habilitado" : "deshabilitado"}.`);
-    }
-    setSaving("");
+  useEffect(() => { if (permissions?.isMaster) void load(); }, [permissions?.isMaster]);
+  const toggle = async (professor, key, label) => {
+    if (saving) return;
+    const next = !professor[key];
+    setSaving(`${professor.userId}:${key}`); setError(""); setMessage("");
+    try {
+      const result = await setProfessorPermission(professor.userId, key, next);
+      if (result.error) setError(result.error.message || "No se pudo actualizar el permiso.");
+      else {
+        setProfessors((current) => current.map((item) => item.userId === professor.userId ? { ...item, [key]: next } : item));
+        setMessage(`${professor.name || professor.email}: ${label} ${next ? "habilitado" : "deshabilitado"}.`);
+      }
+    } catch { setError("No se pudo guardar el permiso. Volvé a intentar."); }
+    finally { setSaving(""); }
   };
-
   if (!permissions?.isMaster) return null;
-
   return <div className="mx-auto max-w-[1000px] space-y-6">
-    <section className="page-head"><div><p className="eyebrow">Seguridad</p><h1 className="page-title">Permisos de profesores</h1><p className="page-subtitle">El Admin Master decide qué profesores pueden ver y usar el botón “Permitir acceso”.</p></div><button onClick={load} disabled={loading} className="btn-secondary"><RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} /> Actualizar</button></section>
-
-    {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{message}</p>}
-    {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
-
-    <section className="panel p-3.5 sm:p-5"><div className="space-y-3">{professors.map((professor) => <article key={professor.userId} className="flex flex-col gap-3 rounded-2xl border border-black/7 bg-white p-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><span className={`grid size-11 shrink-0 place-items-center rounded-2xl ${professor.canGrantAccess ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}><UserCog className="size-5" /></span><div className="min-w-0"><p className="truncate font-black text-slate-900">{professor.name || professor.email}</p><p className="truncate text-xs font-bold text-slate-400">{professor.email}</p><p className="mt-1 text-[11px] text-slate-400">{professor.linkedPersonId ? "Ficha vinculada" : "Sin ficha vinculada"}</p></div></div><button onClick={() => toggle(professor)} disabled={saving === professor.userId} className={`min-h-11 rounded-xl px-4 text-sm font-black transition disabled:opacity-50 ${professor.canGrantAccess ? "bg-red-50 text-[#9E0710]" : "bg-[#050505] text-white"}`}>{professor.canGrantAccess ? <><ShieldOff className="mr-1.5 inline size-4" /> Quitar permiso</> : <><ShieldCheck className="mr-1.5 inline size-4" /> Habilitar acceso</>}</button></article>)}{!loading && !professors.length && <p className="py-10 text-center text-sm text-slate-400">No hay cuentas Profesor registradas.</p>}</div></section>
+    <section className="page-head"><div><h1 className="page-title">Permisos de profesores</h1><p className="page-subtitle">Habilitá cada función para los profesores que elijas.</p></div><button onClick={load} disabled={loading || Boolean(saving)} className="btn-secondary"><RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} /> Actualizar</button></section>
+    {message && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{message}</p>}
+    {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
+    <section className="space-y-4">{professors.map((professor) => <article key={professor.userId} className="panel p-4 sm:p-5">
+      <div className="mb-4 flex min-w-0 items-center gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-red-50 text-[#E30613]"><UserCog className="size-5" /></span><div className="min-w-0"><h2 className="truncate font-black text-slate-900">{professor.name || professor.email}</h2><p className="truncate text-xs text-slate-500">{professor.email}</p></div></div>
+      <div className="divide-y divide-slate-100">{controls.map(([key, label, detail]) => <div key={key} className="flex items-center justify-between gap-4 py-3"><div className="min-w-0"><p id={`${professor.userId}-${key}`} className="text-sm font-bold text-slate-800">{label}</p><p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p></div><button type="button" role="switch" aria-checked={Boolean(professor[key])} aria-labelledby={`${professor.userId}-${key}`} disabled={Boolean(saving)} onClick={() => toggle(professor, key, label)} className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition disabled:opacity-50 ${professor[key] ? "bg-[#E30613]" : "bg-slate-300"}`}><span className={`size-6 rounded-full bg-white shadow transition-transform ${professor[key] ? "translate-x-7" : "translate-x-1"}`} /></button></div>)}</div>
+    </article>)}{loading && <p className="text-sm text-slate-500">Cargando profesores…</p>}{!loading && !professors.length && <p className="panel py-10 text-center text-sm text-slate-500">No hay cuentas Profesor registradas.</p>}</section>
   </div>;
 }

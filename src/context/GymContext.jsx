@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { supabase } from "../services/supabase";
-import { getCloudState, getWalOperations, recoverWalOperations, setCloudState, stagePendingOperations, unstagePendingOperations } from "../services/storage";
+import { getCloudState, clearCloudState, getWalOperations, recoverWalOperations, setCloudState, stagePendingOperations, unstagePendingOperations } from "../services/storage";
 import { applyOperationsLocally, buildStateOperations, flushPendingOperations, getDeviceId, pendingOperations, queueStateOperations } from "../services/offlineSync";
 import { cancelMembershipNotifications, scheduleMembershipNotifications, sendRemoteEvent } from "../services/notifications";
 import { useAuth } from "./AuthContext";
@@ -68,6 +68,8 @@ export function GymProvider({ children }) {
   const [storageReady, setStorageReady] = useState(false);
   const loadedIdentity = useRef("");
   const dataRef = useRef(seed);
+  const permissionRef = useRef(permissions);
+  permissionRef.current = permissions;
   const syncingRef = useRef(false);
   const flushTimerRef = useRef(null);
   const volatileOpsRef = useRef([]);
@@ -77,10 +79,20 @@ export function GymProvider({ children }) {
 
   const replaceData = (value) => {
     const next = normalizeData(value);
+    if (permissionRef.current?.role === "profe" && !permissionRef.current.canViewStudents) {
+      next.people = []; next.accesses = []; next.notificationLog = [];
+    }
     dataRef.current = next;
     setData(next);
     return next;
   };
+
+  useEffect(() => {
+    if (permissions?.role === "profe" && !permissions.canViewStudents) {
+      replaceData(dataRef.current);
+      if (user?.id) void clearCloudState(user.id).catch(() => undefined);
+    }
+  }, [permissions?.role, permissions?.canViewStudents, user?.id]);
 
   const localUnsentOperations = async (userId = user?.id) => {
     if (!userId) return [];
@@ -125,8 +137,7 @@ export function GymProvider({ children }) {
 
         const remaining = await localUnsentOperations(user.id);
         if (remoteState) {
-          const merged = applyOperationsLocally(normalizeData(remoteState), remaining);
-          replaceData(merged);
+          const merged = replaceData(applyOperationsLocally(normalizeData(remoteState), remaining));
           await setCloudState(user.id, merged).catch(() => undefined);
         }
       }
@@ -138,8 +149,7 @@ export function GymProvider({ children }) {
       }
 
       const remaining = await localUnsentOperations(user.id);
-      const finalState = remoteState ? applyOperationsLocally(normalizeData(remoteState), remaining) : dataRef.current;
-      replaceData(finalState);
+      const finalState = replaceData(remoteState ? applyOperationsLocally(normalizeData(remoteState), remaining) : dataRef.current);
       await setCloudState(user.id, finalState).catch(() => undefined);
       setPendingCount(remaining.length);
 
@@ -198,10 +208,9 @@ export function GymProvider({ children }) {
           const { data: remoteState, error } = await supabase.rpc("gf_get_gym_state");
           if (error) throw error;
           const remote = normalizeData(remoteState || seed);
-          const next = applyOperationsLocally(remote, queued);
-          await setCloudState(user.id, next).catch(() => undefined);
           if (!active || loadedIdentity.current !== identity) return;
-          replaceData(next);
+          const next = replaceData(applyOperationsLocally(remote, queued));
+          await setCloudState(user.id, next).catch(() => undefined);
           setSync(queued.length ? `Sincronizando ${queued.length} pendiente${queued.length === 1 ? "" : "s"}…` : "Sincronizado");
         } catch {
           if (!active || loadedIdentity.current !== identity) return;
@@ -221,7 +230,7 @@ export function GymProvider({ children }) {
     })();
 
     return () => { active = false; };
-  }, [isCloud, isLocal, user?.id, permissions?.isStaff]);
+  }, [isCloud, isLocal, user?.id, permissions?.isStaff, permissions?.canViewStudents]);
 
   useEffect(() => {
     if (!storageReady || !user?.id || !permissions?.isStaff || (!isCloud && !isLocal)) return undefined;

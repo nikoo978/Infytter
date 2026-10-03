@@ -37,8 +37,8 @@ export default function ProfessorMobilePreview() {
     if (professorPath === "/progreso") return <div className="pointer-events-none select-none"><ProfessorProgress /></div>;
     if (professorPath === "/ejercicios") return <ExerciseCatalog preview />;
     if (professorPath === "/rutinas") return <div className="pointer-events-none select-none"><Routines /></div>;
-    return <div onClickCapture={(event) => { const link = event.target.closest?.("a[href]"); if (!link) return; event.preventDefault(); navigateProfessor(link.getAttribute("href")); }}><ProfessorDashboard previewProfile={{ display_name: professor?.name || "Profesor" }} /></div>;
+    return <div onClickCapture={(event) => { const link = event.target.closest?.("a[href]"); if (!link) return; event.preventDefault(); navigateProfessor(link.getAttribute("href")); }}><ProfessorDashboard previewProfile={{ display_name: professor?.name || "Profesor", can_view_students: true }} /></div>;
   })();
 
-  return <ProfessorLayout preview previewProfile={{ display_name: professor?.name || "Profesor" }} currentPath={professorPath} onPreviewNavigate={navigateProfessor}>{professorContent}</ProfessorLayout>;
+  return <ProfessorLayout preview previewProfile={{ display_name: professor?.name || "Profesor", can_view_students: true }} currentPath={professorPath} onPreviewNavigate={navigateProfessor}>{professorContent}</ProfessorLayout>;
 }

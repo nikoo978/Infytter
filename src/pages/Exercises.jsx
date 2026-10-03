@@ -1,11 +1,11 @@
 import useAppBack from "../hooks/useAppBack";
-import { ChevronDown, ChevronUp, Eye, EyeOff, Dumbbell, ExternalLink, Pencil, Plus, RefreshCw, Search, Trash2, Video } from "lucide-react";
+import { ChevronDown, ChevronUp, Eye, EyeOff, Dumbbell, ExternalLink, Pencil, Plus, RefreshCw, Trash2, Video } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ExerciseGifGallery } from "../components/exercises/ExerciseGif";
-import MuscleMap from "../components/exercises/MuscleMap";
+import ExerciseExplorer from "../components/exercises/ExerciseExplorer";
 import FormDialog from "../components/ui/FormDialog";
 import { useAuth } from "../context/AuthContext";
-import { createExercise, deleteExercise, EXERCISE_CATEGORIES, listExercises, matchesExerciseSearch, MUSCLE_GROUPS, setExerciseVisibility, updateExercise } from "../services/exercises";
+import { createExercise, deleteExercise, EXERCISE_CATEGORIES, MUSCLE_GROUPS, listExercises, matchesExerciseSearch, setExerciseVisibility, updateExercise } from "../services/exercises";
 
 const input = "mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-[#E30613]/20";
 const PAGE_SIZE = 48;
@@ -74,7 +74,7 @@ function SecondaryNames({ exercise }) {
 }
 
 export default function Exercises() {
-  const { user, role } = useAuth();
+  const { user, role, permissions } = useAuth();
   const [exercises, setExercises] = useState([]);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("Todos");
@@ -87,7 +87,12 @@ export default function Exercises() {
   const [message, setMessage] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const isManager = ["admin", "coadmin"].includes(role);
-  const canCreate = ["admin", "coadmin", "profe"].includes(role);
+  const canCreate = permissions.canCreateExercises;
+
+  useEffect(() => {
+    if (!canCreate) setCreating(false);
+    if (!permissions.canEditExercises) setEditing(null);
+  }, [canCreate, permissions.canEditExercises]);
 
   useAppBack(Boolean(openId), () => setOpenId(""), 20);
 
@@ -111,6 +116,7 @@ export default function Exercises() {
 
   const submitCreate = async (event) => {
     event.preventDefault();
+    if (!canCreate) return;
     setBusy(true); setError(""); setMessage("");
     const result = await createExercise(normalizePayload(new FormData(event.currentTarget)));
     if (result.error) setError(result.error.message || "No se pudo crear el ejercicio.");
@@ -120,7 +126,7 @@ export default function Exercises() {
 
   const submitEdit = async (event) => {
     event.preventDefault();
-    if (!editing) return;
+    if (!editing || !canEdit(editing)) return;
     setBusy(true); setError(""); setMessage("");
     const result = await updateExercise(editing.id, normalizePayload(new FormData(event.currentTarget)));
     if (result.error) setError(result.error.message || "No se pudo actualizar el ejercicio.");
@@ -129,7 +135,7 @@ export default function Exercises() {
   };
 
   const remove = async (exercise) => {
-    if (!window.confirm(`¿Eliminar ${exercise.name}?`)) return;
+    if (!canDelete(exercise) || !window.confirm(`¿Eliminar ${exercise.name}?`)) return;
     setBusy(true); setError("");
     const result = await deleteExercise(exercise.id);
     if (!result.ok) setError(result.error?.message || "No se pudo eliminar el ejercicio.");
@@ -145,15 +151,15 @@ export default function Exercises() {
     setBusy(false);
   };
 
-  const canEdit = (exercise) => isManager || (!exercise.is_system && exercise.created_by === user?.id);
+  const ownsCustom = (exercise) => !exercise.is_system && exercise.created_by === user?.id;
+  const canEdit = (exercise) => isManager || (permissions.canEditExercises && ownsCustom(exercise));
+  const canDelete = (exercise) => !exercise.is_system && (isManager || (permissions.canDeleteExercises && ownsCustom(exercise)));
 
   return (
     <div className="mx-auto max-w-[1480px] space-y-4 sm:space-y-6">
       <section className="page-head gap-4">
         <div>
-          <p className="eyebrow">Glosario</p>
           <h1 className="page-title">Ejercicios</h1>
-          <p className="page-subtitle">Biblioteca completa clasificada por músculo. Cada ejercicio aparece una sola vez; cuando tiene variantes visuales, todos sus GIFs se muestran dentro del mismo detalle.</p>
         </div>
         <div className="flex w-full gap-2 sm:w-auto">
           <button onClick={load} disabled={loading} className="btn-secondary flex-1 sm:flex-none"><RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} /><span className="hidden sm:inline">Actualizar</span></button>
@@ -164,24 +170,7 @@ export default function Exercises() {
       {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{message}</p>}
       {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
 
-      <section className="panel space-y-3 p-3 sm:p-4">
-        <label className="flex h-11 items-center gap-2 rounded-xl border border-slate-200 px-3 focus-within:ring-2 focus-within:ring-[#E30613]/15">
-          <Search className="size-4 shrink-0 text-slate-400" />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" placeholder="Buscar nombre, alias u original" />
-        </label>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-black text-slate-400">{loading ? "Cargando…" : `${visible.length} de ${exercises.length} ejercicios`}</p>
-          {query && <button type="button" onClick={() => setQuery("")} className="text-xs font-black text-[#9E0710]">Limpiar</button>}
-        </div>
-
-        <MuscleMap value={group} onChange={setGroup} />
-
-        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Todos los filtros</p>
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <button type="button" onClick={() => setGroup("Todos")} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === "Todos" ? "bg-[#050505] text-white" : "bg-slate-100 text-slate-600"}`}>Todos</button>
-          {MUSCLE_GROUPS.map((item) => <button key={item} type="button" onClick={() => setGroup(item)} className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ${group === item ? "bg-[#E30613] text-white" : "bg-slate-100 text-slate-600"}`}>{item}</button>)}
-        </div>
-      </section>
+      <ExerciseExplorer query={query} onQueryChange={setQuery} group={group} onGroupChange={setGroup} count={visible.length} loading={loading} />
 
       <section className="grid gap-3 md:grid-cols-2">
         {shown.map((exercise) => {
@@ -213,7 +202,7 @@ export default function Exercises() {
                     {exercise.video_url && <a href={exercise.video_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-700"><Video className="size-3.5" /> Ver video <ExternalLink className="size-3" /></a>}
                     {isManager && <button type="button" onClick={() => toggleVisibility(exercise)} disabled={busy} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-100 px-3 text-xs font-black text-slate-700">{exercise.is_hidden ? <Eye className="size-4" /> : <EyeOff className="size-4" />}{exercise.is_hidden ? "Mostrar al público" : "Ocultar al público"}</button>}
                     {canEdit(exercise) && <button onClick={() => setEditing(exercise)} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-700"><Pencil className="size-3.5" /> Editar</button>}
-                    {canEdit(exercise) && !exercise.is_system && <button onClick={() => remove(exercise)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-xs font-black text-[#9E0710]"><Trash2 className="size-3.5" /> Eliminar</button>}
+                    {canDelete(exercise) && <button onClick={() => remove(exercise)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-3 py-2 text-xs font-black text-[#9E0710]"><Trash2 className="size-3.5" /> Eliminar</button>}
                   </div>
                 </div>
               )}
