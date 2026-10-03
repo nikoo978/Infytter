@@ -217,6 +217,14 @@ async function login(page, role) {
           await page.getByRole("heading", { name: "Fuerza inicial", exact: true }).waitFor();
           await page.getByRole("button", { name: "Lunes", exact: true }).click();
           await page.getByRole("heading", { name: "Fuerza inicial", exact: true }).waitFor();
+          const routineToggle = page.getByRole("button", { name: "Rutina: Fuerza inicial", exact: true });
+          assert.equal(await routineToggle.getAttribute("aria-expanded"), "false");
+          assert.equal(await page.getByRole("button", { name: "Comenzar entrenamiento", exact: true }).count(), 0);
+          await routineToggle.click();
+          await page.getByRole("button", { name: "Comenzar entrenamiento", exact: true }).waitFor();
+          await routineToggle.click();
+          assert.equal(await routineToggle.getAttribute("aria-expanded"), "false");
+          await routineToggle.click();
           await page.getByRole("button", { name: "Organizar días (opcional)", exact: true }).click();
           const dayDialog = page.getByRole("dialog", { name: "Organizar días", exact: true });
           await dayDialog.getByRole("button", { name: "Miércoles", exact: true }).click();
@@ -393,15 +401,18 @@ async function login(page, role) {
             0,
           );
           await page.getByText("Personal del alumno", { exact: false }).waitFor();
-          await page.getByRole("button", { name: "Consultar rutina: Personal de person-2", exact: true }).click();
-          await page.getByRole("dialog", { name: "Rutina del alumno", exact: true }).waitFor();
+          const personalToggle = page.getByRole("button", { name: "Rutina: Personal de person-2", exact: true });
+          assert.equal(await personalToggle.getAttribute("aria-expanded"), "false");
+          await personalToggle.click();
+          assert.equal(await personalToggle.getAttribute("aria-expanded"), "true");
           await page.evaluate(() => history.back());
-          await page.getByRole("dialog", { name: "Rutina del alumno", exact: true }).waitFor({ state: "hidden" });
-          assert.ok(page.url().includes("/rutinas"), "Atrás del diálogo conserva la ruta del profesor");
+          await page.waitForFunction(() => document.querySelector('[aria-label="Rutina: Personal de person-2"]').getAttribute("aria-expanded") === "false");
+          assert.ok(page.url().includes("/rutinas"), "Atrás cierra la rutina conservando la ruta del profesor");
           assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, "Por cliente no desborda en móvil");
           await page
             .getByRole("button", { name: "Mis rutinas", exact: true })
             .click();
+          await page.getByRole("button", { name: "Rutina: Fuerza inicial", exact: true }).click();
           await page
             .getByRole("button", { name: "Enviar", exact: true })
             .click();
