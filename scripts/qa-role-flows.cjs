@@ -260,6 +260,7 @@ if (require.main === module) (async () => {
             await toggle.click();
             await page.getByText(text,{exact:true}).waitFor();
             await page.evaluate(()=>history.back());
+            await page.getByText(text,{exact:true}).waitFor({state:"hidden"});
             assert.equal(await toggle.getAttribute("aria-expanded"),"false");
           }
           await page.getByRole("button",{name:"Perfil",exact:true}).click();
