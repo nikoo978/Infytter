@@ -101,6 +101,7 @@ async function mock(page, role, permissions = true) {
         is_master: role === "admin",
         can_view_students: permissions, can_create_exercises: permissions, can_edit_exercises: permissions, can_delete_exercises: permissions,
         can_view_student_progress: permissions, can_record_student_metrics: permissions, can_delete_student_metrics: permissions, can_view_student_routines: permissions, can_assign_routines: permissions, can_view_routines: true, can_view_exercises: true, can_use_own_progress: true, can_create_routines: permissions, can_edit_routines: permissions,
+        ...(typeof permissions === "object" ? permissions : {}),
       };
     else if (url.includes("/gf_exercises")) {
       if (failCatalog) {
@@ -544,6 +545,23 @@ async function login(page, role, permissions = true) {
       assert.equal(controls.calls.some(url=>url.includes("gf_list_routine_clients")),false);
       console.log("profe sin permisos: OK; menú, rutas, ejercicios y rutinas");
       await context.close();
+      const mixedContext = await restrictedBrowser.newContext({viewport:{width:390,height:844},serviceWorkers:"block"});
+      const mixedPage = await mixedContext.newPage();
+      await login(mixedPage, "profe", { can_view_students:true, can_view_student_progress:true, can_record_student_metrics:false, can_delete_student_metrics:false, can_view_student_routines:false, can_assign_routines:true, can_view_routines:true, can_view_exercises:true, can_use_own_progress:false, can_create_routines:false, can_edit_routines:false, can_create_exercises:false, can_edit_exercises:false, can_delete_exercises:false });
+      await mixedPage.goto("http://127.0.0.1:5174/rutinas?alumno=person-1");
+      await mixedPage.getByRole("button",{name:"Rutina: Fuerza inicial",exact:true}).waitFor();
+      await mixedPage.waitForTimeout(250);
+      await mixedPage.getByRole("button",{name:"Rutina: Fuerza inicial",exact:true}).click();
+      await mixedPage.getByRole("button",{name:"Enviar",exact:true}).waitFor();
+      assert.equal(await mixedPage.getByRole("button",{name:"Por cliente",exact:true}).count(),0);
+      assert.equal(await mixedPage.getByRole("button",{name:"Editar",exact:true}).count(),0);
+      await mixedPage.getByRole("link",{name:"Progreso",exact:true}).first().click();
+      await mixedPage.getByRole("button",{name:/Tomás Fernández/}).click();
+      await mixedPage.getByRole("heading",{name:"Tomás Fernández",exact:true}).waitFor();
+      assert.equal(await mixedPage.getByRole("button",{name:"Registrar medición",exact:true}).count(),0);
+      assert.equal(await mixedPage.getByRole("button",{name:"Mis medidas",exact:true}).count(),0);
+      await mixedContext.close();
+      console.log("profe con permisos mixtos: OK; envío independiente de consulta, progreso sólo lectura");
       const adminContext=await restrictedBrowser.newContext({viewport:{width:390,height:844},serviceWorkers:"block"});
       const adminPage=await adminContext.newPage();
       const adminErrors=[]; adminPage.on("pageerror",e=>{adminErrors.push(e.message);console.error("Admin page:",e.message)});
@@ -562,6 +580,7 @@ async function login(page, role, permissions = true) {
       }
       await adminPage.getByRole("button", { name: "Habilitar todos", exact: true }).click();
       await adminPage.waitForFunction(() => Array.from(document.querySelectorAll('[role="switch"]')).every(el => el.getAttribute("aria-checked") === "true"));
+      await adminPage.waitForTimeout(300);
       await adminPage.screenshot({path:path.join(output,"qa-admin-permisos.png"),fullPage:true});
       await adminPage.getByRole("button", { name: "Deshabilitar todos", exact: true }).click();
       await adminPage.waitForFunction(() => Array.from(document.querySelectorAll('[role="switch"]')).every(el => el.getAttribute("aria-checked") === "false"));

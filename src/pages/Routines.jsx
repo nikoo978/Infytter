@@ -69,7 +69,7 @@ export default function Routines() {
 
   const loadClient = async (personId) => {
     const currentRequest = ++requestId.current;
-    setSelectedClientId(String(personId)); setClientRoutines([]); setError(""); setClientLoading(Boolean(personId));
+    setSelectedClientId(String(personId)); setClientRoutines([]); setError(""); setClientLoading(Boolean(personId) && canViewStudents);
     if (!personId || !canViewStudents) return;
     const result = await getClientRoutinesForProfessor(personId);
     if (currentRequest !== requestId.current) return;
@@ -80,11 +80,11 @@ export default function Routines() {
 
   useEffect(() => {
     const id = searchParams.get("alumno");
-    if (!id || loading || linkedClient.current === id || !clients.some((client) => String(client.person_id) === id)) return;
+    if (!canViewStudents || !id || loading || linkedClient.current === id || !clients.some((client) => String(client.person_id) === id)) return;
     linkedClient.current = id;
     setMobileView("clientes");
     void loadClient(id);
-  }, [searchParams, clients, loading]);
+  }, [searchParams, clients, loading, canViewStudents]);
 
   const newRecipients = assignSelection.filter((id) => !(assigning?.assignedPersonIds || []).map(String).includes(id));
 
