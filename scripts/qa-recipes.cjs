@@ -21,6 +21,10 @@ require('node:fs').mkdirSync(output,{recursive:true});
      await page.setViewportSize(size);
      const box=await entry.boundingBox();const nav=await page.getByRole('button',{name:'Inicio',exact:true}).boundingBox();
      assert.ok(box && box.y+box.height<nav.y,'Recetas visible sin desplazar el inicio');
+     const logo=await page.locator('.client-shell header > img').boundingBox();
+     const version=await page.getByText('V.1.11.1',{exact:true}).boundingBox();
+     assert.ok(box.x+box.width<=size.width-8,'Botón de recetas dentro del encabezado');
+     assert.ok(logo.x+logo.width<version.x,'Logo y versión no se superponen');
     }
    }
    if(role==='admin') { await page.getByRole('button', {name:'Últimas notificaciones',exact:true}).waitFor(); await page.goto('http://127.0.0.1:5174/recetas'); } else { await entry.waitFor();await entry.click(); }
