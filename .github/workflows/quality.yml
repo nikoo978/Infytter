@@ -38,6 +38,9 @@ jobs:
       - run: node scripts/qa-role-flows.cjs
         env:
           PLAYWRIGHT_MODULE: /tmp/infytter-browser/node_modules/playwright
+      - run: node scripts/qa-recipes.cjs
+        env:
+          PLAYWRIGHT_MODULE: /tmp/infytter-browser/node_modules/playwright
       - uses: actions/upload-artifact@v4
         if: always()
         with:

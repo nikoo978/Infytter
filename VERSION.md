@@ -1,3 +1,12 @@
+## V1.11.0 — Recetario (2026-10-04)
+
+- 99 recetas del archivo proporcionado con fotos, ingredientes, preparación, tiempos y macros originales.
+- Accesos en Inicio y Perfil del alumno; Inicio del profesor; menú Recetas del admin.
+- Búsqueda por nombre/ingrediente, categorías y filtro hasta 15 minutos.
+- Admin: alta, edición, ocultar/mostrar, eliminar con confirmación; control global de publicación.
+- RLS: lectores sólo ven recetas publicadas cuando la sección está habilitada. Sólo admin escribe.
+- Importación única en migración; el despliegue no reemplaza ediciones ni restaura eliminaciones.
+
 ## V1.10.0 — 04/10/2026
 
 - Admin master controla 15 permisos por profesor: alumnos, progreso, mediciones, rutinas, ejercicios, progreso propio y acceso manual. Búsqueda, grupos y habilitación/deshabilitación masiva atómica.

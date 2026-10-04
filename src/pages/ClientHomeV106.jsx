@@ -1,6 +1,8 @@
+import Recipes from "./Recipes";
+import useRecipeVisibility from "../hooks/useRecipeVisibility";
 import useAppBack from "../hooks/useAppBack";
 import {
-  Activity, CalendarDays, CheckCircle2, ChevronLeft, Clock3, Dumbbell, Fingerprint,
+  Activity, ChefHat, CalendarDays, CheckCircle2, ChevronLeft, Clock3, Dumbbell, Fingerprint,
   Home, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, UserRound, XCircle
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +26,7 @@ const number = (value, digits = 1) => value == null ? "—" : Number(value).toLo
 
 export default function ClientHomeV106({ previewPortal = null, previewIdentity = null, preview = false }) {
   const { user, profile, logout } = useAuth();
+  const recipesEnabled = useRecipeVisibility(preview);
   const [portal, setPortal] = useState(previewPortal);
   const [loading, setLoading] = useState(!preview);
   const [error, setError] = useState("");
@@ -177,6 +180,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
               <button onClick={() => { setTab("ejercicios"); }} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Dumbbell className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Ejercicios</p><p className="mt-1 text-[10px] font-bold text-slate-400">Técnica y ejercicios</p></button>
             </section>
           </>}
+          {recipesEnabled && <button type="button" onClick={() => setTab("recetas")} className="flex min-h-16 w-full items-center gap-3 rounded-[20px] bg-white p-4 text-left shadow-sm"><ChefHat className="size-6 shrink-0 text-[#E30613]" /><span><span className="block text-sm font-black">Recetas</span><span className="block text-xs text-slate-500">Ideas, ingredientes y preparación</span></span></button>}
         </>}
 
         {tab === "entrenar" && trainingView === "plan" && <TrainingPlan
@@ -198,6 +202,8 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
           <button onClick={() => setTrainingView("plan")} className="flex items-center gap-2 text-sm font-black text-slate-600"><ChevronLeft className="size-4" /> Volver a mi plan</button>
           <ExerciseCatalog preview={preview} />
         </>}
+
+        {tab === "recetas" && <Recipes onBack={() => setTab("inicio")} />}
 
         {tab === "ejercicios" && <ExerciseCatalog compact preview={preview} />}
 
@@ -225,6 +231,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
             </section>
           </>}
 
+          {recipesEnabled && <button type="button" onClick={() => setTab("recetas")} className="flex min-h-16 w-full items-center gap-3 rounded-[20px] bg-white p-4 text-left shadow-sm"><ChefHat className="size-6 shrink-0 text-[#E30613]" /><span><span className="block text-sm font-black">Recetas</span><span className="block text-xs text-slate-500">Ideas, ingredientes y preparación</span></span></button>}
           {!preview && <button onClick={logout} className="btn-secondary min-h-11 w-full"><LogOut className="size-4" /> Cerrar sesión</button>}
         </>}
       </div>

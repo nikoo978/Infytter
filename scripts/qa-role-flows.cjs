@@ -57,6 +57,8 @@ const people = [
 ];
 async function mock(page, role, permissions = true) {
   let failCatalog = false;
+  let recipesEnabled = true;
+  let recipes = [{id:'recipe-1',title:'Avena con frambuesa',category:'Desayunos',minutes:10,protein_g:31,carbs_g:38,fat_g:7,ingredients:['50 g Avena','100 g Frambuesas'],steps:['Mezclá la avena.','Agregá las frambuesas.'],image_url:'/images/recipes/2.webp',source:'Recetario original',is_hidden:false},{id:'recipe-2',title:'Receta oculta',category:'Otros',minutes:30,ingredients:['Arroz'],steps:['Cociná el arroz.'],is_hidden:true}];
   const calls = [];
   let routineDays = {};
   const professorPermissions = {userId:"profe-fixture", name:"Martín López",email:"profe@example.test",canGrantAccess:false,canViewStudents:false,canCreateExercises:false,canEditExercises:false,canDeleteExercises:false};
@@ -92,6 +94,21 @@ async function mock(page, role, permissions = true) {
         user,
       };
     else if (url.includes("/auth/v1/user")) data = user;
+    else if (url.includes('/gf_recipe_settings')) {
+      if (route.request().method()==='PATCH') recipesEnabled=JSON.parse(route.request().postData()).enabled;
+      data={enabled:recipesEnabled};
+    }
+    else if (url.includes('/gf_recipes')) {
+      const method=route.request().method();
+      if(method==='GET') data=role==='admin'?recipes:recipes.filter(r=>recipesEnabled&&!r.is_hidden);
+      else {
+        const id=new URL(url).searchParams.get('id')?.replace('eq.','');
+        const payload=JSON.parse(route.request().postData()||'{}');
+        if(method==='POST'){data={...payload,id:'recipe-new'};recipes.push(data);}
+        if(method==='PATCH'){data=Object.assign(recipes.find(r=>r.id===id),payload);}
+        if(method==='DELETE'){data={id};recipes=recipes.filter(r=>r.id!==id);}
+      }
+    }
     else if (url.includes("/gf_profiles"))
       data = {
         user_id: uid,
@@ -191,7 +208,8 @@ async function login(page, role, permissions = true) {
   await page.getByRole("button", { name: "Ingresar", exact: true }).click();
   return controls;
 }
-(async () => {
+module.exports = { login, mock };
+if (require.main === module) (async () => {
   const server = require("node:child_process").spawn(
     process.execPath,
     ["server/index.js"],
