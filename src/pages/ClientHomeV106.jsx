@@ -257,5 +257,5 @@ function InfoCard({ icon: Icon = CalendarDays, label, value }) {
 function ScaleIcon(props) { return <Activity {...props} />; }
 
 function NavButton({ active, onClick, icon: Icon, label }) {
-  return <button type="button" aria-current={active ? "page" : undefined} onClick={onClick} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2.5 text-[9px] min-[390px]:text-[10px] font-black leading-none transition active:scale-95 ${active ? "bg-[#E30613] text-white shadow-sm" : "text-slate-500"}`}><Icon className="size-4" /><span className="whitespace-nowrap">{label}</span></button>;
+  return <button type="button" aria-current={active ? "page" : undefined} onClick={onClick} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2.5 text-[9px] min-[390px]:text-[10px] font-bold leading-none transition active:scale-95 ${active ? "bg-[#E30613] text-white shadow-sm" : "text-slate-500"}`}><Icon className="size-4" /><span className="whitespace-nowrap">{label}</span></button>;
 }
