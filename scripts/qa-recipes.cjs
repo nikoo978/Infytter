@@ -23,7 +23,7 @@ require('node:fs').mkdirSync(output,{recursive:true});
      const menu=page.getByRole('navigation',{name:'Menú del alumno',exact:true});
      assert.deepEqual(await menu.getByRole('button').allTextContents(),['Inicio','Entrenar','Ejercicios','Progreso','Recetas','Perfil']);
      assert.equal(await page.locator('.client-shell header').getByRole('button',{name:'Recetas',exact:true}).count(),0);
-     await page.getByText('1.11.3',{exact:true}).waitFor();
+     await page.getByText('1.11.4',{exact:true}).waitFor();
      const overflow=await menu.locator('button span').evaluateAll(labels=>labels.filter(label=>{const range=document.createRange();range.selectNodeContents(label);const button=label.parentElement;const style=getComputedStyle(button);return range.getBoundingClientRect().width>button.getBoundingClientRect().width-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)+1;}).map(label=>({label:label.textContent,text:label.getBoundingClientRect().width,button:label.parentElement.getBoundingClientRect().width,font:getComputedStyle(label).fontSize})));
      assert.deepEqual(overflow,[],`Etiquetas legibles en el menú a ${size.width}px`);
     }
