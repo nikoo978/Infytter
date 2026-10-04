@@ -1,3 +1,10 @@
+## V1.10.0 — 04/10/2026
+
+- Admin master controla 15 permisos por profesor: alumnos, progreso, mediciones, rutinas, ejercicios, progreso propio y acceso manual. Búsqueda, grupos y habilitación/deshabilitación masiva atómica.
+- Rutas, controles, RPC y RLS respetan permisos y dependencias; se conservan las funciones previamente habilitadas para profesores existentes.
+- La figura Hombre/Mujer se recuerda en este navegador y se comparte entre catálogo, detalle y entrenamiento.
+- Figura femenina sin rostro, con cabeza neutra y contornos claros del mismo estilo que la masculina; se conservan coordenadas y resaltados musculares.
+
 ## V1.09.9 — 03/10/2026
 
 - Inicio de profesores sin búsqueda ni fichas duplicadas de alumnos.

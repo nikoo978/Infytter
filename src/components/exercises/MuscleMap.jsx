@@ -1,3 +1,4 @@
+import useAnatomyGender from "../../hooks/useAnatomyGender";
 import { useState } from "react";
 import "./muscle-map.css";
 
@@ -6,7 +7,7 @@ import AnatomyPlate from "./AnatomyPlate";
 export const AnatomyFigure = AnatomyPlate;
 
 export default function MuscleMap({ value = "Todos", onChange, minimal = false }) {
-  const [gender, setGender] = useState("male");
+  const [gender, setGender] = useAnatomyGender();
   const [hovered, setHovered] = useState("");
   const selected = value === "Todos" ? "" : value;
   const select = (name) => onChange(name === selected ? "Todos" : name);

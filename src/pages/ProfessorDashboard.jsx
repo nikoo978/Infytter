@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { statusOf, useGym } from "../context/GymContext";
 import { useAuth } from "../context/AuthContext";
 import { allowProfessorManualAccess } from "../services/professorAccess";
+import { permissionsForRole } from "../services/roles";
 import { gymDateISO, gymDateISOOrNull } from "../services/gymDate";
 
 const today = () => gymDateISO();
@@ -20,7 +21,8 @@ export default function ProfessorDashboard({ previewProfile = null }) {
   const active = people.filter((person) => statusOf(person) !== "Vencida");
   const expiring = people.filter((person) => statusOf(person) === "Por vencer").sort((a, b) => String(a.expiry).localeCompare(String(b.expiry)));
   const accessesToday = data.accesses.filter((item) => item.branch === branch && gymDateISOOrNull(item.date) === today());
-  const canViewStudents = previewProfile ? previewProfile.can_view_students === true : permissions.canViewStudents;
+  const allowed = previewProfile ? permissionsForRole("profe", previewProfile) : permissions;
+  const canViewStudents = allowed.canViewStudents;
   const canGrantAccess = !previewProfile && permissions.canGrantManualAccess;
 
   const grantAccess = async () => {
@@ -54,9 +56,9 @@ export default function ProfessorDashboard({ previewProfile = null }) {
     </section>}
 
     <section className="order-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
-      <QuickLink to="/progreso" icon={Activity} label="Progreso" detail={canViewStudents ? "Medidas y evolución" : "Mis medidas"} />
-      <QuickLink to="/ejercicios" icon={Dumbbell} label="Ejercicios" detail="Resolver dudas" />
-      <QuickLink to="/rutinas" icon={ClipboardList} label="Rutinas" detail="Crear y enviar" />
+      {(allowed.canUseOwnProgress || allowed.canViewStudentProgress) && <QuickLink to="/progreso" icon={Activity} label="Progreso" detail={allowed.canViewStudentProgress ? "Medidas y evolución" : "Mis medidas"} />}
+      {allowed.canViewExercises && <QuickLink to="/ejercicios" icon={Dumbbell} label="Ejercicios" detail="Resolver dudas" />}
+      {(allowed.canViewRoutines || allowed.canViewStudentRoutines) && <QuickLink to="/rutinas" icon={ClipboardList} label="Rutinas" detail="Consultar rutinas" />}
     </section>
 
 

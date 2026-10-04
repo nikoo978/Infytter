@@ -1,3 +1,4 @@
+import { PROFESSOR_PERMISSIONS } from "../services/professorPermissions";
 import { useMemo, useState } from "react";
 import ExerciseCatalog from "../components/exercises/ExerciseCatalog";
 import ProfessorLayout from "../components/layout/ProfessorLayout";
@@ -37,8 +38,8 @@ export default function ProfessorMobilePreview() {
     if (professorPath === "/progreso") return <div className="pointer-events-none select-none"><ProfessorProgress /></div>;
     if (professorPath === "/ejercicios") return <ExerciseCatalog preview />;
     if (professorPath === "/rutinas") return <div className="pointer-events-none select-none"><Routines /></div>;
-    return <div onClickCapture={(event) => { const link = event.target.closest?.("a[href]"); if (!link) return; event.preventDefault(); navigateProfessor(link.getAttribute("href")); }}><ProfessorDashboard previewProfile={{ display_name: professor?.name || "Profesor", can_view_students: true }} /></div>;
+    return <div onClickCapture={(event) => { const link = event.target.closest?.("a[href]"); if (!link) return; event.preventDefault(); navigateProfessor(link.getAttribute("href")); }}><ProfessorDashboard previewProfile={{ display_name: professor?.name || "Profesor", ...Object.fromEntries(PROFESSOR_PERMISSIONS.map(({ column }) => [column, true])) }} /></div>;
   })();
 
-  return <ProfessorLayout preview previewProfile={{ display_name: professor?.name || "Profesor", can_view_students: true }} currentPath={professorPath} onPreviewNavigate={navigateProfessor}>{professorContent}</ProfessorLayout>;
+  return <ProfessorLayout preview previewProfile={{ display_name: professor?.name || "Profesor", ...Object.fromEntries(PROFESSOR_PERMISSIONS.map(({ column }) => [column, true])) }} currentPath={professorPath} onPreviewNavigate={navigateProfessor}>{professorContent}</ProfessorLayout>;
 }

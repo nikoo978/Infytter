@@ -1,3 +1,4 @@
+import useAnatomyGender from "../../hooks/useAnatomyGender";
 import { useId, useState } from "react";
 import { ExternalLink, Video } from "lucide-react";
 import { ExerciseGifGallery } from "./ExerciseGif";
@@ -5,7 +6,7 @@ import { AnatomyFigure } from "./MuscleMap";
 import "./exercise-detail.css";
 
 export function MuscleFocus({ group = "" }) {
-  const [gender, setGender] = useState("male");
+  const [gender, setGender] = useAnatomyGender();
   return <div className="exercise-detail__focus">
     <div className="exercise-detail__heading">
       <h3>Área de enfoque</h3>

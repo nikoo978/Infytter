@@ -12,7 +12,7 @@ const dateLabel = (value) => value ? new Date(`${value}T12:00:00Z`).toLocaleDate
 export default function Clientes() {
   const { data, addPerson, editPerson, archivePerson, restorePerson, deletePerson, renew } = useGym();
   const { permissions } = useAuth();
-  const professorLinks = (person) => permissions?.role === "profe" && !person.archivedAt && <><Link className="btn-secondary min-h-11" to={`/progreso?alumno=${encodeURIComponent(person.id)}`}><Activity className="size-4" /> Progreso</Link><Link className="btn-primary min-h-11" to={`/rutinas?alumno=${encodeURIComponent(person.id)}`}><ClipboardList className="size-4" /> Rutinas</Link></>;
+  const professorLinks = (person) => permissions?.role === "profe" && !person.archivedAt && <>{permissions.canViewStudentProgress && <Link className="btn-secondary min-h-11" to={`/progreso?alumno=${encodeURIComponent(person.id)}`}><Activity className="size-4" /> Progreso</Link>}{permissions.canViewStudentRoutines && <Link className="btn-primary min-h-11" to={`/rutinas?alumno=${encodeURIComponent(person.id)}`}><ClipboardList className="size-4" /> Rutinas</Link>}</>;
   const [query, setQuery] = useState("");
   const [view, setView] = useState("active");
   const [adding, setAdding] = useState(false);

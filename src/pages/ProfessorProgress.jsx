@@ -8,12 +8,12 @@ import { useGym } from "../context/GymContext";
 export default function ProfessorProgress() {
   const { data } = useGym();
   const { permissions } = useAuth();
-  const canViewStudents = permissions.canViewStudents;
+  const canViewStudents = permissions.canViewStudentProgress;
   const [searchParams, setSearchParams] = useSearchParams();
   const [mode, setMode] = useState("alumnos");
   const [query, setQuery] = useState("");
   const selectedId = canViewStudents ? searchParams.get("alumno") || "" : "";
-  const shownMode = canViewStudents ? mode : "mio";
+  const shownMode = canViewStudents && (!permissions.canUseOwnProgress || mode === "alumnos") ? "alumnos" : "mio";
   const selectClient = (id) => setSearchParams(id ? { alumno: String(id) } : {});
 
   const clients = useMemo(() => (data.people || [])
@@ -26,7 +26,7 @@ export default function ProfessorProgress() {
   return <div className="mx-auto max-w-[1200px] space-y-4 sm:space-y-6">
     <section className="page-head"><div><p className="eyebrow">Seguimiento</p><h1 className="page-title">Progreso</h1><p className="page-subtitle">Medidas propias y seguimiento corporal de alumnos, pensado para usar desde el celular.</p></div></section>
 
-    {canViewStudents && <div className="grid grid-cols-2 rounded-2xl bg-slate-200/70 p-1">
+    {canViewStudents && permissions.canUseOwnProgress && <div className="grid grid-cols-2 rounded-2xl bg-slate-200/70 p-1">
       <button type="button" aria-pressed={mode === "alumnos"} onClick={() => setMode("alumnos")} className={`min-h-11 rounded-xl px-3 text-xs font-black ${mode === "alumnos" ? "bg-white text-[#050505] shadow-sm" : "text-slate-500"}`}><UsersRound className="mr-1.5 inline size-4" /> Alumnos</button>
       <button type="button" aria-pressed={mode === "mio"} onClick={() => setMode("mio")} className={`min-h-11 rounded-xl px-3 text-xs font-black ${mode === "mio" ? "bg-white text-[#050505] shadow-sm" : "text-slate-500"}`}><UserRound className="mr-1.5 inline size-4" /> Mis medidas</button>
     </div>}
@@ -40,7 +40,7 @@ export default function ProfessorProgress() {
         <div className="mt-3 max-h-[55dvh] space-y-2 overflow-y-auto pr-1">{clients.slice(0, 60).map((person) => <button key={person.id} type="button" aria-pressed={String(selectedId) === String(person.id)} onClick={() => selectClient(person.id)} className={`w-full rounded-2xl border p-3 text-left transition active:scale-[.99] ${String(selectedId) === String(person.id) ? "border-[#E30613]/30 bg-red-50" : "border-black/7 bg-white"}`}><p className="truncate text-sm font-black text-slate-900">{person.name}</p><p className="mt-1 text-xs font-bold text-slate-400">DNI {person.dni || "—"} · {person.plan || "Sin plan"}</p></button>)}{!clients.length && <p className="py-8 text-center text-sm text-slate-400">No hay alumnos que coincidan.</p>}{clients.length > 60 && <p className="py-2 text-center text-[11px] font-bold text-slate-400">Refiná la búsqueda para encontrar otros alumnos.</p>}</div>
       </div>
 
-      <div className="min-w-0">{selected ? <BodyMetricsPanel key={selected.id} personId={selected.id} title={selected.name} subtitle={`DNI ${selected.dni || "—"} · ${selected.plan || "Sin plan"}`} /> : <div className="grid min-h-64 place-items-center rounded-[24px] border border-dashed border-slate-200 bg-white p-8 text-center"><div><UsersRound className="mx-auto size-9 text-slate-300" /><p className="mt-3 font-black text-slate-500">Seleccioná un alumno</p><p className="mt-1 text-sm text-slate-400">Vas a poder registrar peso, altura, medidas, IMC y grasa estimada.</p></div></div>}</div>
+      <div className="min-w-0">{selected ? <BodyMetricsPanel canRecord={permissions.canRecordStudentMetrics} canDelete={permissions.canDeleteStudentMetrics} key={selected.id} personId={selected.id} title={selected.name} subtitle={`DNI ${selected.dni || "—"} · ${selected.plan || "Sin plan"}`} /> : <div className="grid min-h-64 place-items-center rounded-[24px] border border-dashed border-slate-200 bg-white p-8 text-center"><div><UsersRound className="mx-auto size-9 text-slate-300" /><p className="mt-3 font-black text-slate-500">Seleccioná un alumno</p><p className="mt-1 text-sm text-slate-400">Vas a poder registrar peso, altura, medidas, IMC y grasa estimada.</p></div></div>}</div>
     </section>}
   </div>;
 }

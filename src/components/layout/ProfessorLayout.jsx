@@ -19,8 +19,8 @@ export default function ProfessorLayout({ currentPath = "/", children, preview =
   const { profile, logout } = useAuth();
   const { data, setBranch, sync } = useGym();
   const shownProfile = previewProfile || profile;
-  const canViewStudents = permissionsForRole("profe", shownProfile).canViewStudents;
-  const visibleNavigation = professorNavigation.filter((item) => canViewStudents || item.path !== "/clientes");
+  const allowed = permissionsForRole("profe", shownProfile);
+  const visibleNavigation = professorNavigation.filter((item) => item.path === "/" || ({ "/clientes": allowed.canViewStudents, "/progreso": allowed.canUseOwnProgress || allowed.canViewStudentProgress, "/ejercicios": allowed.canViewExercises, "/rutinas": allowed.canViewRoutines || allowed.canViewStudentRoutines }[item.path]));
   const displayName = shownProfile?.display_name || "Profesor";
 
   const NavItem = ({ item, compact = false }) => {

@@ -29,7 +29,7 @@ import "./styles/v1066-admin-menu.css";
 import "./styles/mobile-role-branding.css";
 import "./styles/role-experience.css";
 
-export const APP_VERSION = "V.1.09.9";
+export const APP_VERSION = "V.1.10.0";
 export const navigation = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "coadmin"] },
   { label: "Clientes", path: "/clientes", icon: UsersRound, roles: ["admin", "coadmin"] },
@@ -54,9 +54,9 @@ function ProfessorApp({ currentPath }) {
       <Routes>
         <Route path="/" element={<ProfessorDashboard />} />
         <Route path="/clientes" element={permissions.canViewStudents ? <Clientes /> : <Navigate to="/" replace />} />
-        <Route path="/progreso" element={<ProfessorProgress />} />
-        <Route path="/ejercicios" element={<Exercises />} />
-        <Route path="/rutinas" element={<Routines />} />
+        <Route path="/progreso" element={permissions.canUseOwnProgress || permissions.canViewStudentProgress ? <ProfessorProgress /> : <Navigate to="/" replace />} />
+        <Route path="/ejercicios" element={permissions.canViewExercises ? <Exercises /> : <Navigate to="/" replace />} />
+        <Route path="/rutinas" element={permissions.canViewRoutines || permissions.canViewStudentRoutines ? <Routines /> : <Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ProfessorLayout>

@@ -1,3 +1,4 @@
+import { PROFESSOR_PERMISSIONS, professorPermissionEnabled } from "./professorPermissions";
 import { supabase } from "./supabase";
 
 export const ROLE_LABELS = {
@@ -15,7 +16,7 @@ export async function getMyProfile() {
   if (authError || !authData?.user?.id) return { profile: null, error: authError || new Error("Sin sesión") };
   const { data, error } = await supabase
     .from("gf_profiles")
-    .select("user_id,email,display_name,dni,role,is_master,can_grant_access,can_view_students,can_create_exercises,can_edit_exercises,can_delete_exercises,created_at,updated_at")
+    .select("user_id,email,display_name,dni,role,is_master,can_grant_access,can_view_students,can_create_exercises,can_edit_exercises,can_delete_exercises,can_view_student_progress,can_record_student_metrics,can_delete_student_metrics,can_view_student_routines,can_view_routines,can_create_routines,can_edit_routines,can_assign_routines,can_view_exercises,can_use_own_progress,created_at,updated_at")
     .eq("user_id", authData.user.id)
     .maybeSingle();
   return { profile: data || null, error };
@@ -77,7 +78,8 @@ export async function getMyClientPortal() {
 }
 
 export function permissionsForRole(role, profile = null) {
-  const professorAccess = role === "profe" && Boolean(profile?.can_grant_access);
+  const professorAccess = role === "profe" && professorPermissionEnabled(profile, "canGrantAccess");
+  const professorFlags = Object.fromEntries(PROFESSOR_PERMISSIONS.map(({ key }) => [key, ["admin", "coadmin"].includes(role) || (role === "profe" && professorPermissionEnabled(profile, key))]));
   return {
     role,
     isMaster: role === "admin",
@@ -88,10 +90,7 @@ export function permissionsForRole(role, profile = null) {
     canDelete: role === "admin",
     canAccessControl: ["admin", "coadmin"].includes(role),
     canGrantManualAccess: professorAccess,
-    canViewStudents: ["admin", "coadmin"].includes(role) || (role === "profe" && profile?.can_view_students === true),
-    canCreateExercises: ["admin", "coadmin"].includes(role) || (role === "profe" && profile?.can_create_exercises === true),
-    canEditExercises: ["admin", "coadmin"].includes(role) || (role === "profe" && profile?.can_edit_exercises === true),
-    canDeleteExercises: ["admin", "coadmin"].includes(role) || (role === "profe" && profile?.can_delete_exercises === true),
+    ...professorFlags,
     canViewFinance: ["admin", "coadmin"].includes(role),
     canManageNotifications: ["admin", "coadmin"].includes(role),
   };

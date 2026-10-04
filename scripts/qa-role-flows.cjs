@@ -100,6 +100,8 @@ async function mock(page, role, permissions = true) {
         role,
         is_master: role === "admin",
         can_view_students: permissions, can_create_exercises: permissions, can_edit_exercises: permissions, can_delete_exercises: permissions,
+        can_view_student_progress: permissions, can_record_student_metrics: permissions, can_delete_student_metrics: permissions, can_view_student_routines: permissions, can_assign_routines: permissions, can_view_routines: true, can_view_exercises: true, can_use_own_progress: true, can_create_routines: permissions, can_edit_routines: permissions,
+        ...(typeof permissions === "object" ? permissions : {}),
       };
     else if (url.includes("/gf_exercises")) {
       if (failCatalog) {
@@ -143,6 +145,11 @@ async function mock(page, role, permissions = true) {
       data = { personal: [], assigned: [routine] };
     else if (url.includes("gf_list_account_events")) data=[];
     else if (url.includes("gf_list_professor_permissions")) data=[professorPermissions];
+    else if (url.includes("gf_set_professor_permissions")) {
+      const payload = JSON.parse(route.request().postData());
+      Object.assign(professorPermissions, payload.p_permissions);
+      data = { userId: professorPermissions.userId, permissions: payload.p_permissions };
+    }
     else if (url.includes("gf_set_professor_permission")) {
       const payload=JSON.parse(route.request().postData());
       professorPermissions[payload.p_permission]=payload.p_enabled;
@@ -333,6 +340,14 @@ async function login(page, role, permissions = true) {
           await page
             .getByRole("button", { name: "Mujer", exact: true })
             .click();
+          assert.equal(await page.evaluate(() => localStorage.getItem("infytter.anatomy.gender")), "female");
+          await page.reload();
+          await page.getByRole("button", { name: "Ejercicios", exact: true }).click();
+          await page.getByRole("button", { name: "Mujer", exact: true }).waitFor();
+          assert.equal(await page.getByRole("button", { name: "Mujer", exact: true }).getAttribute("aria-pressed"), "true");
+          await page.locator('svg[aria-label="Frente, figura femenina"] image').first().evaluate(el => new Promise((resolve, reject) => { const img = new Image(); img.onload = resolve; img.onerror = reject; img.src = el.getAttribute("href"); }));
+          await page.screenshot({ path: path.join(output, "qa-figura-femenina.png"), fullPage: true });
+
           await page.screenshot({
             path: path.join(output, "qa-alumno-ejercicios.png"),
             fullPage: true,
@@ -522,18 +537,40 @@ async function login(page, role, permissions = true) {
       assert.equal(await page.getByRole("button",{name:"Editar",exact:true}).count(),0);
       assert.equal(await page.getByRole("button",{name:"Eliminar",exact:true}).count(),0);
       await page.getByRole("link",{name:"Rutinas",exact:true}).first().click();
-      await page.getByRole("button",{name:"Nueva rutina",exact:true}).waitFor();
+      assert.equal(await page.getByRole("button",{name:"Nueva rutina",exact:true}).count(),0);
+      await page.getByRole("button",{name:"Rutina: Fuerza inicial",exact:true}).click();
+      assert.equal(await page.getByRole("button",{name:"Editar",exact:true}).count(),0);
+      assert.equal(await page.getByRole("button",{name:"Enviar",exact:true}).count(),0);
       assert.equal(await page.getByRole("button",{name:"Por cliente",exact:true}).count(),0);
       assert.equal(controls.calls.some(url=>url.includes("gf_list_routine_clients")),false);
       console.log("profe sin permisos: OK; menú, rutas, ejercicios y rutinas");
       await context.close();
+      const mixedContext = await restrictedBrowser.newContext({viewport:{width:390,height:844},serviceWorkers:"block"});
+      const mixedPage = await mixedContext.newPage();
+      await login(mixedPage, "profe", { can_view_students:true, can_view_student_progress:true, can_record_student_metrics:false, can_delete_student_metrics:false, can_view_student_routines:false, can_assign_routines:true, can_view_routines:true, can_view_exercises:true, can_use_own_progress:false, can_create_routines:false, can_edit_routines:false, can_create_exercises:false, can_edit_exercises:false, can_delete_exercises:false });
+      await mixedPage.getByRole("link", { name: "Rutinas", exact: true }).first().waitFor();
+      await mixedPage.goto("http://127.0.0.1:5174/rutinas?alumno=person-1");
+      await mixedPage.getByRole("button",{name:"Rutina: Fuerza inicial",exact:true}).waitFor();
+      await mixedPage.waitForTimeout(250);
+      await mixedPage.getByRole("button",{name:"Rutina: Fuerza inicial",exact:true}).click();
+      await mixedPage.getByRole("button",{name:"Enviar",exact:true}).waitFor();
+      assert.equal(await mixedPage.getByRole("button",{name:"Por cliente",exact:true}).count(),0);
+      assert.equal(await mixedPage.getByRole("button",{name:"Editar",exact:true}).count(),0);
+      await mixedPage.getByRole("link",{name:"Progreso",exact:true}).first().click();
+      await mixedPage.getByRole("button",{name:/Tomás Fernández/}).click();
+      await mixedPage.getByRole("heading",{name:"Tomás Fernández",exact:true}).waitFor();
+      assert.equal(await mixedPage.getByRole("button",{name:"Registrar medición",exact:true}).count(),0);
+      assert.equal(await mixedPage.getByRole("button",{name:"Mis medidas",exact:true}).count(),0);
+      await mixedContext.close();
+      console.log("profe con permisos mixtos: OK; envío independiente de consulta, progreso sólo lectura");
       const adminContext=await restrictedBrowser.newContext({viewport:{width:390,height:844},serviceWorkers:"block"});
       const adminPage=await adminContext.newPage();
       const adminErrors=[]; adminPage.on("pageerror",e=>{adminErrors.push(e.message);console.error("Admin page:",e.message)});
       await login(adminPage,"admin");
       await adminPage.waitForFunction(()=>JSON.parse(localStorage.getItem("gymflow-profile-v1")||"null")?.role==="admin");
       await adminPage.goto("http://127.0.0.1:5174/permisos");
-      for (const label of ["Consultar alumnos","Agregar ejercicios","Modificar ejercicios propios","Quitar ejercicios propios","Permitir acceso"]) {
+      await adminPage.locator("summary").filter({hasText:"Martín López"}).click();
+      for (const label of ["Consultar alumnos","Consultar progreso de alumnos","Registrar medidas de alumnos","Eliminar medidas de alumnos","Consultar rutinas de alumnos","Consultar mis rutinas","Crear rutinas","Modificar rutinas propias","Enviar rutinas a alumnos","Consultar ejercicios","Agregar ejercicios","Modificar ejercicios propios","Quitar ejercicios propios","Mi progreso personal","Permitir acceso"]) {
         const toggle=adminPage.getByRole("switch",{name:label,exact:true});
         await toggle.waitFor();
         assert.equal(await toggle.getAttribute("aria-checked"),"false");
@@ -542,11 +579,16 @@ async function login(page, role, permissions = true) {
         await toggle.click();
         await adminPage.waitForFunction(label=>Array.from(document.querySelectorAll('[role="switch"]')).find(el=>document.getElementById(el.getAttribute('aria-labelledby'))?.textContent===label)?.getAttribute('aria-checked')==='false',label);
       }
+      await adminPage.getByRole("button", { name: "Habilitar todos", exact: true }).click();
+      await adminPage.waitForFunction(() => Array.from(document.querySelectorAll('[role="switch"]')).every(el => el.getAttribute("aria-checked") === "true"));
+      await adminPage.waitForTimeout(300);
       await adminPage.screenshot({path:path.join(output,"qa-admin-permisos.png"),fullPage:true});
+      await adminPage.getByRole("button", { name: "Deshabilitar todos", exact: true }).click();
+      await adminPage.waitForFunction(() => Array.from(document.querySelectorAll('[role="switch"]')).every(el => el.getAttribute("aria-checked") === "false"));
       assert.deepEqual(adminErrors,[]);
       assert.equal(await adminPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
       await adminContext.close();
-      console.log("admin: OK; cinco permisos independientes reversibles");
+      console.log("admin: OK; quince permisos individuales y cambios masivos reversibles");
     } finally {await restrictedBrowser.close();}
   } finally {
     server.kill();
