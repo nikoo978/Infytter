@@ -149,7 +149,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
           <section className="student-home__welcome overflow-hidden rounded-[26px] bg-[#050505] p-5 text-white shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/65">Tu día en Infytter</p><h1 className="student-home__greeting mt-2 break-words text-2xl font-black sm:text-3xl">Hola, {name}</h1><p className="mt-2 text-xs text-white/70">{todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}</p></div>
-              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613]"><ShieldCheck className="size-5" /></span>
+              <>{recipesEnabled ? <button type="button" onClick={() => setTab("recetas")} className="flex min-h-11 min-w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-[#E30613] px-2 py-1 text-[10px] font-black"><ChefHat className="size-5" />Recetas</button> : <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613]"><ShieldCheck className="size-5" /></span>}</>
             </div>
             {member && <div className="student-home__membership mt-5 flex items-center justify-between rounded-2xl bg-white/8 px-4 py-3 border border-white/10"><div><p className="text-[10px] font-black uppercase tracking-wider text-white/40">Membresía</p><p className="mt-1 text-lg font-black">{status}</p></div><span className={`rounded-full px-3 py-1.5 text-xs font-black ${statusTone}`}>{dateLabel(member.expiry)}</span></div>}
           </section>
@@ -180,7 +180,6 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
               <button onClick={() => { setTab("ejercicios"); }} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Dumbbell className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Ejercicios</p><p className="mt-1 text-[10px] font-bold text-slate-400">Técnica y ejercicios</p></button>
             </section>
           </>}
-          {recipesEnabled && <button type="button" onClick={() => setTab("recetas")} className="flex min-h-16 w-full items-center gap-3 rounded-[20px] bg-white p-4 text-left shadow-sm"><ChefHat className="size-6 shrink-0 text-[#E30613]" /><span><span className="block text-sm font-black">Recetas</span><span className="block text-xs text-slate-500">Ideas, ingredientes y preparación</span></span></button>}
         </>}
 
         {tab === "entrenar" && trainingView === "plan" && <TrainingPlan

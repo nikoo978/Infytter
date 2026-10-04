@@ -14,7 +14,15 @@ require('node:fs').mkdirSync(output,{recursive:true});
    const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,serviceWorkers:'block'});
    const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
    await login(page,role);
-   const entry=role==='cliente'?page.getByRole('button',{name:'Recetas Ideas, ingredientes y preparación',exact:true}):page.getByRole('link',{name:/Recetas/}).first();
+   const entry=role==='cliente'?page.getByRole('button',{name:'Recetas',exact:true}):page.getByRole('link',{name:/Recetas/}).first();
+   if(role==='cliente') {
+    await entry.waitFor();
+    for(const size of [{width:320,height:568},{width:360,height:640},{width:390,height:844}]) {
+     await page.setViewportSize(size);
+     const box=await entry.boundingBox();const nav=await page.getByRole('button',{name:'Inicio',exact:true}).boundingBox();
+     assert.ok(box && box.y+box.height<nav.y,'Recetas visible sin desplazar el inicio');
+    }
+   }
    if(role==='admin') { await page.getByRole('button', {name:'Últimas notificaciones',exact:true}).waitFor(); await page.goto('http://127.0.0.1:5174/recetas'); } else { await entry.waitFor();await entry.click(); }
    await page.getByRole('button',{name:'Ver receta: Avena con frambuesa',exact:true}).waitFor();
    assert.equal(await page.getByRole('button',{name:'Ver receta: Receta oculta',exact:true}).count(),role==='admin'?1:0);
