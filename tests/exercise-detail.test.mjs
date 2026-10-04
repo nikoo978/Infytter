@@ -11,7 +11,8 @@ test("specific limb highlights use cropped plates with independent SVG IDs", () 
  assert.match(html, /male_muscle_03.webp/);
  assert.match(html, /male_muscle_07.webp/);
  const ids = [...html.matchAll(/<clipPath id="([^"]+)"/g)].map(x => x[1]);
- assert.equal(new Set(ids).size, 4);
+ assert.equal(ids.length, 8);
+ assert.equal(new Set(ids).size, ids.length);
  assert.doesNotMatch(html, /Filtrar por|tabindex=/);
 });
 test("technique is immediately available without changing membership or exercise data", () => {
