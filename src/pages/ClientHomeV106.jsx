@@ -234,7 +234,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
         </>}
       </div>
 
-      <div className={`${navClass} z-40`}><nav aria-label="Menú del alumno" style={{ gridTemplateColumns: `repeat(${recipesEnabled ? 6 : 5}, minmax(0, 1fr))` }} className="grid gap-0.5 sm:gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl">
+      <div className={`${navClass} z-40`}><nav aria-label="Menú del alumno" style={{ gridTemplateColumns: recipesEnabled ? "minmax(0, .8fr) minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, .8fr)" : "repeat(5, minmax(0, 1fr))" }} className="grid gap-0.5 sm:gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl">
         <NavButton active={tab === "inicio"} onClick={() => setTab("inicio")} icon={Home} label="Inicio" />
         <NavButton active={tab === "entrenar"} onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} icon={Dumbbell} label="Entrenar" />
         <NavButton active={tab === "ejercicios"} onClick={() => setTab("ejercicios")} icon={Dumbbell} label="Ejercicios" />
