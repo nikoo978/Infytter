@@ -138,7 +138,7 @@ async function mock(page, role, permissions = true) {
         personId: "person-1",
       };
     else if (url.includes("gf_get_my_client_portal"))
-      data = { member: people[0], accesses: [] };
+      data = { member: people[0], accesses: Array.from({length:6},(_,i)=>({id:`access-${i}`,allowed:true,date:`2026-10-0${i+1}T12:00:00Z`})) };
     else if (url.includes("gf_get_gym_state"))
       data = {
         branches: [
@@ -185,13 +185,13 @@ async function mock(page, role, permissions = true) {
       data = [{ ...routine, title: id + " · Fuerza inicial" }, { ...routine, id: "personal-" + id, title: "Personal de " + id, sourceType: "client", canEdit: false }];
     } else if (url.includes("body_metrics"))
       data = {
-        items: [],
+        items: Array.from({length:6},(_,i)=>({id:`metric-${i}`,weightKg:80-i,heightCm:176,bmi:25.8,measuredAt:`2026-09-${20-i}T12:00:00Z`,notes:`Medición de muestra ${i+1}`})),
         personId: JSON.parse(route.request().postData() || "{}").p_person_id,
       };
     else if (url.includes("workout_history"))
       data = { recent: [], lastByExercise: {} };
     else if (url.includes("training_overview"))
-      data = { sessions: [], items: [], summary: {} };
+      data = { last30: {workouts:6,sets:18}, recent: Array.from({length:6},(_,i)=>({id:`training-${i}`,routineTitle:`Sesión de muestra ${i+1}`,completedAt:`2026-09-${20-i}T12:00:00Z`,completedSets:3,durationSeconds:1800,totalVolumeKg:100,sets:[]})) };
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -251,6 +251,25 @@ if (require.main === module) (async () => {
             assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
             await page.screenshot({path:path.join(output,`qa-alumno-${viewport.width}.png`)});
           }
+          await page.getByRole("button", {name:"Progreso",exact:true}).click();
+          for (const [title, text] of [["Entrenamientos recientes","Sesión de muestra 1"],["Historial de mediciones","Medición de muestra 1"]]) {
+            const toggle=page.getByRole("button",{name:title,exact:true});
+            await toggle.waitFor();
+            assert.equal(await toggle.getAttribute("aria-expanded"),"false");
+            assert.equal(await page.getByText(text,{exact:true}).isVisible(),false);
+            await toggle.click();
+            await page.getByText(text,{exact:true}).waitFor();
+            await page.evaluate(()=>history.back());
+            assert.equal(await toggle.getAttribute("aria-expanded"),"false");
+          }
+          await page.getByRole("button",{name:"Perfil",exact:true}).click();
+          const accessesToggle=page.getByRole("button",{name:"Últimos accesos",exact:true});
+          assert.equal(await accessesToggle.getAttribute("aria-expanded"),"false");
+          await accessesToggle.click();
+          assert.equal(await page.getByText("Ingreso autorizado",{exact:true}).count(),6);
+          await accessesToggle.click();
+          assert.equal(await accessesToggle.getAttribute("aria-expanded"),"false");
+          await page.getByRole("button",{name:"Inicio",exact:true}).click();
           await page.setViewportSize({width:390,height:844});
           await page.screenshot({
             path: path.join(output, "qa-alumno-inicio.png"),
