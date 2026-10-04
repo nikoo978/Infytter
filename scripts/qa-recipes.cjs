@@ -19,12 +19,11 @@ require('node:fs').mkdirSync(output,{recursive:true});
     await entry.waitFor();
     for(const size of [{width:320,height:568},{width:360,height:640},{width:390,height:844}]) {
      await page.setViewportSize(size);
-     const box=await entry.boundingBox();const nav=await page.getByRole('button',{name:'Inicio',exact:true}).boundingBox();
-     assert.ok(box && box.y+box.height<nav.y,'Recetas visible sin desplazar el inicio');
-     const logo=await page.locator('.client-shell header > img').boundingBox();
-     const version=await page.getByText('V.1.11.1',{exact:true}).boundingBox();
-     assert.ok(box.x+box.width<=size.width-8,'Botón de recetas dentro del encabezado');
-     assert.ok(logo.x+logo.width<version.x,'Logo y versión no se superponen');
+     const menu=page.getByRole('navigation',{name:'Menú del alumno',exact:true});
+     assert.deepEqual(await menu.getByRole('button').allTextContents(),['Inicio','Entrenar','Ejercicios','Progreso','Recetas','Perfil']);
+     assert.equal(await page.locator('.client-shell header').getByRole('button',{name:'Recetas',exact:true}).count(),0);
+     await page.getByText('1.11.2',{exact:true}).waitFor();
+     assert.equal(await menu.locator('button span').evaluateAll(labels=>labels.some(label=>label.scrollWidth>label.parentElement.clientWidth)),false,'Etiquetas legibles en el menú');
     }
    }
    if(role==='admin') { await page.getByRole('button', {name:'Últimas notificaciones',exact:true}).waitFor(); await page.goto('http://127.0.0.1:5174/recetas'); } else { await entry.waitFor();await entry.click(); }

@@ -1,6 +1,6 @@
 # Recetario — V1.11.0
 
-Ubicación: encabezado siempre accesible y Perfil del alumno; Inicio del profesor; menú Recetas del admin. El profesor puede abrir `/recetas`. Se mantiene la barra móvil de cinco opciones para no reducir los controles de entrenamiento.
+Ubicación: menú flotante del alumno, entre Progreso y Perfil; Inicio del profesor; menú Recetas del admin. El profesor puede abrir `/recetas`. El menú del alumno muestra seis opciones cuando Recetas está habilitada y cinco si el admin oculta la sección.
 
 El admin crea, edita, publica/oculta y elimina con confirmación. También puede ocultar toda la sección. Profesores, alumnos y coadmins consultan únicamente recetas publicadas mientras la sección esté habilitada. El recetario es compartido por Junín y Chacabuco.
 
