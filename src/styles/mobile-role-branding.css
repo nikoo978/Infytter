@@ -17,11 +17,3 @@
     object-position: left center;
   }
 }
-
-/* El acceso al recetario comparte el encabezado sin recortar versión ni controles. */
-@media (max-width: 767px) {
-  .client-shell header.client-header--recipes > img[src="/infytter-logo.svg"].w-28 {
-    width: min(8rem, 35vw) !important;
-    height: 2.5rem !important;
-  }
-}

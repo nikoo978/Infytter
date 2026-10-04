@@ -139,9 +139,9 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
 
   return <main className={`${preview ? "min-h-full" : "min-h-dvh"} role-shell client-shell overflow-x-hidden bg-[#F4F5F7]`}>
     <div className="client-shell__inner mx-auto w-full max-w-5xl pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
-      <header className={`sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/10 bg-[#050505]/95 px-4 text-white shadow-lg backdrop-blur-xl sm:h-16 ${recipesEnabled ? "client-header--recipes" : ""}`}>
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/10 bg-[#050505]/95 px-4 text-white shadow-lg backdrop-blur-xl sm:h-16">
         <img src="/infytter-logo.svg" alt="Infytter Fitness" className="h-8 w-28 object-contain object-left sm:h-9 sm:w-32" />
-        <div className="flex shrink-0 items-center gap-2"><div className="whitespace-nowrap text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/70">Mi Infytter</p></div>{recipesEnabled && <button type="button" onClick={() => setTab("recetas")} className="flex min-h-11 shrink-0 items-center gap-1 rounded-xl bg-[#E30613] px-2 text-[10px] font-black"><ChefHat className="size-4" />Recetas</button>}</div>
+        <div className="whitespace-nowrap text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/70">Mi Infytter</p></div>
       </header>
 
       <div className={`${tab === "inicio" ? "student-home" : "space-y-4"} p-3.5 sm:p-4`}>
@@ -230,16 +230,16 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
             </section>
           </>}
 
-          {recipesEnabled && <button type="button" onClick={() => setTab("recetas")} className="flex min-h-16 w-full items-center gap-3 rounded-[20px] bg-white p-4 text-left shadow-sm"><ChefHat className="size-6 shrink-0 text-[#E30613]" /><span><span className="block text-sm font-black">Recetas</span><span className="block text-xs text-slate-500">Ideas, ingredientes y preparación</span></span></button>}
           {!preview && <button onClick={logout} className="btn-secondary min-h-11 w-full"><LogOut className="size-4" /> Cerrar sesión</button>}
         </>}
       </div>
 
-      <div className={`${navClass} z-40`}><nav className="grid grid-cols-5 gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl">
+      <div className={`${navClass} z-40`}><nav aria-label="Menú del alumno" style={{ gridTemplateColumns: recipesEnabled ? "minmax(0, .8fr) minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, .8fr)" : "repeat(5, minmax(0, 1fr))" }} className="grid gap-0.5 sm:gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl">
         <NavButton active={tab === "inicio"} onClick={() => setTab("inicio")} icon={Home} label="Inicio" />
         <NavButton active={tab === "entrenar"} onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} icon={Dumbbell} label="Entrenar" />
         <NavButton active={tab === "ejercicios"} onClick={() => setTab("ejercicios")} icon={Dumbbell} label="Ejercicios" />
         <NavButton active={tab === "progreso"} onClick={() => { setTab("progreso"); if (!preview) void load(); }} icon={Activity} label="Progreso" />
+        {recipesEnabled && <NavButton active={tab === "recetas"} onClick={() => setTab("recetas")} icon={ChefHat} label="Recetas" />}
         <NavButton active={tab === "perfil"} onClick={() => setTab("perfil")} icon={UserRound} label="Perfil" />
       </nav></div>
     </div>
@@ -257,5 +257,5 @@ function InfoCard({ icon: Icon = CalendarDays, label, value }) {
 function ScaleIcon(props) { return <Activity {...props} />; }
 
 function NavButton({ active, onClick, icon: Icon, label }) {
-  return <button type="button" aria-current={active ? "page" : undefined} onClick={onClick} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2.5 text-[10px] font-black leading-none transition active:scale-95 ${active ? "bg-[#E30613] text-white shadow-sm" : "text-slate-500"}`}><Icon className="size-4" /><span className="truncate">{label}</span></button>;
+  return <button type="button" aria-current={active ? "page" : undefined} onClick={onClick} className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-2.5 text-[9px] min-[390px]:text-[10px] font-bold leading-none transition active:scale-95 ${active ? "bg-[#E30613] text-white shadow-sm" : "text-slate-500"}`}><Icon className="size-4" /><span className="whitespace-nowrap">{label}</span></button>;
 }

@@ -1,3 +1,19 @@
+## Versionado A.B.C
+
+- A: actualizaciones muy grandes o cambios principales del producto.
+- B: mejoras intermedias y nuevas funcionalidades.
+- C: correcciones y ajustes pequeños.
+- Al aumentar A, B y C vuelven a cero. Al aumentar B, C vuelve a cero.
+- Mostrar únicamente A.B.C en la interfaz, sin prefijo V ni ceros de relleno.
+- Mantener sincronizados package.json, raíz de package-lock.json, APP_VERSION y caché PWA.
+
+## 1.11.2 — Menú del alumno — 04/10/2026
+
+- Recetas se integra al menú flotante: Inicio, Entrenar, Ejercicios, Progreso, Recetas, Perfil.
+- Se retira del encabezado y del atajo duplicado de Perfil. El logo recupera su tamaño habitual.
+- El admin conserva la opción de ocultar Recetas; el menú se adapta a cinco o seis opciones.
+- Versiones mostradas en formato A.B.C y regla de relevancia documentada.
+
 ## V1.11.1 — Encabezado del alumno (2026-10-04)
 
 - Logo, versión y acceso a recetas con separación en pantallas pequeñas, conservando altura y controles.
