@@ -9,7 +9,7 @@ const n = (value, digits = 1) => value == null || value === "" ? "—" : Number(
 const dateLabel = (value) => value ? new Date(value).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const emptyDraft = { weightKg: "", heightCm: "", waistCm: "", neckCm: "", hipCm: "", sex: "", notes: "" };
 
-export default function BodyMetricsPanel({ personId = null, self = false, title = "Progreso corporal", subtitle = "Registrá medidas y seguí la evolución.", preview = false }) {
+export default function BodyMetricsPanel({ personId = null, self = false, title = "Progreso corporal", subtitle = "Registrá medidas y seguí la evolución.", preview = false, canRecord = true, canDelete = true }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(!preview);
   const [saving, setSaving] = useState(false);
@@ -36,6 +36,7 @@ export default function BodyMetricsPanel({ personId = null, self = false, title 
   const calculation = useMemo(() => calculateBodyComposition(draft), [draft]);
 
   const startMeasurement = () => {
+    if (!canRecord) return;
     setDraft({
       weightKg: latest?.weightKg ?? "",
       heightCm: latest?.heightCm ?? "",
@@ -52,6 +53,7 @@ export default function BodyMetricsPanel({ personId = null, self = false, title 
 
   const submit = async (event) => {
     event.preventDefault();
+    if (!canRecord) return;
     if (draft.sex && calculation.bodyFatState !== "valid") {
       setError(calculation.bodyFatMessage || "Revisá las medidas necesarias para calcular la grasa corporal.");
       return;
@@ -64,7 +66,7 @@ export default function BodyMetricsPanel({ personId = null, self = false, title 
   };
 
   const removeMetric = async (item) => {
-    if (!item?.id || !window.confirm(`¿Eliminar la medición del ${dateLabel(item.measuredAt)}? Esta acción no se puede deshacer.`)) return;
+    if (!canDelete || !item?.id || !window.confirm(`¿Eliminar la medición del ${dateLabel(item.measuredAt)}? Esta acción no se puede deshacer.`)) return;
     setDeletingId(item.id); setError(""); setMessage("");
     const result = self ? await deleteMyBodyMetric(item.id) : await deletePersonBodyMetric(personId, item.id);
     if (result.error || !result.ok) setError(result.error?.message || "No se pudo eliminar la medición.");
@@ -75,7 +77,7 @@ export default function BodyMetricsPanel({ personId = null, self = false, title 
   return <section className="space-y-4">
     <div className="flex items-start justify-between gap-3">
       <div><p className="text-[10px] font-black uppercase tracking-[.16em] text-[#E30613]">Seguimiento</p><h2 className="mt-1 text-xl font-black text-[#050505]">{title}</h2><p className="mt-1 text-xs leading-5 text-slate-500">{subtitle}</p></div>
-      {!preview && (self || personId) && <button onClick={startMeasurement} className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613] text-white shadow-sm" aria-label="Registrar medición"><Plus className="size-5" /></button>}
+      {!preview && canRecord && (self || personId) && <button onClick={startMeasurement} className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613] text-white shadow-sm" aria-label="Registrar medición"><Plus className="size-5" /></button>}
     </div>
 
     {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{message}</p>}
@@ -94,14 +96,14 @@ export default function BodyMetricsPanel({ personId = null, self = false, title 
         <div className="flex items-center justify-between"><div><p className="text-sm font-black text-slate-900">Historial</p><p className="text-[11px] text-slate-400">Últimas mediciones registradas</p></div>{!preview && <button onClick={load} className="grid size-9 place-items-center rounded-xl border border-black/8 text-slate-500"><RefreshCw className="size-4" /></button>}</div>
         <div className="mt-3 divide-y divide-slate-100">{items.slice(0, 10).map((item) => {
           const storedCalculation = item.bodyFatPct == null && item.sex ? calculateBodyComposition(item) : null;
-          return <div key={item.id} className="grid grid-cols-[1fr_auto] gap-3 py-3"><div><p className="text-sm font-black text-slate-800">{n(item.weightKg)} kg <span className="font-bold text-slate-400">· IMC {n(item.bmi, 2)}</span></p><p className="mt-1 text-[11px] text-slate-400">{dateLabel(item.measuredAt)}{item.bodyFatPct != null ? ` · Grasa ${n(item.bodyFatPct)}%` : ""}</p>{storedCalculation?.bodyFatState === "invalid" && <p className="mt-1 text-[11px] font-bold text-amber-600">Grasa no calculada: revisá las medidas registradas.</p>}{item.notes && <p className="mt-1 text-xs text-slate-500">{item.notes}</p>}</div><div className="flex items-center gap-2"><span className="hidden self-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500 sm:inline-flex">{item.waistCm ? `${n(item.waistCm)} cm cintura` : "Medición"}</span>{!preview && <button type="button" onClick={() => removeMetric(item)} disabled={deletingId === item.id} className="grid size-9 place-items-center rounded-xl bg-red-50 text-[#9E0710] disabled:opacity-40" aria-label={`Eliminar medición del ${dateLabel(item.measuredAt)}`}><Trash2 className="size-4" /></button>}</div></div>;
+          return <div key={item.id} className="grid grid-cols-[1fr_auto] gap-3 py-3"><div><p className="text-sm font-black text-slate-800">{n(item.weightKg)} kg <span className="font-bold text-slate-400">· IMC {n(item.bmi, 2)}</span></p><p className="mt-1 text-[11px] text-slate-400">{dateLabel(item.measuredAt)}{item.bodyFatPct != null ? ` · Grasa ${n(item.bodyFatPct)}%` : ""}</p>{storedCalculation?.bodyFatState === "invalid" && <p className="mt-1 text-[11px] font-bold text-amber-600">Grasa no calculada: revisá las medidas registradas.</p>}{item.notes && <p className="mt-1 text-xs text-slate-500">{item.notes}</p>}</div><div className="flex items-center gap-2"><span className="hidden self-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500 sm:inline-flex">{item.waistCm ? `${n(item.waistCm)} cm cintura` : "Medición"}</span>{!preview && canDelete && <button type="button" onClick={() => removeMetric(item)} disabled={deletingId === item.id} className="grid size-9 place-items-center rounded-xl bg-red-50 text-[#9E0710] disabled:opacity-40" aria-label={`Eliminar medición del ${dateLabel(item.measuredAt)}`}><Trash2 className="size-4" /></button>}</div></div>;
         })}</div>
       </div>
     </>}
 
     {!loading && !latest && <div className="rounded-[22px] border border-dashed border-slate-200 bg-white p-7 text-center"><Scale className="mx-auto size-8 text-slate-300" /><p className="mt-3 text-sm font-black text-slate-500">Todavía no hay mediciones</p><p className="mt-1 text-xs leading-5 text-slate-400">Registrá peso y altura para obtener IMC. Para estimar grasa con Navy: elegí sexo y completá cintura y cuello; en femenino también cadera.</p></div>}
 
-    <FormDialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) setError(""); }} title="Nueva medición" description="Los cálculos son orientativos y no reemplazan una evaluación médica.">
+    <FormDialog open={open && canRecord} onOpenChange={(value) => { setOpen(value); if (!value) setError(""); }} title="Nueva medición" description="Los cálculos son orientativos y no reemplazan una evaluación médica.">
       <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
         <label className="text-sm font-bold text-slate-600">Peso (kg)<input value={draft.weightKg} onChange={(event) => patchDraft("weightKg", event.target.value)} type="number" step="0.1" min="20" max="400" required inputMode="decimal" className={input} /></label>
         <label className="text-sm font-bold text-slate-600">Altura (cm)<input value={draft.heightCm} onChange={(event) => patchDraft("heightCm", event.target.value)} type="number" step="0.1" min="100" max="250" required inputMode="decimal" className={input} /></label>

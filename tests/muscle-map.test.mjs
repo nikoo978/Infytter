@@ -45,3 +45,11 @@ test("each anatomy viewport clips the unused half of the combined image", () => 
     }
   }
 });
+
+test("female plate uses faceless vector heads without changing muscle clipping", () => {
+  const html = renderToStaticMarkup(React.createElement(AnatomyFigure, { gender: "female", selected: "Pecho" }));
+  assert.match(html, /<mask/);
+  assert.match(html, /stroke="white"/);
+  assert.match(html, /feMorphology/);
+  assert.match(html, /female_muscle_04.webp/);
+});
