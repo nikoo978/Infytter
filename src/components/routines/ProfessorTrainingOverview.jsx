@@ -1,3 +1,4 @@
+import CollapsibleSection from "../ui/CollapsibleSection";
 import useAppBack from "../../hooks/useAppBack";
 import { ChevronDown, ChevronUp, Clock3, Dumbbell, RefreshCw, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -52,7 +53,7 @@ export default function ProfessorTrainingOverview({ personId }) {
       <div className="rounded-xl bg-slate-50 p-3"><p className="text-lg font-black text-slate-800">{number(stats.minutes)}</p><p className="text-[9px] font-black uppercase text-slate-400">Minutos</p></div>
     </div>}
 
-    <div className="mt-4 space-y-2">
+    <CollapsibleSection key={personId} title="Entrenamientos recientes del alumno" count={recent.length} collapsible={recent.length > 5} className="mt-4 space-y-2">
       {recent.map((session) => {
         const expanded = openSession === session.id;
         const grouped = new Map();
@@ -79,6 +80,6 @@ export default function ProfessorTrainingOverview({ personId }) {
         </article>;
       })}
       {!loading && !recent.length && !error && <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center"><TrendingUp className="mx-auto size-6 text-slate-300" /><p className="mt-2 text-sm font-bold text-slate-400">Todavía no hay entrenamientos finalizados para este cliente.</p></div>}
-    </div>
+    </CollapsibleSection>
   </section>;
 }

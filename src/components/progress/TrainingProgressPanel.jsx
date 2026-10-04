@@ -1,3 +1,4 @@
+import CollapsibleSection from "../ui/CollapsibleSection";
 import { Activity, CalendarDays, Clock3, Dumbbell, RefreshCw, TrendingUp, Weight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getMyTrainingOverview } from "../../services/routines";
@@ -61,8 +62,7 @@ export default function TrainingProgressPanel({ preview = false }) {
       <div className="col-span-2"><Stat icon={Weight} label="Volumen acumulado" value={`${number(stats.volumeKg)} kg`} /></div>
     </div>}
 
-    {!loading && <div className="rounded-[22px] bg-white p-4 shadow-sm">
-      <div className="flex items-center gap-2"><TrendingUp className="size-5 text-[#E30613]" /><div><p className="text-sm font-black text-slate-900">Entrenamientos recientes</p><p className="text-[11px] text-slate-400">Duración, series y volumen real registrado.</p></div></div>
+    {!loading && <CollapsibleSection title="Entrenamientos recientes" count={recent.length} description="Duración, series y volumen real registrado." icon={TrendingUp}>
       <div className="mt-3 divide-y divide-slate-100">
         {recent.map((session) => <article key={session.id} className="py-3">
           <div className="flex items-start justify-between gap-3">
@@ -79,6 +79,6 @@ export default function TrainingProgressPanel({ preview = false }) {
         </article>)}
         {!recent.length && <p className="py-7 text-center text-sm text-slate-400">Todavía no finalizaste entrenamientos desde Infytter.</p>}
       </div>
-    </div>}
+    </CollapsibleSection>}
   </section>;
 }

@@ -1,3 +1,4 @@
+import CollapsibleSection from "../components/ui/CollapsibleSection";
 import Recipes from "./Recipes";
 import useRecipeVisibility from "../hooks/useRecipeVisibility";
 import useAppBack from "../hooks/useAppBack";
@@ -224,10 +225,9 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
               <InfoCard icon={CalendarDays} label="Semana" value={thisWeekDays === null ? "Sin límite" : `${thisWeekDays} / 3 días`} />
             </section>
 
-            <section className="rounded-[22px] bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[.16em] text-[#E30613]">Actividad</p><h2 className="mt-1 text-lg font-black text-[#050505]">Últimos accesos</h2></div>{!preview && <button aria-label="Actualizar accesos" onClick={load} className="grid size-11 place-items-center rounded-xl border border-black/8 text-slate-500"><RefreshCw className="size-4" /></button>}</div>
+            <CollapsibleSection title="Últimos accesos" count={Math.min(accesses.length, 8)} description="Actividad de ingreso al gimnasio" actions={!preview && <button type="button" aria-label="Actualizar accesos" onClick={load} className="grid size-11 place-items-center rounded-xl border border-black/8 text-slate-500"><RefreshCw className="size-4" /></button>}>
               <div className="mt-3 divide-y divide-slate-100">{accesses.slice(0, 8).map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div className="flex min-w-0 items-center gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-xl ${item.allowed ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{item.allowed ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}</span><div className="min-w-0"><p className="truncate text-sm font-black text-slate-800">{item.allowed ? "Ingreso autorizado" : "Ingreso rechazado"}</p><p className="text-[11px] text-slate-400">{new Date(item.date).toLocaleDateString("es-AR", { timeZone: GYM_TIME_ZONE })}</p></div></div><span className="shrink-0 text-xs font-bold text-slate-400"><Clock3 className="mr-1 inline size-3.5" />{new Date(item.date).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: GYM_TIME_ZONE })}</span></div>)}{!accesses.length && <p className="py-7 text-center text-sm text-slate-400">Todavía no tenés accesos registrados.</p>}</div>
-            </section>
+            </CollapsibleSection>
           </>}
 
           {!preview && <button onClick={logout} className="btn-secondary min-h-11 w-full"><LogOut className="size-4" /> Cerrar sesión</button>}

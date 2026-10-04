@@ -1,3 +1,4 @@
+import CollapsibleSection from "../ui/CollapsibleSection";
 import useAppBack from "../../hooks/useAppBack";
 import {
   Check, ChevronLeft, ChevronRight, Clock3, Cloud, CloudCheck, CloudOff, Dumbbell,
@@ -635,10 +636,12 @@ export default function WorkoutRunnerV2({ routine, exercises = [], open, onClose
             </div>
             <PerformanceChart points={performance.trend || []} />
             <p className="text-[10px] leading-4 text-white/30">e1RM = estimación de una repetición máxima calculada a partir del peso y repeticiones registradas. Es orientativa, no una prueba máxima real.</p>
+            <CollapsibleSection key={current.exerciseKey || activeIndex} title="Sesiones anteriores" count={performanceRecent.length} collapsible={performanceRecent.length > 5} className="text-white space-y-3">
             {performanceRecent.map((session) => <article key={session.id} className="rounded-xl bg-white/[.04] p-3">
               <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black text-white/75">{new Date(session.completedAt).toLocaleDateString("es-AR")}</p><p className="mt-0.5 text-[10px] font-bold text-white/30">{session.routineTitle}</p></div><span className="text-[10px] font-bold text-white/35">e1RM {formatNumber(session.e1rm)} kg</span></div>
               <div className="mt-2 flex flex-wrap gap-2">{(session.sets || []).map((set) => <span key={`${session.id}-${set.setNumber}`} className="rounded-lg bg-black/20 px-2 py-1.5 text-[11px] font-bold text-white/65">S{set.setNumber}: {set.reps} × {formatNumber(set.weightKg)} kg{set.rir != null ? ` · RIR ${set.rir}` : ""}</span>)}</div>
             </article>)}
+            </CollapsibleSection>
             {!performanceRecent.length && <p className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-white/35">Todavía no hay entrenamientos guardados para este ejercicio.</p>}
           </>}
         </section>}

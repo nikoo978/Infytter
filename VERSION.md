@@ -7,6 +7,13 @@
 - Mostrar únicamente A.B.C en la interfaz, sin prefijo V ni ceros de relleno.
 - Mantener sincronizados package.json, raíz de package-lock.json, APP_VERSION y caché PWA.
 
+## 1.11.3 — Historiales compactos — 04/10/2026
+
+- Entrenamientos recientes, últimos accesos e historial de mediciones cerrados por defecto, con contador y flecha para desplegar.
+- Resúmenes y actualización visibles; Atrás cierra el desplegable abierto.
+- Historiales del profesor y del ejercicio se contraen cuando superan cinco registros.
+- Listado de recetas, ingredientes y preparación plegables cuando tienen más de cinco elementos.
+
 ## 1.11.2 — Menú del alumno — 04/10/2026
 
 - Recetas se integra al menú flotante: Inicio, Entrenar, Ejercicios, Progreso, Recetas, Perfil.
