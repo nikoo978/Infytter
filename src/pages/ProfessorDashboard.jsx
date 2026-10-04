@@ -1,4 +1,5 @@
-import { Activity, ArrowUpRight, CalendarClock, ClipboardList, DoorOpen, Dumbbell, UserCheck, UsersRound } from "lucide-react";
+import useRecipeVisibility from "../hooks/useRecipeVisibility";
+import { Activity, ArrowUpRight, CalendarClock, ChefHat, ClipboardList, DoorOpen, Dumbbell, UserCheck, UsersRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { statusOf, useGym } from "../context/GymContext";
@@ -10,6 +11,7 @@ import { gymDateISO, gymDateISOOrNull } from "../services/gymDate";
 const today = () => gymDateISO();
 
 export default function ProfessorDashboard({ previewProfile = null }) {
+  const recipesEnabled = useRecipeVisibility(!!previewProfile);
   const { data, sync, syncPendingNow } = useGym();
   const { profile, permissions } = useAuth();
   const [accessBusy, setAccessBusy] = useState(false);
@@ -59,6 +61,7 @@ export default function ProfessorDashboard({ previewProfile = null }) {
       {(allowed.canUseOwnProgress || allowed.canViewStudentProgress) && <QuickLink to="/progreso" icon={Activity} label="Progreso" detail={allowed.canViewStudentProgress ? "Medidas y evolución" : "Mis medidas"} />}
       {allowed.canViewExercises && <QuickLink to="/ejercicios" icon={Dumbbell} label="Ejercicios" detail="Resolver dudas" />}
       {(allowed.canViewRoutines || allowed.canViewStudentRoutines) && <QuickLink to="/rutinas" icon={ClipboardList} label="Rutinas" detail="Consultar rutinas" />}
+      {recipesEnabled && <QuickLink to="/recetas" icon={ChefHat} label="Recetas" detail="Ingredientes y preparación" />}
     </section>
 
 

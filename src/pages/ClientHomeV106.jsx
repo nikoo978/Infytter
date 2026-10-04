@@ -1,6 +1,8 @@
+import Recipes from "./Recipes";
+import useRecipeVisibility from "../hooks/useRecipeVisibility";
 import useAppBack from "../hooks/useAppBack";
 import {
-  Activity, CalendarDays, CheckCircle2, ChevronLeft, Clock3, Dumbbell, Fingerprint,
+  Activity, ChefHat, CalendarDays, CheckCircle2, ChevronLeft, Clock3, Dumbbell, Fingerprint,
   Home, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, UserRound, XCircle
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +26,7 @@ const number = (value, digits = 1) => value == null ? "—" : Number(value).toLo
 
 export default function ClientHomeV106({ previewPortal = null, previewIdentity = null, preview = false }) {
   const { user, profile, logout } = useAuth();
+  const recipesEnabled = useRecipeVisibility(preview);
   const [portal, setPortal] = useState(previewPortal);
   const [loading, setLoading] = useState(!preview);
   const [error, setError] = useState("");
@@ -138,7 +141,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
     <div className="client-shell__inner mx-auto w-full max-w-5xl pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/10 bg-[#050505]/95 px-4 text-white shadow-lg backdrop-blur-xl sm:h-16">
         <img src="/infytter-logo.svg" alt="Infytter Fitness" className="h-8 w-28 object-contain object-left sm:h-9 sm:w-32" />
-        <div className="text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/70">Mi Infytter</p></div>
+        <div className="flex items-center gap-2"><div className="text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/70">Mi Infytter</p></div>{recipesEnabled && <button type="button" onClick={() => setTab("recetas")} className="flex min-h-11 shrink-0 items-center gap-1 rounded-xl bg-[#E30613] px-2 text-[10px] font-black"><ChefHat className="size-4" />Recetas</button>}</div>
       </header>
 
       <div className={`${tab === "inicio" ? "student-home" : "space-y-4"} p-3.5 sm:p-4`}>
@@ -199,6 +202,8 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
           <ExerciseCatalog preview={preview} />
         </>}
 
+        {tab === "recetas" && <Recipes onBack={() => setTab("inicio")} />}
+
         {tab === "ejercicios" && <ExerciseCatalog compact preview={preview} />}
 
         {tab === "progreso" && <div className="space-y-5">
@@ -225,6 +230,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
             </section>
           </>}
 
+          {recipesEnabled && <button type="button" onClick={() => setTab("recetas")} className="flex min-h-16 w-full items-center gap-3 rounded-[20px] bg-white p-4 text-left shadow-sm"><ChefHat className="size-6 shrink-0 text-[#E30613]" /><span><span className="block text-sm font-black">Recetas</span><span className="block text-xs text-slate-500">Ideas, ingredientes y preparación</span></span></button>}
           {!preview && <button onClick={logout} className="btn-secondary min-h-11 w-full"><LogOut className="size-4" /> Cerrar sesión</button>}
         </>}
       </div>

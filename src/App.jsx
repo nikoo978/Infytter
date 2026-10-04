@@ -1,7 +1,7 @@
 "use client";
 
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { Activity, BarChart3, BellRing, Building2, CircleDollarSign, Dumbbell, Eye, FileClock, Fingerprint, LayoutDashboard, Settings2, ShieldCheck, UserCog, UsersRound } from "lucide-react";
+import { Activity, BarChart3, BellRing, Building2, CircleDollarSign, ChefHat, Dumbbell, Eye, FileClock, Fingerprint, LayoutDashboard, Settings2, ShieldCheck, UserCog, UsersRound } from "lucide-react";
 import ClientPlatformGate from "./components/auth/ClientPlatformGate";
 import EmailConfirmedWelcome from "./components/auth/EmailConfirmedWelcome";
 import AppLayout from "./components/layout/AppLayout";
@@ -23,13 +23,14 @@ import ProfessorPermissions from "./pages/ProfessorPermissions";
 import ProfessorProgress from "./pages/ProfessorProgress";
 import Reportes from "./pages/Reportes";
 import Routines from "./pages/Routines";
+import Recipes from "./pages/Recipes";
 import Usuarios from "./pages/Usuarios";
 import { useAuth } from "./context/AuthContext";
 import "./styles/v1066-admin-menu.css";
 import "./styles/mobile-role-branding.css";
 import "./styles/role-experience.css";
 
-export const APP_VERSION = "V.1.10.0";
+export const APP_VERSION = "V.1.11.0";
 export const navigation = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard, roles: ["admin", "coadmin"] },
   { label: "Clientes", path: "/clientes", icon: UsersRound, roles: ["admin", "coadmin"] },
@@ -37,6 +38,7 @@ export const navigation = [
   { label: "Usuarios", path: "/usuarios", icon: ShieldCheck, roles: ["admin", "coadmin"] },
   { label: "Permisos", path: "/permisos", icon: Settings2, roles: ["admin"] },
   { label: "Ejercicios", path: "/ejercicios", icon: Dumbbell, roles: ["admin", "coadmin"] },
+  { label: "Recetas", path: "/recetas", icon: ChefHat, roles: ["admin", "coadmin"] },
   { label: "Caja", path: "/caja", icon: CircleDollarSign, roles: ["admin", "coadmin"] },
   { label: "Reportes", path: "/reportes", icon: BarChart3, roles: ["admin", "coadmin"] },
   { label: "Accesos", path: "/accesos", icon: Fingerprint, roles: ["admin", "coadmin"] },
@@ -56,6 +58,7 @@ function ProfessorApp({ currentPath }) {
         <Route path="/clientes" element={permissions.canViewStudents ? <Clientes /> : <Navigate to="/" replace />} />
         <Route path="/progreso" element={permissions.canUseOwnProgress || permissions.canViewStudentProgress ? <ProfessorProgress /> : <Navigate to="/" replace />} />
         <Route path="/ejercicios" element={permissions.canViewExercises ? <Exercises /> : <Navigate to="/" replace />} />
+        <Route path="/recetas" element={<Recipes />} />
         <Route path="/rutinas" element={permissions.canViewRoutines || permissions.canViewStudentRoutines ? <Routines /> : <Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -91,6 +94,7 @@ export default function App() {
         <Route path="/usuarios" element={allowed("/usuarios") ? <Usuarios /> : <Navigate to={fallback} replace />} />
         <Route path="/permisos" element={allowed("/permisos") ? <ProfessorPermissions /> : <Navigate to={fallback} replace />} />
         <Route path="/ejercicios" element={allowed("/ejercicios") ? <Exercises /> : <Navigate to={fallback} replace />} />
+        <Route path="/recetas" element={allowed("/recetas") ? <Recipes /> : <Navigate to={fallback} replace />} />
         <Route path="/caja" element={allowed("/caja") ? <Caja /> : <Navigate to={fallback} replace />} />
         <Route path="/reportes" element={allowed("/reportes") ? <Reportes /> : <Navigate to={fallback} replace />} />
         <Route path="/accesos" element={allowed("/accesos") ? <Accesos /> : <Navigate to={fallback} replace />} />
