@@ -385,6 +385,12 @@ if (require.main === module) (async () => {
           assert.equal(await page.getByRole("button", { name: "Mujer", exact: true }).getAttribute("aria-pressed"), "true");
           await page.locator('svg[aria-label="Frente, figura femenina"] image').first().evaluate(el => new Promise((resolve, reject) => { const img = new Image(); img.onload = resolve; img.onerror = reject; img.src = el.getAttribute("href"); }));
           await page.screenshot({ path: path.join(output, "qa-figura-femenina.png"), fullPage: true });
+          await page.setViewportSize({width:1440,height:900});
+          await page.screenshot({path:path.join(output,"qa-figura-femenina-desktop.png"),fullPage:true});
+          await page.getByRole("button",{name:"Hombre",exact:true}).click();
+          await page.screenshot({path:path.join(output,"qa-figura-masculina-desktop.png"),fullPage:true});
+          await page.getByRole("button",{name:"Mujer",exact:true}).click();
+          await page.setViewportSize({width:390,height:844});
 
           await page.screenshot({
             path: path.join(output, "qa-alumno-ejercicios.png"),

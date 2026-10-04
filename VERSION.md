@@ -7,6 +7,11 @@
 - Mostrar únicamente A.B.C en la interfaz, sin prefijo V ni ceros de relleno.
 - Mantener sincronizados package.json, raíz de package-lock.json, APP_VERSION y caché PWA.
 
+## 1.11.5 — Figura muscular — 04/10/2026
+
+- Recorte explícito del frente y espalda para evitar partes duplicadas en pantallas anchas.
+- Figura femenina con cabello, rostro neutro y cintura más delgada, manteniendo filtros musculares.
+
 ## 1.11.4 — Recetario — 04/10/2026
 
 - Se retira el texto de fuente del detalle visible de las recetas.

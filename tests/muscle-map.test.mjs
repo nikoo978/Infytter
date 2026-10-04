@@ -38,7 +38,9 @@ test("each anatomy viewport clips the unused half of the combined image", () => 
           assert.match(html, /<svg[^>]*style="overflow:hidden"/);
           assert.ok(html.includes(`viewBox="${back ? 328 : 0} 0 328 614"`));
           assert.ok(html.includes(`${gender}_muscle_00.webp`));
-          // Both raster halves remain in the image; the SVG viewport clips the unused one.
+          assert.match(html, /clipPathUnits="userSpaceOnUse"/);
+          assert.ok(html.includes(`<rect x="${back ? 328 : 0}" y="0" width="328" height="614"`));
+          // Clip in user coordinates, including the aspect-ratio letterbox area.
           assert.match(html, /<image[^>]*width="656"[^>]*height="614"/);
         }
       }
@@ -49,6 +51,8 @@ test("each anatomy viewport clips the unused half of the combined image", () => 
 test("female plate uses faceless vector heads without changing muscle clipping", () => {
   const html = renderToStaticMarkup(React.createElement(AnatomyFigure, { gender: "female", selected: "Pecho" }));
   assert.match(html, /<mask/);
+  assert.match(html, /data-anatomy-hair="front"/);
+  assert.match(html, /data-anatomy-hair="back"/);
   assert.match(html, /stroke="white"/);
   assert.match(html, /feMorphology/);
   assert.match(html, /female_muscle_04.webp/);
