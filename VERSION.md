@@ -1,3 +1,7 @@
+## V1.11.1 — Encabezado del alumno (2026-10-04)
+
+- Logo, versión y acceso a recetas con separación en pantallas pequeñas, conservando altura y controles.
+
 ## V1.11.0 — Recetario (2026-10-04)
 
 - 99 recetas del archivo proporcionado con fotos, ingredientes, preparación, tiempos y macros originales.
