@@ -548,6 +548,7 @@ async function login(page, role, permissions = true) {
       const mixedContext = await restrictedBrowser.newContext({viewport:{width:390,height:844},serviceWorkers:"block"});
       const mixedPage = await mixedContext.newPage();
       await login(mixedPage, "profe", { can_view_students:true, can_view_student_progress:true, can_record_student_metrics:false, can_delete_student_metrics:false, can_view_student_routines:false, can_assign_routines:true, can_view_routines:true, can_view_exercises:true, can_use_own_progress:false, can_create_routines:false, can_edit_routines:false, can_create_exercises:false, can_edit_exercises:false, can_delete_exercises:false });
+      await mixedPage.getByRole("link", { name: "Rutinas", exact: true }).first().waitFor();
       await mixedPage.goto("http://127.0.0.1:5174/rutinas?alumno=person-1");
       await mixedPage.getByRole("button",{name:"Rutina: Fuerza inicial",exact:true}).waitFor();
       await mixedPage.waitForTimeout(250);
