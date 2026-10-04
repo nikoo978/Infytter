@@ -46,8 +46,8 @@ export default function AnatomyPlate({ gender = "male", back = false, selected =
         </mask>
         <mask id={`${id}-waist`} maskUnits="userSpaceOnUse" x="0" y="0" width="656" height="614">
           <rect width="656" height="614" fill="white" />
-          <path d="M98 190 L114 190 Q127 231 112 276 L98 276 Z M220 190 L206 190 Q193 231 208 276 L220 276 Z" fill="black" />
-          <path d="M432 190 L459 190 Q478 233 449 276 L432 276 Z M558 190 L531 190 Q512 233 541 276 L558 276 Z" fill="black" />
+          <path d="M100 190 L116 190 Q149 230 109 270 L100 270 Z M220 190 L203 190 Q170 230 210 270 L220 270 Z" fill="black" />
+          <path d="M434 170 L446 170 C450 190 465 210 463 230 C462 241 451 245 444 260 L434 260 Z M557 170 L545 170 C541 190 526 210 528 230 C529 241 540 245 547 260 L557 260 Z" fill="black" />
         </mask>
         <filter id={`${id}-outline`} colorInterpolationFilters="sRGB" x="0" y="0" width="100%" height="100%">
           <feMorphology in="SourceAlpha" operator="dilate" radius="1.3" result="outline" />
@@ -71,7 +71,7 @@ export default function AnatomyPlate({ gender = "male", back = false, selected =
       <path d="M495 7 C473 7 465 24 466 46 C459 46 460 63 469 64 L479 64 L479 80 C486 80 504 80 511 80 L511 64 L521 64 C530 63 531 46 524 46 C525 24 516 7 495 7 Z" />
     </g>}
     {figure === "female" && <g aria-hidden="true" fill="none" stroke="white" strokeWidth="2.5">
-      <path d="M114 190 Q127 231 112 276 M206 190 Q193 231 208 276 M459 190 Q478 233 449 276 M531 190 Q512 233 541 276" />
+      <path d="M116 190 Q149 230 109 270 M203 190 Q170 230 210 270 M446 170 C450 190 465 210 463 230 C462 241 451 245 444 260 M545 170 C541 190 526 210 528 230 C529 241 540 245 547 260" />
     </g>}
     {selectedArea && !plate && <path d={polygonPath(selectedArea)} fill="#e30613" opacity=".35" />}
     {interactive && paths.map(([name,area]) => <path key={name} d={polygonPath(area[side])} fill="transparent" stroke="transparent" className="anatomy-plate__target" role="button" tabIndex={0} aria-label={`Filtrar por ${name}`} aria-pressed={selected === name} onClick={() => onSelect(name)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSelect(name); } }} onMouseEnter={() => onHover(name)} onMouseLeave={() => onHover("")} onFocus={() => onHover(name)} onBlur={() => onHover("")}><title>{name}</title></path>)}
