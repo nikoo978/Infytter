@@ -141,7 +141,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
     <div className="client-shell__inner mx-auto w-full max-w-5xl pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/10 bg-[#050505]/95 px-4 text-white shadow-lg backdrop-blur-xl sm:h-16">
         <img src="/infytter-logo.svg" alt="Infytter Fitness" className="h-8 w-28 object-contain object-left sm:h-9 sm:w-32" />
-        <div className="text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/70">Mi Infytter</p></div>
+        <div className="flex items-center gap-2"><div className="text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/70">Mi Infytter</p></div>{recipesEnabled && <button type="button" onClick={() => setTab("recetas")} className="flex min-h-11 shrink-0 items-center gap-1 rounded-xl bg-[#E30613] px-2 text-[10px] font-black"><ChefHat className="size-4" />Recetas</button>}</div>
       </header>
 
       <div className={`${tab === "inicio" ? "student-home" : "space-y-4"} p-3.5 sm:p-4`}>
@@ -149,7 +149,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
           <section className="student-home__welcome overflow-hidden rounded-[26px] bg-[#050505] p-5 text-white shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/65">Tu día en Infytter</p><h1 className="student-home__greeting mt-2 break-words text-2xl font-black sm:text-3xl">Hola, {name}</h1><p className="mt-2 text-xs text-white/70">{todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}</p></div>
-              <>{recipesEnabled ? <button type="button" onClick={() => setTab("recetas")} className="flex min-h-11 min-w-14 shrink-0 flex-col items-center justify-center gap-1 rounded-xl bg-[#E30613] px-2 py-1 text-[10px] font-black"><ChefHat className="size-5" />Recetas</button> : <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613]"><ShieldCheck className="size-5" /></span>}</>
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#E30613]"><ShieldCheck className="size-5" /></span>
             </div>
             {member && <div className="student-home__membership mt-5 flex items-center justify-between rounded-2xl bg-white/8 px-4 py-3 border border-white/10"><div><p className="text-[10px] font-black uppercase tracking-wider text-white/40">Membresía</p><p className="mt-1 text-lg font-black">{status}</p></div><span className={`rounded-full px-3 py-1.5 text-xs font-black ${statusTone}`}>{dateLabel(member.expiry)}</span></div>}
           </section>
