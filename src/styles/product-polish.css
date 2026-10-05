@@ -1,0 +1,45 @@
+/* A small shared visual layer, without animation dependencies or continuous effects. */
+.animated-dock {
+  position: relative; isolation: isolate; display: grid; gap: 0; padding: 6px;
+  border: 1px solid rgba(255,255,255,.9); border-radius: 27px;
+  background: rgba(255,255,255,.94); backdrop-filter: blur(18px);
+  box-shadow: 0 10px 35px rgba(15,23,42,.14), 0 0 0 1px rgba(15,23,42,.05);
+}
+.animated-dock__indicator {
+  position: absolute; z-index: -1; top: 6px; bottom: 6px;
+  left: calc(8px + (100% - 12px) / var(--dock-count) * var(--dock-index));
+  width: calc((100% - 12px) / var(--dock-count) - 4px); border-radius: 21px;
+  background: linear-gradient(145deg,#f51929,#bd0010); box-shadow: 0 4px 12px #e3061326;
+  transition: left 340ms cubic-bezier(.22,1,.36,1), width 340ms cubic-bezier(.22,1,.36,1), opacity 180ms;
+}
+.animated-dock > :is(button,a,span:not(.animated-dock__indicator)) {
+  position: relative; min-height: 52px; background: transparent; box-shadow: none;
+  transition: color 200ms, transform 200ms; -webkit-tap-highlight-color: transparent;
+}
+.animated-dock > [aria-current="page"] { color: white; }
+.animated-dock > :is(button,a):active { transform: scale(.94); }
+.animated-dock > [aria-current="page"] svg { animation: dock-icon 340ms cubic-bezier(.22,1,.36,1); }
+@keyframes dock-icon { 0% { transform: translateY(3px) scale(.88); } 60% { transform: translateY(-2px) scale(1.1); } 100% { transform: none; } }
+@keyframes page-arrive { from { opacity: .65; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+.page-arrive { animation: page-arrive 220ms ease-out; }
+.product-polish, .role-shell { background-image: radial-gradient(ellipse at 85% 0%,#e3061308,transparent 48%); }
+.student-home__welcome { background: radial-gradient(ellipse at 100% 0%,#762331 0,transparent 65%),linear-gradient(145deg,#15161c,#08090d); border: 1px solid #ffffff14; }
+.student-home__training { background: linear-gradient(125deg,#ed1224,#b90010); box-shadow: 0 8px 22px #9e071023; }
+.role-shell :is(.student-home__shortcuts button,.student-home__stats article,.exercise-explorer) { border: 1px solid #e7e9ef; box-shadow: 0 3px 16px #0f172a06; }
+.product-polish :is(.btn-primary,.btn-secondary), .role-shell :is(.btn-primary,.btn-secondary) { transition: transform 180ms, box-shadow 180ms, background-color 180ms; }
+.product-polish :is(.btn-primary,.btn-secondary):active, .role-shell :is(.btn-primary,.btn-secondary):active { transform: scale(.98); }
+.product-polish nav a { transition: background-color 200ms,color 200ms,transform 200ms; }
+.routine-order-card { transition: border-color 160ms,box-shadow 160ms; }
+.routine-order-card--target { border-color: #e30613; box-shadow: 0 0 0 3px #e3061320; }
+.routine-grip { cursor: grab; }
+.routine-grip:active { cursor: grabbing; background: #fee2e5; color: #b90010; }
+.routine-grip:disabled { cursor: default; opacity: .35; }
+@media (hover:hover) {
+  .animated-dock > :is(button,a):not([aria-current="page"]):hover { color: #b90010; transform: translateY(-2px); }
+  .product-polish nav a:hover { transform: translateX(2px); }
+  .role-shell .student-home__shortcuts button { transition: transform 200ms,box-shadow 200ms; }
+  .role-shell .student-home__shortcuts button:hover { transform: translateY(-2px); box-shadow: 0 5px 18px #0f172a0c; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .animated-dock *, .page-arrive, .product-polish *, .routine-order-card { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

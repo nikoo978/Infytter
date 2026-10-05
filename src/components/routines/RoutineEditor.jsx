@@ -1,5 +1,7 @@
+import RoutineReorderHandle from "./RoutineReorderHandle";
+import { reorderRoutineItems } from "../../services/routineOrder";
 import { ArrowDown, ArrowUp, Check, Minus, Plus, Save, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import ExerciseDetail from "../exercises/ExerciseDetail";
 import FormDialog from "../ui/FormDialog";
 import { matchesExerciseSearch, MUSCLE_GROUPS } from "../../services/exercises";
@@ -12,7 +14,10 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
   const [title, setTitle] = useState(routine?.title || "");
   const [description, setDescription] = useState(routine?.description || "");
   const scheduleDays = routine?.scheduleDays || [];
-  const [items, setItems] = useState((routine?.items || []).map((item) => ({ ...item })));
+  const [items, setItems] = useState((routine?.items || []).map((item) => ({ ...item, _editorKey: crypto.randomUUID() })));
+  const listRef = useRef(null);
+  const [dragTarget, setDragTarget] = useState(null);
+  const [orderNotice, setOrderNotice] = useState("");
   const [group, setGroup] = useState("Todos");
   const [query, setQuery] = useState("");
   const [detailExercise, setDetailExercise] = useState(null);
@@ -46,26 +51,25 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
     setItems((current) => {
       const matches = (item) => String(exerciseById.get(String(item.exercise_id || ""))?.id || item.exercise_id) === String(exercise.id);
       if (current.some(matches)) return current.filter((item) => !matches(item));
-      return [...current, { exercise_id: exercise.id, exercise_name: exercise.name, sets: exercise.default_sets || 3, reps: exercise.default_reps || "8-12", rest_seconds: exercise.rest_seconds ?? 60, notes: "" }];
+      return [...current, { _editorKey: crypto.randomUUID(), exercise_id: exercise.id, exercise_name: exercise.name, sets: exercise.default_sets || 3, reps: exercise.default_reps || "8-12", rest_seconds: exercise.rest_seconds ?? 60, notes: "" }];
     });
   };
 
   const patchItem = (index, patch) => setItems((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
   const removeItem = (index) => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
-  const moveItem = (index, direction) => setItems((current) => {
-    const target = index + direction;
-    if (target < 0 || target >= current.length) return current;
-    const next = [...current];
-    [next[index], next[target]] = [next[target], next[index]];
-    return next;
-  });
+  const moveTo = (from, to) => {
+    if (busy) return;
+    setItems((current) => reorderRoutineItems(current, from, to));
+    if (from !== to) setOrderNotice(`Ejercicio movido a la posición ${to + 1}. Guardá los cambios para conservar el orden.`);
+  };
+  const moveItem = (index, direction) => moveTo(index, index + direction);
   const changeSets = (index, delta) => patchItem(index, { sets: Math.max(1, Math.min(20, Number(items[index]?.sets || 1) + delta)) });
   const changeRest = (index, delta) => patchItem(index, { rest_seconds: Math.max(0, Math.min(1800, Number(items[index]?.rest_seconds || 0) + delta)) });
 
   const submit = (event) => {
     event.preventDefault();
     if (title.trim().length < 2 || !items.length) return;
-    const normalizedItems = items.map((item) => {
+    const normalizedItems = items.map(({ _editorKey, ...item }) => {
       const sourceExercise = exerciseById.get(String(item.exercise_id || ""));
       return {
         ...item,
@@ -120,12 +124,17 @@ export default function RoutineEditor({ routine = null, exercises = [], onSave, 
     </section>
 
     <section>
-      <div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-wider text-slate-500">2. Configurá la rutina</p><p className="mt-1 text-xs text-slate-400">Ordená y ajustá cada ejercicio.</p></div><span className="text-xs font-black text-slate-400">{items.length} ejercicios</span></div>
-      <div className="space-y-3">{items.map((item, index) => {
+      <div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-wider text-slate-500">2. Configurá la rutina</p><p className="mt-1 text-xs text-slate-400">Arrastrá desde el asa, usá las flechas o elegí la posición.</p></div><span className="text-xs font-black text-slate-400">{items.length} ejercicios</span></div>
+      <p role="status" className="sr-only">{orderNotice}</p>
+      <div ref={listRef} className="space-y-3">{items.map((item, index) => {
         const sourceExercise = exerciseById.get(String(item.exercise_id || ""));
         const visibleName = sourceExercise?.name || item.exercise_name;
-        return <article key={`${item.exercise_id || item.exercise_name}-${index}`} className="rounded-2xl border border-black/7 bg-white p-3.5 shadow-sm sm:p-4">
-          <div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#050505] text-xs font-black text-white">{index + 1}</span><div className="min-w-0 flex-1"><p className="break-words font-black leading-5 text-slate-800">{visibleName}</p><p className="mt-0.5 text-[11px] font-bold text-slate-400">Series · repeticiones · descanso</p></div><div className="flex shrink-0 gap-1"><button type="button" onClick={() => moveItem(index, -1)} disabled={index === 0} className="grid size-8 place-items-center rounded-lg bg-slate-100 text-slate-500 disabled:opacity-25" aria-label="Subir ejercicio"><ArrowUp className="size-3.5" /></button><button type="button" onClick={() => moveItem(index, 1)} disabled={index === items.length - 1} className="grid size-8 place-items-center rounded-lg bg-slate-100 text-slate-500 disabled:opacity-25" aria-label="Bajar ejercicio"><ArrowDown className="size-3.5" /></button><button type="button" onClick={() => removeItem(index)} className="grid size-8 place-items-center rounded-lg bg-red-50 text-[#9E0710]" aria-label="Eliminar ejercicio"><Trash2 className="size-3.5" /></button></div></div>
+        return <article key={item._editorKey} data-routine-position={index} className={`routine-order-card rounded-2xl border border-black/7 bg-white p-3.5 shadow-sm sm:p-4 ${dragTarget === index ? "routine-order-card--target" : ""}`}>
+          <div className="flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#050505] text-xs font-black text-white">{index + 1}</span><div className="min-w-0 flex-1"><p className="break-words font-black leading-5 text-slate-800">{visibleName}</p><p className="mt-0.5 text-[11px] font-bold text-slate-400">Series · repeticiones · descanso</p></div><RoutineReorderHandle index={index} name={visibleName} listRef={listRef} onTarget={setDragTarget} onDrop={moveTo} disabled={busy || items.length < 2} /></div>
+          <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-2">
+            <label className="flex min-w-0 items-center gap-2 text-xs font-bold text-slate-500">Posición<select aria-label={`Posición de ${visibleName}`} value={index} disabled={busy} onChange={(event) => moveTo(index, Number(event.target.value))} className="h-11 rounded-lg border border-slate-200 bg-white px-3 font-black text-slate-800">{items.map((_, position) => <option key={position} value={position}>{position + 1}</option>)}</select></label>
+            <div className="flex shrink-0 gap-1"><button type="button" onClick={() => moveItem(index, -1)} disabled={busy || index === 0} className="grid size-11 place-items-center rounded-lg bg-white text-slate-600 disabled:opacity-25" aria-label={`Subir ${visibleName}`}><ArrowUp className="size-4" /></button><button type="button" onClick={() => moveItem(index, 1)} disabled={busy || index === items.length - 1} className="grid size-11 place-items-center rounded-lg bg-white text-slate-600 disabled:opacity-25" aria-label={`Bajar ${visibleName}`}><ArrowDown className="size-4" /></button><button type="button" onClick={() => removeItem(index)} disabled={busy} className="grid size-11 place-items-center rounded-lg bg-red-50 text-[#9E0710]" aria-label={`Eliminar ${visibleName}`}><Trash2 className="size-4" /></button></div>
+          </div>
 
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
             <div className="rounded-xl bg-slate-50 p-2.5"><p className="text-[10px] font-black uppercase text-slate-400">Series</p><div className="mt-1.5 flex items-center gap-2"><button type="button" onClick={() => changeSets(index, -1)} className="grid size-8 place-items-center rounded-lg bg-white text-slate-600 shadow-sm"><Minus className="size-3.5" /></button><input type="number" min="1" max="20" value={item.sets} onChange={(event) => patchItem(index, { sets: Math.max(1, Math.min(20, Number(event.target.value || 1))) })} className="h-8 min-w-0 flex-1 bg-transparent text-center text-sm font-black outline-none" /><button type="button" onClick={() => changeSets(index, 1)} className="grid size-8 place-items-center rounded-lg bg-white text-slate-600 shadow-sm"><Plus className="size-3.5" /></button></div></div>

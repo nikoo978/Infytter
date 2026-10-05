@@ -104,7 +104,7 @@ export default function AppLayout({ currentPath, children }) {
   }, [permissions?.canManageRoles, isCloud]);
   const syncIcon = isCloud && sync === "Sincronizado" ? <Cloud className="size-3.5 text-[#E30613]" /> : isLocal ? <HardDrive className="size-3.5 text-[#E30613]" /> : <CloudOff className="size-3.5 text-[#9E0710]" />;
 
-  return <div className="min-h-svh bg-[#F5F5F5] md:flex">
+  return <div className="product-polish min-h-svh bg-[#F5F5F5] md:flex">
     <aside className="hidden w-64 shrink-0 flex-col bg-[#050505] md:fixed md:inset-y-0 md:flex"><Nav currentPath={currentPath} onSync={syncPendingNow} /></aside>
     {mobileOpen && <div className="fixed inset-0 z-40 bg-black/55 md:hidden" onClick={() => setMobileOpen(false)}><aside className="flex h-full w-[82%] max-w-72 flex-col bg-[#050505]" onClick={(e) => e.stopPropagation()}><div className="absolute left-[calc(min(82%,18rem)-3rem)] top-4"><button onClick={() => setMobileOpen(false)} className="grid size-9 place-items-center rounded-xl bg-white text-black"><X className="size-5" /></button></div><Nav currentPath={currentPath} onNavigate={() => setMobileOpen(false)} onSync={syncPendingNow} /></aside></div>}
     <div className="min-w-0 flex-1 md:ml-64">

@@ -1,3 +1,4 @@
+import AnimatedDock from "../components/ui/AnimatedDock";
 import AccountProfile from "../components/account/AccountProfile";
 import Recipes from "./Recipes";
 import useRecipeVisibility from "../hooks/useRecipeVisibility";
@@ -134,6 +135,8 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
     setRoutineBusy(false);
   };
 
+  const dockTabs = ["inicio", "entrenar", "ejercicios", ...(recipesEnabled ? ["recetas"] : []), "perfil"];
+  const dockIndex = dockTabs.indexOf(tab === "progreso" ? "inicio" : tab);
   const navClass = preview
     ? "sticky bottom-2 mx-2"
     : "fixed bottom-0 left-1/2 w-full max-w-3xl -translate-x-1/2 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))]";
@@ -145,7 +148,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
         <div className="whitespace-nowrap text-right"><p className="text-[11px] font-black text-[#E30613]">{APP_VERSION}</p><p className="text-[10px] text-white/70">Mi Infytter</p></div>
       </header>
 
-      <div className={`${tab === "inicio" ? "student-home" : "space-y-4"} p-3.5 sm:p-4`}>
+      <div key={tab} className={`${tab === "inicio" ? "student-home" : "space-y-4"} page-arrive p-3.5 sm:p-4`}>
         {tab === "inicio" && <>
           <section className="student-home__welcome overflow-hidden rounded-[26px] bg-[#050505] p-5 text-white shadow-xl">
             <div className="flex items-start justify-between gap-4">
@@ -217,13 +220,13 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
 
       </div>
 
-      <div className={`${navClass} z-40`}><nav aria-label="Menú del alumno" style={{ gridTemplateColumns: `repeat(${recipesEnabled ? 5 : 4}, minmax(0, 1fr))` }} className="grid gap-0.5 sm:gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl">
-        <NavButton active={tab === "inicio"} onClick={() => setTab("inicio")} icon={Home} label="Inicio" />
+      <div className={`${navClass} z-40`}><AnimatedDock label="Menú del alumno" count={dockTabs.length} activeIndex={dockIndex}>
+        <NavButton active={tab === "inicio" || tab === "progreso"} onClick={() => setTab("inicio")} icon={Home} label="Inicio" />
         <NavButton active={tab === "entrenar"} onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} icon={Dumbbell} label="Entrenar" />
         <NavButton active={tab === "ejercicios"} onClick={() => setTab("ejercicios")} icon={Search} label="Ejercicios" />
         {recipesEnabled && <NavButton active={tab === "recetas"} onClick={() => setTab("recetas")} icon={ChefHat} label="Recetas" />}
         <NavButton active={tab === "perfil"} onClick={() => setTab("perfil")} icon={UserRound} label="Perfil" />
-      </nav></div>
+      </AnimatedDock></div>
     </div>
 
     {routineError && (creatingRoutine || editingRoutine) && <p role="alert" className="fixed bottom-24 inset-x-3 z-[60] rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{routineError}</p>}
