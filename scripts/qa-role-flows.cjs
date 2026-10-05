@@ -93,7 +93,16 @@ async function mock(page, role, permissions = true) {
         token_type: "bearer",
         user,
       };
-    else if (url.includes("/auth/v1/user")) data = user;
+    else if (url.includes("/auth/v1/user")) {
+      if (route.request().method() === "PUT") {
+        const payload=JSON.parse(route.request().postData() || "{}");
+        if (payload.data) Object.assign(user.user_metadata,payload.data);
+      }
+      data = user;
+    }
+    else if (url.includes("/storage/v1/object/sign/")) data={signedURL:"/object/public/avatar-fixture"};
+    else if (url.includes("/storage/v1/object/public/avatar-fixture")) { await route.fulfill({contentType:"image/webp",body:require("node:fs").readFileSync(path.join(__dirname,"../public/images/muscles/male_muscle_04.webp"))}); return; }
+    else if (url.includes("/storage/v1/object/")) data={Key:"avatar-fixture"};
     else if (url.includes('/gf_recipe_settings')) {
       if (route.request().method()==='PATCH') recipesEnabled=JSON.parse(route.request().postData()).enabled;
       data={enabled:recipesEnabled};
@@ -251,7 +260,7 @@ if (require.main === module) (async () => {
             assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
             await page.screenshot({path:path.join(output,`qa-alumno-${viewport.width}.png`)});
           }
-          await page.getByRole("button", {name:"Progreso",exact:true}).click();
+          await page.getByRole("button", {name:"Ver progreso"}).click();
           for (const [title, text] of [["Entrenamientos recientes","Sesión de muestra 1"],["Historial de mediciones","Medición de muestra 1"]]) {
             const toggle=page.getByRole("button",{name:title,exact:true});
             await toggle.waitFor();
@@ -264,12 +273,22 @@ if (require.main === module) (async () => {
             assert.equal(await toggle.getAttribute("aria-expanded"),"false");
           }
           await page.getByRole("button",{name:"Perfil",exact:true}).click();
-          const accessesToggle=page.getByRole("button",{name:"Últimos accesos",exact:true});
-          assert.equal(await accessesToggle.getAttribute("aria-expanded"),"false");
-          await accessesToggle.click();
-          assert.equal(await page.getByText("Ingreso autorizado",{exact:true}).count(),6);
-          await accessesToggle.click();
-          assert.equal(await accessesToggle.getAttribute("aria-expanded"),"false");
+          await page.getByRole("heading",{name:"Mi perfil",exact:true}).waitFor();
+          assert.equal(await page.getByRole("button",{name:"Últimos accesos",exact:true}).count(),0);
+          await page.getByRole("button",{name:"Cambiar contraseña",exact:true}).click();
+          await page.getByLabel("Contraseña actual",{exact:true}).fill("Actual123!");
+          await page.getByLabel("Nueva contraseña",{exact:true}).fill("Nueva123!");
+          await page.getByLabel("Confirmar nueva contraseña",{exact:true}).fill("Distinta123!");
+          await page.getByRole("button",{name:"Guardar contraseña",exact:true}).click();
+          await page.getByText("Las nuevas contraseñas no coinciden.",{exact:true}).waitFor();
+          await page.getByLabel("Confirmar nueva contraseña",{exact:true}).fill("Nueva123!");
+          await page.getByRole("button",{name:"Guardar contraseña",exact:true}).click();
+          await page.getByText("Contraseña actualizada correctamente.",{exact:true}).waitFor();
+          const file = require("node:fs").readFileSync(path.join(__dirname,"../public/images/muscles/male_muscle_04.webp"));
+          await page.getByLabel("Elegir foto de perfil",{exact:true}).setInputFiles({name:"foto.webp",mimeType:"image/webp",buffer:file});
+          await page.getByText("Foto de perfil actualizada.",{exact:true}).waitFor();
+          await page.getByAltText("Foto de Tomás Fernández",{exact:true}).waitFor();
+          await page.screenshot({path:path.join(output,"qa-alumno-perfil.png"),fullPage:true});
           await page.getByRole("button",{name:"Inicio",exact:true}).click();
           await page.setViewportSize({width:390,height:844});
           await page.screenshot({
@@ -375,6 +394,10 @@ if (require.main === module) (async () => {
             .getByRole("button", { name: "Ejercicios", exact: true })
             .click();
           await page.getByRole("button", { name: "Hombre", exact: true }).waitFor();
+          const muscleRow=page.getByRole("group",{name:"Filtrar por músculo",exact:true});
+          assert.equal(await muscleRow.evaluate(row=>new Set([...row.children].map(button=>button.offsetTop)).size),1);
+          assert.equal(await muscleRow.evaluate(row=>row.scrollWidth>row.clientWidth),true);
+
           await page
             .getByRole("button", { name: "Mujer", exact: true })
             .click();

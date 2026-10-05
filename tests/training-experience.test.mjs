@@ -10,10 +10,12 @@ const professor = readFileSync(new URL("../src/components/routines/ProfessorTrai
 const migration = readFileSync(new URL("../supabase/migrations/20260917192000_gf_training_plan_performance_v1090.sql", import.meta.url), "utf8");
 const globalHistory = readFileSync(new URL("../supabase/migrations/20260917192200_gf_global_exercise_last_values_v1090.sql", import.meta.url), "utf8");
 
-test("Cliente usa navegación Inicio, Entrenar, Progreso y Perfil", () => {
+test("Cliente accede a Progreso desde Inicio y mantiene Perfil separado", () => {
   assert.match(client, /label="Inicio"/);
   assert.match(client, /label="Entrenar"/);
-  assert.match(client, /label="Progreso"/);
+  assert.doesNotMatch(client, /label="Progreso"/);
+  assert.match(client, /Ver progreso/);
+  assert.match(client, /<AccountProfile/);
   assert.match(client, /label="Perfil"/);
   assert.match(client, /<TrainingPlan/);
   assert.match(client, /<TrainingProgressPanel/);

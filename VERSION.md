@@ -7,6 +7,13 @@
 - Mostrar únicamente A.B.C en la interfaz, sin prefijo V ni ceros de relleno.
 - Mantener sincronizados package.json, raíz de package-lock.json, APP_VERSION y caché PWA.
 
+## 1.12.0 — Cuenta del alumno y navegación — 05/10/2026
+
+- Progreso se abre desde Inicio; menú inferior con Inicio, Entrenar, Ejercicios, Recetas y Perfil.
+- Perfil independiente de Inicio: foto circular privada, selección de imagen y cambio de contraseña con confirmación.
+- Fotos centradas, optimizadas a 512 px y protegidas por permisos de propietario en Storage.
+- Ejercicios utiliza una lupa; filtros musculares en una sola fila desplazable horizontalmente.
+
 ## 1.11.5 — Figura muscular — 04/10/2026
 
 - Recorte explícito del frente y espalda para evitar partes duplicadas en pantallas anchas.

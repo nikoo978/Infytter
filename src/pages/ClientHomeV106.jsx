@@ -1,10 +1,10 @@
-import CollapsibleSection from "../components/ui/CollapsibleSection";
+import AccountProfile from "../components/account/AccountProfile";
 import Recipes from "./Recipes";
 import useRecipeVisibility from "../hooks/useRecipeVisibility";
 import useAppBack from "../hooks/useAppBack";
 import {
-  Activity, ChefHat, CalendarDays, CheckCircle2, ChevronLeft, Clock3, Dumbbell, Fingerprint,
-  Home, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, UserRound, XCircle
+  Activity, ChefHat, CalendarDays, ChevronLeft, Dumbbell, Fingerprint,
+  Home, RefreshCw, Search, ShieldCheck, UserRound
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { APP_VERSION } from "../App";
@@ -26,7 +26,7 @@ const dateLabel = (value) => value ? new Date(`${String(value).slice(0, 10)}T12:
 const number = (value, digits = 1) => value == null ? "—" : Number(value).toLocaleString("es-AR", { maximumFractionDigits: digits });
 
 export default function ClientHomeV106({ previewPortal = null, previewIdentity = null, preview = false }) {
-  const { user, profile, logout } = useAuth();
+  const { user, profile } = useAuth();
   const recipesEnabled = useRecipeVisibility(preview);
   const [portal, setPortal] = useState(previewPortal);
   const [loading, setLoading] = useState(!preview);
@@ -178,7 +178,7 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
 
             <section className="student-home__shortcuts grid grid-cols-2 gap-3">
               <button onClick={() => setTab("progreso")} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Activity className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Ver progreso</p><p className="mt-1 text-[10px] font-bold text-slate-400">Cuerpo + rendimiento</p></button>
-              <button onClick={() => { setTab("ejercicios"); }} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Dumbbell className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Ejercicios</p><p className="mt-1 text-[10px] font-bold text-slate-400">Técnica y ejercicios</p></button>
+              <button onClick={() => { setTab("ejercicios"); }} className="min-h-24 rounded-[20px] bg-white p-4 text-left shadow-sm active:scale-[.98]"><Search className="size-5 text-[#E30613]" /><p className="mt-3 text-sm font-black text-slate-900">Ejercicios</p><p className="mt-1 text-[10px] font-bold text-slate-400">Técnica y ejercicios</p></button>
             </section>
           </>}
         </>}
@@ -208,37 +208,19 @@ export default function ClientHomeV106({ previewPortal = null, previewIdentity =
         {tab === "ejercicios" && <ExerciseCatalog compact preview={preview} />}
 
         {tab === "progreso" && <div className="space-y-5">
+          <button type="button" onClick={() => setTab("inicio")} className="flex min-h-11 items-center gap-2 text-sm font-bold text-slate-600"><ChevronLeft className="size-4" /> Volver a Inicio</button>
           <TrainingProgressPanel preview={preview} />
           <BodyMetricsPanel self preview={preview} title="Progreso corporal" subtitle="Registrá peso, altura y medidas. El IMC y la grasa corporal por Navy son estimaciones orientativas." />
         </div>}
 
-        {tab === "perfil" && <>
-          <section className="overflow-hidden rounded-[26px] bg-[#050505] p-5 text-white shadow-xl">
-            <div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.18em] text-white/70">Perfil</p><h1 className="mt-2 truncate text-2xl font-black">{name}</h1><p className="mt-1 truncate text-xs text-white/70">{shownEmail}</p></div><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white/8"><UserRound className="size-5" /></span></div>
-          </section>
+        {tab === "perfil" && <AccountProfile name={name} email={shownEmail} preview={preview} />}
 
-          {member && <>
-            <section className="grid grid-cols-2 gap-3">
-              <InfoCard label="Membresía" value={status} />
-              <InfoCard label="Vencimiento" value={dateLabel(member.expiry)} />
-              <InfoCard icon={Fingerprint} label="Acceso" value={member.biometricMethod || "Sin registrar"} />
-              <InfoCard icon={CalendarDays} label="Semana" value={thisWeekDays === null ? "Sin límite" : `${thisWeekDays} / 3 días`} />
-            </section>
-
-            <CollapsibleSection title="Últimos accesos" count={Math.min(accesses.length, 8)} description="Actividad de ingreso al gimnasio" actions={!preview && <button type="button" aria-label="Actualizar accesos" onClick={load} className="grid size-11 place-items-center rounded-xl border border-black/8 text-slate-500"><RefreshCw className="size-4" /></button>}>
-              <div className="mt-3 divide-y divide-slate-100">{accesses.slice(0, 8).map((item) => <div key={item.id} className="flex items-center justify-between gap-3 py-3"><div className="flex min-w-0 items-center gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-xl ${item.allowed ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{item.allowed ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}</span><div className="min-w-0"><p className="truncate text-sm font-black text-slate-800">{item.allowed ? "Ingreso autorizado" : "Ingreso rechazado"}</p><p className="text-[11px] text-slate-400">{new Date(item.date).toLocaleDateString("es-AR", { timeZone: GYM_TIME_ZONE })}</p></div></div><span className="shrink-0 text-xs font-bold text-slate-400"><Clock3 className="mr-1 inline size-3.5" />{new Date(item.date).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: GYM_TIME_ZONE })}</span></div>)}{!accesses.length && <p className="py-7 text-center text-sm text-slate-400">Todavía no tenés accesos registrados.</p>}</div>
-            </CollapsibleSection>
-          </>}
-
-          {!preview && <button onClick={logout} className="btn-secondary min-h-11 w-full"><LogOut className="size-4" /> Cerrar sesión</button>}
-        </>}
       </div>
 
-      <div className={`${navClass} z-40`}><nav aria-label="Menú del alumno" style={{ gridTemplateColumns: recipesEnabled ? "minmax(0, .8fr) minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, .8fr)" : "repeat(5, minmax(0, 1fr))" }} className="grid gap-0.5 sm:gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl">
+      <div className={`${navClass} z-40`}><nav aria-label="Menú del alumno" style={{ gridTemplateColumns: `repeat(${recipesEnabled ? 5 : 4}, minmax(0, 1fr))` }} className="grid gap-0.5 sm:gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl">
         <NavButton active={tab === "inicio"} onClick={() => setTab("inicio")} icon={Home} label="Inicio" />
         <NavButton active={tab === "entrenar"} onClick={() => { setTab("entrenar"); setTrainingView("plan"); }} icon={Dumbbell} label="Entrenar" />
-        <NavButton active={tab === "ejercicios"} onClick={() => setTab("ejercicios")} icon={Dumbbell} label="Ejercicios" />
-        <NavButton active={tab === "progreso"} onClick={() => { setTab("progreso"); if (!preview) void load(); }} icon={Activity} label="Progreso" />
+        <NavButton active={tab === "ejercicios"} onClick={() => setTab("ejercicios")} icon={Search} label="Ejercicios" />
         {recipesEnabled && <NavButton active={tab === "recetas"} onClick={() => setTab("recetas")} icon={ChefHat} label="Recetas" />}
         <NavButton active={tab === "perfil"} onClick={() => setTab("perfil")} icon={UserRound} label="Perfil" />
       </nav></div>
