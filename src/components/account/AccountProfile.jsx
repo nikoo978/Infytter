@@ -67,7 +67,7 @@ export default function AccountProfile({ name, email, preview = false }) {
     {error && <p role="alert" className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">{error}</p>}
     <section className="rounded-[24px] bg-white p-4 shadow-sm">
       <h2 className="px-1 text-xs font-black uppercase tracking-wider text-slate-400">Seguridad de la cuenta</h2>
-      <button type="button" disabled={disabled} onClick={() => { setPasswordError(""); setNotice(""); setNeedsCode(false); setPasswordOpen(true); }} className="mt-3 flex min-h-16 w-full items-center gap-3 rounded-2xl bg-slate-50 p-4 text-left disabled:opacity-50"><KeyRound className="size-5 shrink-0 text-[#E30613]" /><span><span className="block text-sm font-black">Cambiar contraseña</span><span className="mt-1 block text-xs text-slate-500">Actualizá tu acceso a Infytter</span></span></button>
+      <button type="button" aria-label="Cambiar contraseña" disabled={disabled} onClick={() => { setPasswordError(""); setNotice(""); setNeedsCode(false); setPasswordOpen(true); }} className="mt-3 flex min-h-16 w-full items-center gap-3 rounded-2xl bg-slate-50 p-4 text-left disabled:opacity-50"><KeyRound className="size-5 shrink-0 text-[#E30613]" /><span><span className="block text-sm font-black">Cambiar contraseña</span><span className="mt-1 block text-xs text-slate-500">Actualizá tu acceso a Infytter</span></span></button>
       {disabled && <p className="mt-3 text-xs text-slate-500">{preview ? "Estas opciones están disponibles en tu cuenta real." : "Conectate a Internet para editar tu cuenta."}</p>}
     </section>
     {!preview && <button type="button" onClick={logout} className="btn-secondary min-h-12 w-full"><LogOut className="size-4" /> Cerrar sesión</button>}
