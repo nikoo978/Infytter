@@ -1,6 +1,7 @@
+import AnimatedDock from "../ui/AnimatedDock";
 "use client";
 
-import { Activity, ClipboardList, Dumbbell, LayoutDashboard, LogOut, UsersRound } from "lucide-react";
+import { Activity, ClipboardList, Search, LayoutDashboard, LogOut, UsersRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { APP_VERSION } from "../../App";
 import { useAuth } from "../../context/AuthContext";
@@ -11,7 +12,7 @@ const professorNavigation = [
   { label: "Inicio", path: "/", icon: LayoutDashboard },
   { label: "Alumnos", path: "/clientes", icon: UsersRound },
   { label: "Progreso", path: "/progreso", icon: Activity },
-  { label: "Ejercicios", path: "/ejercicios", icon: Dumbbell },
+  { label: "Ejercicios", path: "/ejercicios", icon: Search },
   { label: "Rutinas", path: "/rutinas", icon: ClipboardList },
 ];
 
@@ -52,12 +53,12 @@ export default function ProfessorLayout({ currentPath = "/", children, preview =
       <nav className="mx-auto hidden max-w-[1480px] items-center justify-center gap-1 border-t border-black/5 px-4 py-2 md:flex lg:border-0 lg:py-0">{visibleNavigation.map((item) => <NavItem key={item.path} item={item} />)}</nav>
     </header>
 
-    <main className="px-3 pb-[calc(6.75rem+env(safe-area-inset-bottom))] pt-4 sm:p-6 sm:pb-28 md:pb-8 lg:p-8">{children}</main>
+    <main key={currentPath} className="page-arrive px-3 pb-[calc(6.75rem+env(safe-area-inset-bottom))] pt-4 sm:p-6 sm:pb-28 md:pb-8 lg:p-8">{children}</main>
 
     <div className="fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(.45rem,env(safe-area-inset-bottom))] md:hidden">
-      <nav style={{ gridTemplateColumns: `repeat(${visibleNavigation.length}, minmax(0, 1fr))` }} className="grid gap-1 rounded-[22px] border border-black/10 bg-white/95 p-1.5 shadow-[0_-8px_30px_rgba(0,0,0,.10)] backdrop-blur-xl">
+      <AnimatedDock label="Menú del profesor" count={visibleNavigation.length} activeIndex={visibleNavigation.findIndex((item) => item.path === currentPath)}>
         {visibleNavigation.map((item) => <NavItem key={item.path} item={item} compact />)}
-      </nav>
+      </AnimatedDock>
     </div>
   </div>;
 }

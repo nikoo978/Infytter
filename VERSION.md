@@ -7,6 +7,14 @@
 - Mostrar únicamente A.B.C en la interfaz, sin prefijo V ni ceros de relleno.
 - Mantener sincronizados package.json, raíz de package-lock.json, APP_VERSION y caché PWA.
 
+## 1.13.0 — Orden de rutinas y estética — 05/10/2026
+
+- Ordenar ejercicios con arrastre táctil o mouse, flechas de 44 px y selector de posición.
+- Mantener series, cargas, notas y descansos al mover ejercicios; guardar el orden con la rutina.
+- Menús de alumno y profesor con indicador deslizante, respuesta al toque y transición de secciones.
+- Tarjetas, fondos y botones renovados conservando identidad roja y negra y legibilidad móvil.
+- Animaciones breves, sin dependencias nuevas y con respeto por movimiento reducido.
+
 ## 1.12.0 — Cuenta del alumno y navegación — 05/10/2026
 
 - Progreso se abre desde Inicio; menú inferior con Inicio, Entrenar, Ejercicios, Recetas y Perfil.

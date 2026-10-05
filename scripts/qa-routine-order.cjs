@@ -1,0 +1,48 @@
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const { login } = require('./qa-role-flows.cjs');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const output = process.env.QA_OUTPUT_DIR || '/tmp/infytter-role-qa';
+(async () => {
+ const server = require('node:child_process').spawn(process.execPath,['server/index.js'],{cwd:path.resolve(__dirname,'..'),env:{...process.env,PORT:'5174',HOST:'127.0.0.1'},stdio:'ignore'});
+ let browser;
+ try {
+  await new Promise(r=>setTimeout(r,700));
+  browser=await chromium.launch({args:['--no-sandbox'],headless:true});
+  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,serviceWorkers:'block'});
+  const page=await context.newPage(); const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+  await login(page,'cliente');
+  const fixtures=['Press banca','Remo'].map((name,i)=>({id:`${i+1}1111111-1111-4111-8111-111111111111`,name,muscle_group:'Pecho',default_sets:i+3,default_reps:'10',rest_seconds:60}));
+  await page.route('**/rest/v1/gf_exercises?**',route=>route.fulfill({contentType:'application/json',body:JSON.stringify(fixtures)}));
+  await page.reload();
+  await page.getByRole('button',{name:'Entrenar',exact:true}).click();
+  await page.getByRole('button',{name:'Crear rutina personal'}).click();
+  const dialog=page.getByRole('dialog',{name:'Nueva rutina',exact:true});
+  await dialog.getByLabel('Nombre de la rutina').fill('Orden de prueba');
+  for(const name of ['Press banca','Remo']) await dialog.getByRole('button',{name:`Elegir ${name}`,exact:true}).click();
+  const rows=()=>dialog.locator('[data-routine-position]');
+  await dialog.getByRole('button',{name:'Bajar Press banca',exact:true}).click();
+  assert.equal(await rows().first().getByText('Remo',{exact:true}).count(),1);
+  await dialog.getByLabel('Posición de Press banca',{exact:true}).selectOption('0');
+  assert.equal(await rows().first().getByText('Press banca',{exact:true}).count(),1);
+  const handle=dialog.getByRole('button',{name:'Arrastrar Remo para cambiar el orden',exact:true});
+  await handle.scrollIntoViewIfNeeded();
+  const cdp=await context.newCDPSession(page); const start=await handle.boundingBox();
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:start.x+20,y:start.y+20}]});
+  const target=rows().first(); await target.scrollIntoViewIfNeeded(); const box=await target.boundingBox();
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:box.x+50,y:box.y+40}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  assert.equal(await rows().first().getByText('Remo',{exact:true}).count(),1);
+  assert.equal(await rows().first().locator('input[type=number]').first().inputValue(),'4');
+  await page.screenshot({path:path.join(output,'qa-orden-rutina.png')});
+  const request=page.waitForRequest(r=>r.url().includes('/gf_save_my_routine_v2'));
+  await dialog.getByRole('button',{name:'Crear rutina',exact:true}).click();
+  const payload=(await request).postDataJSON();
+  assert.deepEqual(payload.p_items.map(i=>i.exercise_name),['Remo','Press banca']);
+  assert.equal(payload.p_items[0].sets,4);
+  assert.equal(payload.p_items.some(i=>'_editorKey' in i),false);
+  assert.deepEqual(errors,[]);
+  await context.close();
+  console.log('Orden de rutina: flechas, posición, arrastre táctil y guardado: OK');
+ } finally { await browser?.close(); server.kill(); }
+})().catch(e=>{console.error(e);process.exit(1);});
