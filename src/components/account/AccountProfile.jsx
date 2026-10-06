@@ -17,10 +17,11 @@ export default function AccountProfile({ name, email, preview = false }) {
   const [passwordError, setPasswordError] = useState("");
   const [needsCode, setNeedsCode] = useState(false);
   const fileInput = useRef(null);
+  useEffect(() => () => { if (photo.startsWith("blob:")) URL.revokeObjectURL(photo); }, [photo]);
   const disabled = preview || !isOnline;
   useEffect(() => {
     let active = true;
-    if (!preview) avatarUrl(user?.user_metadata?.avatar_path, user?.id).then((url) => { if (active) setPhoto(url); }).catch(() => { if (active) setPhoto(""); });
+    if (!preview) avatarUrl(user?.user_metadata?.avatar_path, user?.id).then((url) => { if (active) setPhoto(url); else if (url.startsWith("blob:")) URL.revokeObjectURL(url); }).catch(() => { if (active) setPhoto(""); });
     return () => { active = false; };
   }, [user?.id, user?.user_metadata?.avatar_path, preview]);
 

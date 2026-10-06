@@ -53,6 +53,7 @@ test("female plate uses faceless vector heads without changing muscle clipping",
   assert.match(html, /<mask/);
   assert.match(html, /data-anatomy-hair="front"/);
   assert.match(html, /data-anatomy-hair="back"/);
+  assert.doesNotMatch(html, /M495 7 C473/);
   assert.match(html, /stroke="white"/);
   assert.match(html, /feMorphology/);
   assert.match(html, /female_muscle_04.webp/);

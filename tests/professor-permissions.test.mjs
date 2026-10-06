@@ -8,7 +8,7 @@ test("professor permissions are opt-in and prerequisites cannot be bypassed", ()
     assert.equal(professorPermissionEnabled(all, key), true);
   }
   const noStudents = { ...all, can_view_students: false };
-  for (const key of ["canViewStudentProgress", "canRecordStudentMetrics", "canDeleteStudentMetrics", "canViewStudentRoutines", "canAssignRoutines"]) assert.equal(professorPermissionEnabled(noStudents, key), false);
+  for (const key of ["canViewStudentPhotos", "canViewStudentProgress", "canRecordStudentMetrics", "canDeleteStudentMetrics", "canViewStudentRoutines", "canAssignRoutines"]) assert.equal(professorPermissionEnabled(noStudents, key), false);
   assert.equal(professorPermissionEnabled(noStudents, "canCreateRoutines"), true);
   assert.equal(professorPermissionEnabled({ ...all, can_view_exercises: false }, "canEditRoutines"), false);
   assert.equal(professorPermissionEnabled({ ...all, can_view_routines: false }, "canAssignRoutines"), false);

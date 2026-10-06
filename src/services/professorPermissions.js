@@ -1,4 +1,5 @@
 export const PROFESSOR_PERMISSIONS = [
+  { key: "canViewStudentPhotos", column: "can_view_student_photos", group: "Alumnos", label: "Ver fotos de alumnos", detail: "Mostrar sus fotos de perfil en las fichas. Requiere consultar alumnos.", requires: "canViewStudents" },
   {
     "key": "canViewStudents",
     "column": "can_view_students",

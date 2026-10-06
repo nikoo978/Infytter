@@ -1,3 +1,11 @@
+## 1.14.0 — 2026-10-06
+
+- Figura femenina posterior: cabello sin contorno de cráneo.
+- Fotos privadas en volumen del servidor: un JPG por cuenta, reemplazo atómico, validación/recompresión, límites de peso, capacidad y frecuencia.
+- Nuevo permiso opt-in “Ver fotos de alumnos”. Admin puede consultarlas; profesores necesitan este permiso y consultar alumnos. La API verifica ambas condiciones en Supabase.
+- Migración de fotos previas al abrir el perfil una vez configurado el volumen; conserva lectura de las anteriores mientras falta configuración.
+- Requiere volumen persistente y AVATAR_STORAGE_READY=1 en Coolify; ver docs/SERVER_AVATARS.md.
+
 ## Versionado A.B.C
 
 - A: actualizaciones muy grandes o cambios principales del producto.

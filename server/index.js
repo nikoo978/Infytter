@@ -11,6 +11,7 @@ const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 1024 * 1024);
 
 const API_ROUTES = new Map([
   ["/api/health", "api/health.js"],
+  ["/api/avatar", "api/avatars.js"],
   ["/api/push", "api/push.js"],
   ["/api/notify", "api/notify.js"],
   ["/api/reminders", "api/reminders.js"],
@@ -46,7 +47,7 @@ function queryObject(searchParams) {
   return query;
 }
 
-async function readRawBody(req) {
+async function readRawBody(req, limit = MAX_BODY_BYTES) {
   return new Promise((resolveBody, reject) => {
     const chunks = [];
     let size = 0;
@@ -60,7 +61,7 @@ async function readRawBody(req) {
     req.on("data", (chunk) => {
       if (settled) return;
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) return fail("Payload demasiado grande", 413);
+      if (size > limit) return fail("Payload demasiado grande", 413);
       chunks.push(chunk);
     });
     req.on("end", () => {
@@ -68,7 +69,7 @@ async function readRawBody(req) {
     });
     req.on("error", () => fail("Solicitud interrumpida", 400));
     req.on("aborted", () => fail("Solicitud interrumpida", 400));
-    if (Number(req.headers["content-length"]) > MAX_BODY_BYTES) fail("Payload demasiado grande", 413);
+    if (Number(req.headers["content-length"]) > limit) fail("Payload demasiado grande", 413);
   });
 }
 
@@ -113,11 +114,13 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  let release;
   try {
     req.query = queryObject(url.searchParams);
-    req.rawBody = await readRawBody(req);
-    req.body = parseBody(req.rawBody, req.headers["content-type"]);
     const module = await import(pathToFileURL(resolve(ROOT, modulePath)).href);
+    if (module.preflight) release = await module.preflight(req);
+    req.rawBody = await readRawBody(req, module.MAX_AVATAR_BYTES || MAX_BODY_BYTES);
+    req.body = parseBody(req.rawBody, req.headers["content-type"]);
     if (typeof module.default !== "function") throw new Error(`Handler inválido: ${modulePath}`);
     await module.default(req, adaptResponse(res));
   } catch (error) {
@@ -126,7 +129,7 @@ async function handleApi(req, res, url) {
     res.statusCode = error?.statusCode || 500;
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.end(JSON.stringify({ error: error?.statusCode ? error.message : "Error interno" }));
-  }
+  } finally { release?.(); }
 }
 
 function safeStaticPath(pathname) {
