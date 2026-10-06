@@ -27,6 +27,8 @@ COPY --from=build --chown=node:node /app/dist ./dist
 COPY --chown=node:node api ./api
 COPY --chown=node:node server ./server
 
+RUN mkdir -p /app/data/avatars && chown -R node:node /app/data
+
 USER node
 EXPOSE 3000
 

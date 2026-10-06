@@ -28,25 +28,67 @@ export async function prepareAvatar(file) {
   } finally { URL.revokeObjectURL(url); }
 }
 
+async function avatarRequest(method = "GET", blob, personId) {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) throw new Error("Iniciá sesión para ver o cambiar la foto.");
+  const response = await fetch(`/api/avatar${personId ? `?personId=${encodeURIComponent(personId)}` : ""}`, {
+    method, headers: { Authorization: `Bearer ${token}`, ...(blob ? { "Content-Type": "image/jpeg" } : {}) }, body: blob,
+  });
+  return response;
+}
+
+async function removeLegacyPhoto(path, userId) {
+  const previous = ownAvatarPath(path, userId);
+  if (!previous) return;
+  const { error } = await supabase.storage.from(AVATAR_BUCKET).remove([previous]);
+  if (!error) await supabase.auth.updateUser({ data: { avatar_path: null } });
+}
+
 export async function avatarUrl(path, userId) {
+  const response = await avatarRequest();
+  if (response.ok) {
+    const blob = await response.blob();
+    await removeLegacyPhoto(path, userId).catch(() => {});
+    return URL.createObjectURL(blob);
+  }
   const safe = ownAvatarPath(path, userId);
-  if (!safe) return "";
+  if (![404, 503].includes(response.status) || !safe) return "";
   const { data, error } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(safe, 3600);
-  if (error) throw error;
+  if (error) return "";
+  // Keep existing photos visible until the persistent volume is ready.
+  if (response.status === 503) return data.signedUrl;
+  try {
+    const legacy = await fetch(data.signedUrl);
+    if (!legacy.ok || Number(legacy.headers.get("content-length")) > 512 * 1024) return data.signedUrl;
+    const blob = await legacy.blob();
+    if (blob.size > 512 * 1024) return data.signedUrl;
+    const saved = await avatarRequest("PUT", blob);
+    if (!saved.ok) return data.signedUrl;
+    await removeLegacyPhoto(path, userId);
+    const migrated = await avatarRequest();
+    if (migrated.ok) return URL.createObjectURL(await migrated.blob());
+  } catch { /* A legacy photo is removed only after a confirmed server save. */ }
   return data.signedUrl;
+}
+
+export async function studentAvatarUrl(personId) {
+  if (!personId) return "";
+  const response = await avatarRequest("GET", undefined, personId);
+  return response.ok ? URL.createObjectURL(await response.blob()) : "";
 }
 
 export async function saveAvatar(file, user) {
   const blob = await prepareAvatar(file);
-  const path = `${user.id}/${crypto.randomUUID()}.jpg`;
-  const bucket = supabase.storage.from(AVATAR_BUCKET);
-  const { error } = await bucket.upload(path, blob, { contentType: "image/jpeg", upsert: false });
-  if (error) throw error;
-  const { error: updateError } = await supabase.auth.updateUser({ data: { avatar_path: path } });
-  if (updateError) { await bucket.remove([path]); throw updateError; }
-  const previous = ownAvatarPath(user.user_metadata?.avatar_path, user.id);
-  if (previous) await bucket.remove([previous]);
-  return avatarUrl(path, user.id);
+  const response = await avatarRequest("PUT", blob);
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(result.error || "No se pudo guardar la foto.");
+  }
+  await removeLegacyPhoto(user.user_metadata?.avatar_path, user.id).catch(() => {});
+  const saved = await avatarRequest();
+  if (!saved.ok) throw new Error("La foto se guardó, pero no se pudo cargar. Volvé a abrir tu perfil.");
+  return URL.createObjectURL(await saved.blob());
 }
 
 export async function changeAccountPassword(current, password, confirmation, nonce = "") {

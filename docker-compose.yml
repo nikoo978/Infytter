@@ -14,3 +14,10 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: 3000
+      AVATAR_STORAGE_READY: "1"
+      AVATAR_DIR: /app/data/avatars
+    volumes:
+      - infytter-avatars:/app/data/avatars
+
+volumes:
+  infytter-avatars:

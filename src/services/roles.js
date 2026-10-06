@@ -16,7 +16,7 @@ export async function getMyProfile() {
   if (authError || !authData?.user?.id) return { profile: null, error: authError || new Error("Sin sesión") };
   const { data, error } = await supabase
     .from("gf_profiles")
-    .select("user_id,email,display_name,dni,role,is_master,can_grant_access,can_view_students,can_create_exercises,can_edit_exercises,can_delete_exercises,can_view_student_progress,can_record_student_metrics,can_delete_student_metrics,can_view_student_routines,can_view_routines,can_create_routines,can_edit_routines,can_assign_routines,can_view_exercises,can_use_own_progress,created_at,updated_at")
+    .select("user_id,email,display_name,dni,role,is_master,can_grant_access,can_view_students,can_view_student_photos,can_create_exercises,can_edit_exercises,can_delete_exercises,can_view_student_progress,can_record_student_metrics,can_delete_student_metrics,can_view_student_routines,can_view_routines,can_create_routines,can_edit_routines,can_assign_routines,can_view_exercises,can_use_own_progress,created_at,updated_at")
     .eq("user_id", authData.user.id)
     .maybeSingle();
   return { profile: data || null, error };
@@ -79,7 +79,7 @@ export async function getMyClientPortal() {
 
 export function permissionsForRole(role, profile = null) {
   const professorAccess = role === "profe" && professorPermissionEnabled(profile, "canGrantAccess");
-  const professorFlags = Object.fromEntries(PROFESSOR_PERMISSIONS.map(({ key }) => [key, ["admin", "coadmin"].includes(role) || (role === "profe" && professorPermissionEnabled(profile, key))]));
+  const professorFlags = Object.fromEntries(PROFESSOR_PERMISSIONS.map(({ key }) => [key, (key === "canViewStudentPhotos" ? role === "admin" : ["admin", "coadmin"].includes(role)) || (role === "profe" && professorPermissionEnabled(profile, key))]));
   return {
     role,
     isMaster: role === "admin",

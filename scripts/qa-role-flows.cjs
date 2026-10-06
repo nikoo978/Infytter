@@ -61,7 +61,7 @@ async function mock(page, role, permissions = true) {
   let recipes = [{id:'recipe-1',title:'Avena con frambuesa',category:'Desayunos',minutes:10,protein_g:31,carbs_g:38,fat_g:7,ingredients:['50 g Avena','100 g Frambuesas'],steps:['Mezclá la avena.','Agregá las frambuesas.'],image_url:'/images/recipes/2.webp',source:'Recetario original',is_hidden:false},{id:'recipe-2',title:'Receta oculta',category:'Otros',minutes:30,ingredients:['Arroz'],steps:['Cociná el arroz.'],is_hidden:true}];
   const calls = [];
   let routineDays = {};
-  const professorPermissions = {userId:"profe-fixture", name:"Martín López",email:"profe@example.test",canGrantAccess:false,canViewStudents:false,canCreateExercises:false,canEditExercises:false,canDeleteExercises:false};
+  const professorPermissions = {userId:"profe-fixture", name:"Martín López",email:"profe@example.test",canGrantAccess:false,canViewStudents:false,canViewStudentPhotos:false,canCreateExercises:false,canEditExercises:false,canDeleteExercises:false};
   const uid = "6fd819fe-131d-4278-8a5c-df69b5c2530e";
   const user = {
     id: uid,
@@ -72,6 +72,12 @@ async function mock(page, role, permissions = true) {
       name: role === "cliente" ? "Tomás Fernández" : "Martín López",
     },
   };
+  let photoSaved = false;
+  await page.route("**/api/avatar*", async route => {
+    if (route.request().method() === "PUT") { photoSaved = true; await route.fulfill({contentType:"application/json",body:JSON.stringify({saved:true})}); }
+    else if (photoSaved) await route.fulfill({contentType:"image/webp",body:require("node:fs").readFileSync(path.join(__dirname,"../public/images/muscles/male_muscle_04.webp"))});
+    else await route.fulfill({status:404,contentType:"application/json",body:JSON.stringify({error:"Foto no disponible"})});
+  });
   await page.route("**/*.supabase.co/**", async (route) => {
     const url = route.request().url();
     calls.push(url);
@@ -637,7 +643,7 @@ if (require.main === module) (async () => {
       await adminPage.waitForFunction(()=>JSON.parse(localStorage.getItem("gymflow-profile-v1")||"null")?.role==="admin");
       await adminPage.goto("http://127.0.0.1:5174/permisos");
       await adminPage.locator("summary").filter({hasText:"Martín López"}).click();
-      for (const label of ["Consultar alumnos","Consultar progreso de alumnos","Registrar medidas de alumnos","Eliminar medidas de alumnos","Consultar rutinas de alumnos","Consultar mis rutinas","Crear rutinas","Modificar rutinas propias","Enviar rutinas a alumnos","Consultar ejercicios","Agregar ejercicios","Modificar ejercicios propios","Quitar ejercicios propios","Mi progreso personal","Permitir acceso"]) {
+      for (const label of ["Consultar alumnos","Ver fotos de alumnos","Consultar progreso de alumnos","Registrar medidas de alumnos","Eliminar medidas de alumnos","Consultar rutinas de alumnos","Consultar mis rutinas","Crear rutinas","Modificar rutinas propias","Enviar rutinas a alumnos","Consultar ejercicios","Agregar ejercicios","Modificar ejercicios propios","Quitar ejercicios propios","Mi progreso personal","Permitir acceso"]) {
         const toggle=adminPage.getByRole("switch",{name:label,exact:true});
         await toggle.waitFor();
         assert.equal(await toggle.getAttribute("aria-checked"),"false");
@@ -655,7 +661,7 @@ if (require.main === module) (async () => {
       assert.deepEqual(adminErrors,[]);
       assert.equal(await adminPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
       await adminContext.close();
-      console.log("admin: OK; quince permisos individuales y cambios masivos reversibles");
+      console.log("admin: OK; dieciséis permisos individuales y cambios masivos reversibles");
     } finally {await restrictedBrowser.close();}
   } finally {
     server.kill();
