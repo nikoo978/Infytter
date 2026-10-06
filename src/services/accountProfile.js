@@ -47,7 +47,11 @@ async function removeLegacyPhoto(path, userId) {
 
 export async function avatarUrl(path, userId) {
   const response = await avatarRequest();
-  if (response.ok) return URL.createObjectURL(await response.blob());
+  if (response.ok) {
+    const blob = await response.blob();
+    await removeLegacyPhoto(path, userId).catch(() => {});
+    return URL.createObjectURL(blob);
+  }
   const safe = ownAvatarPath(path, userId);
   if (![404, 503].includes(response.status) || !safe) return "";
   const { data, error } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(safe, 3600);
@@ -81,7 +85,7 @@ export async function saveAvatar(file, user) {
     const result = await response.json().catch(() => ({}));
     throw new Error(result.error || "No se pudo guardar la foto.");
   }
-  await removeLegacyPhoto(user.user_metadata?.avatar_path, user.id);
+  await removeLegacyPhoto(user.user_metadata?.avatar_path, user.id).catch(() => {});
   const saved = await avatarRequest();
   if (!saved.ok) throw new Error("La foto se guardó, pero no se pudo cargar. Volvé a abrir tu perfil.");
   return URL.createObjectURL(await saved.blob());
